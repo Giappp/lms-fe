@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "backend": "npx json-server --watch db.json --port 8080"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.0.1",

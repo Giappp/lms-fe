@@ -1,37 +1,18 @@
-export const buildQueryStringFromOptions = (options?: { [key: string]: any; }) => {
-    const queryParams = [];
-    if (options == undefined || Object.keys(options).length == 0) {
-        return "";
-    }
+export const buildParamsFromOptions = (options?: { [key: string]: any }) => {
+    if (!options) return {};
 
-    for (const key of Object.keys(options)) {
-        if (options[key] == undefined) continue;
-        if (options[key] instanceof Array) {
-            queryParams.push(transformArrayForQueryString(key, options[key]))
-        } else if (options[key] instanceof Date) {
-            const d: Date = options[key];
-            queryParams.push(
-                `${key}=${d.toISOString().substring(0, d.toISOString().indexOf("."))}`
-            );
+    const params: Record<string, any> = {};
+
+    for (const [key, value] of Object.entries(options)) {
+        if (value === undefined) continue;
+        if (Array.isArray(value)) {
+            params[key] = value; // Axios automatically serializes arrays
+        } else if (value instanceof Date) {
+            params[key] = value.toISOString().split(".")[0];
         } else {
-            queryParams.push(`${key}=${options[key]}`);
+            params[key] = value;
         }
     }
-    const res = `?${queryParams.join('&')}`;
-    return res === "?" ? "" : res;
-}
-
-const transformArrayForQueryString = (key: string, array?: string[]) => {
-    let qs = "";
-    if (array === undefined || array.length === 0) {
-        return qs;
-    }
-    for (const s of array) {
-        if (qs === "") {
-            qs += `${key}[]=${s}`;
-        } else {
-            qs += `&${key}[]=${s}`
-        }
-    }
-    return qs;
-}
+    console.log(params);
+    return params;
+};

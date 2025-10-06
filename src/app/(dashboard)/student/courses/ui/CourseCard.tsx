@@ -43,7 +43,7 @@ const CourseCard: React.FC<CourseProps> = ({
                     alt={title}
                     width={300}
                     height={135}
-                    className="rounded-md object-cover"
+                    className="rounded-md object-cover w-auto h-auto"
                 />
             </Link>
 

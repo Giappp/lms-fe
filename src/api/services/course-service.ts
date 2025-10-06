@@ -1,11 +1,12 @@
-import {CourseResponse, CoursesFilterParams} from "@/types";
+import {CoursesFilterParams} from "@/types";
 import {axios} from "@/api/core/axios";
-import {buildQueryStringFromOptions} from "@/api/core/utils";
+import {buildParamsFromOptions} from "@/api/core/utils";
 
 export const CourseService = {
-    getCourses: async (options: CoursesFilterParams): Promise<CourseResponse> => {
-        const params = buildQueryStringFromOptions(options);
-        const response = await axios.get<CourseResponse>(`/courses`, {params: params});
+    getCourses: async (options: CoursesFilterParams): Promise<any> => {
+        const params = buildParamsFromOptions(options);
+        const response = await axios.get(`/courses`, {params: params});
+        console.log(response);
         return response.data;
     }
 }

@@ -41,7 +41,7 @@ const CoursesBrowser = () => {
         setError("");
         try {
             const response = await CourseService.getCourses(params);
-            setCourses(response.courses);
+            setCourses(response);
             setTotalPages(response.totalPages);
         } catch (err) {
             console.error(err);
@@ -125,12 +125,12 @@ const CoursesBrowser = () => {
                 </div>
             ) : (
                 <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {courses.map((item) => (
+                    {courses ? courses.map((item) => (
                         <CourseCard
                             key={item.id}
                             {...item}
                         />
-                    ))}
+                    )) : (<div>No Data</div>)}
                 </div>
             )}
 
