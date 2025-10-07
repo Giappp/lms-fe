@@ -16,12 +16,7 @@
       "price": 1000000,
       "rating": 4.6,
       "status": "Published",
-      "reviews": 34693,
-      "test": [
-        3,
-        2,
-        1
-      ]
+      "reviews": 34693
     },
     {
       "id": 2,
@@ -93,90 +88,6 @@
       "rating": 4.7,
       "status": "Published",
       "reviews": 25218
-    },
-    {
-      "id": "course_001",
-      "title": "Introduction to Web Development",
-      "description": "Learn the fundamentals of HTML, CSS, and JavaScript to build modern websites",
-      "categoryId": "cat_001",
-      "categoryName": "Web Development",
-      "teacherId": "user_002",
-      "teacherName": "Jane Smith",
-      "thumbnail": "/images/web-dev-thumb.jpg",
-      "duration": "8 weeks",
-      "difficulty": "beginner",
-      "prerequisites": [],
-      "price": 0,
-      "enrolledCount": 45,
-      "rating": 4.5,
-      "reviewCount": 23,
-      "status": "published",
-      "createdAt": "2024-01-01T08:00:00Z",
-      "updatedAt": "2024-03-15T10:00:00Z"
-    },
-    {
-      "id": "course_002",
-      "title": "Advanced JavaScript Programming",
-      "description": "Master modern JavaScript features, async programming, and popular frameworks",
-      "categoryId": "cat_001",
-      "categoryName": "Web Development",
-      "teacherId": "user_002",
-      "teacherName": "Jane Smith",
-      "thumbnail": "/images/js-advanced-thumb.jpg",
-      "duration": "12 weeks",
-      "difficulty": "advanced",
-      "prerequisites": [
-        "course_001"
-      ],
-      "price": 49.99,
-      "enrolledCount": 28,
-      "rating": 4.8,
-      "reviewCount": 15,
-      "status": "published",
-      "createdAt": "2024-01-15T08:00:00Z",
-      "updatedAt": "2024-03-10T14:00:00Z"
-    },
-    {
-      "id": "course_003",
-      "title": "React.js Fundamentals",
-      "description": "Build interactive user interfaces with React.js",
-      "categoryId": "cat_002",
-      "categoryName": "Frontend Frameworks",
-      "teacherId": "user_002",
-      "teacherName": "Jane Smith",
-      "thumbnail": "/images/react-thumb.jpg",
-      "duration": "6 weeks",
-      "difficulty": "intermediate",
-      "prerequisites": [
-        "course_001"
-      ],
-      "price": 39.99,
-      "enrolledCount": 62,
-      "rating": 4.7,
-      "reviewCount": 31,
-      "status": "published",
-      "createdAt": "2024-02-01T08:00:00Z",
-      "updatedAt": "2024-03-18T09:00:00Z"
-    },
-    {
-      "id": "course_004",
-      "title": "Database Design Basics",
-      "description": "Learn SQL and database design principles",
-      "categoryId": "cat_003",
-      "categoryName": "Database",
-      "teacherId": "user_002",
-      "teacherName": "Jane Smith",
-      "thumbnail": "/images/database-thumb.jpg",
-      "duration": "4 weeks",
-      "difficulty": "beginner",
-      "prerequisites": [],
-      "price": 0,
-      "enrolledCount": 38,
-      "rating": 4.3,
-      "reviewCount": 18,
-      "status": "draft",
-      "createdAt": "2024-03-01T08:00:00Z",
-      "updatedAt": "2024-03-20T16:00:00Z"
     }
   ],
   "categories": [

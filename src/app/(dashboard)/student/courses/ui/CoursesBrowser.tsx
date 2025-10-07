@@ -1,9 +1,8 @@
 "use client"
-import React, {useEffect, useState} from 'react'
+import React, {useState} from 'react'
 import {useDebounce} from "use-debounce";
-import {Course, CoursesFilterParams} from "@/types";
-import {CourseService} from "@/api/services/course-service";
 import CourseCard from "@/app/(dashboard)/student/courses/ui/CourseCard";
+import {useCourses} from "@/hooks/useCourses";
 
 
 const CoursesBrowser = () => {
@@ -14,17 +13,10 @@ const CoursesBrowser = () => {
     const [minRating, setMinRating] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
 
-    // UI states
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [totalPages, setTotalPages] = useState(1);
-
     // Debounce search term to prevent excessive API calls
     const [debouncedSearch] = useDebounce(searchTerm, 500);
 
-    // Prepare filter params for API
-    const getFilterParams = (): CoursesFilterParams => ({
+    const {courses, totalPages, isLoading, isError} = useCourses({
         search: debouncedSearch || undefined,
         category: selectedCategory || undefined,
         difficulty: selectedDifficulty || undefined,
@@ -35,28 +27,9 @@ const CoursesBrowser = () => {
         limit: 12, // items per page
     });
 
-    // Fetch courses from API
-    const fetchCourses = async (params: CoursesFilterParams) => {
-        setIsLoading(true);
-        setError("");
-        try {
-            const response = await CourseService.getCourses(params);
-            setCourses(response);
-            setTotalPages(response.totalPages);
-        } catch (err) {
-            console.error(err);
-            setError("Server Error");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Effect to fetch courses when filters change
-    useEffect(() => {
-        fetchCourses(getFilterParams());
-    }, [debouncedSearch, selectedCategory, selectedDifficulty, priceRange.min, priceRange.max, minRating, currentPage]);
     return (
         <div className="space-y-6">
+            {/* Filters */}
             <div className="space-y-4">
                 {/* Search input */}
                 <input
@@ -75,7 +48,7 @@ const CoursesBrowser = () => {
                         className="p-2 border rounded-lg"
                     >
                         <option value="">All Categories</option>
-                        {/* Categories will come from API */}
+                        {/* TODO: Map categories from API later */}
                     </select>
 
                     {/* Difficulty filter */}
@@ -85,7 +58,7 @@ const CoursesBrowser = () => {
                         className="p-2 border rounded-lg"
                     >
                         <option value="">All Difficulties</option>
-                        {/* Difficulties will come from API */}
+                        {/* TODO: Map difficulties from API later */}
                     </select>
 
                     {/* Price range filter */}
@@ -94,14 +67,24 @@ const CoursesBrowser = () => {
                             type="number"
                             placeholder="Min price"
                             value={priceRange.min}
-                            onChange={(e) => setPriceRange(prev => ({...prev, min: Number(e.target.value)}))}
+                            onChange={(e) =>
+                                setPriceRange((prev) => ({
+                                    ...prev,
+                                    min: Number(e.target.value),
+                                }))
+                            }
                             className="p-2 border rounded-lg w-full"
                         />
                         <input
                             type="number"
                             placeholder="Max price"
                             value={priceRange.max}
-                            onChange={(e) => setPriceRange(prev => ({...prev, max: Number(e.target.value)}))}
+                            onChange={(e) =>
+                                setPriceRange((prev) => ({
+                                    ...prev,
+                                    max: Number(e.target.value),
+                                }))
+                            }
                             className="p-2 border rounded-lg w-full"
                         />
                     </div>
@@ -118,45 +101,50 @@ const CoursesBrowser = () => {
                     </select>
                 </div>
             </div>
-            {/* Loading state */}
+
+            {/* Courses list */}
             {isLoading ? (
-                <div className="flex justify-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                <div className="mt-4 flex flex-col items-center justify-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 mb-4"></div>
+                    <p className="text-lg font-medium text-gray-700">
+                        Loading courses...
+                    </p>
+                </div>
+            ) : isError ? (
+                <div className="text-center text-red-500 mt-6">
+                    Failed to load courses.
                 </div>
             ) : (
                 <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {courses ? courses.map((item) => (
-                        <CourseCard
-                            key={item.id}
-                            {...item}
-                        />
-                    )) : (<div>No Data</div>)}
+                    {courses.length > 0 ? (
+                        courses.map((item) => <CourseCard key={item.id} {...item} />)
+                    ) : (
+                        <div className="col-span-full text-center text-gray-500">
+                            No courses found
+                        </div>
+                    )}
                 </div>
             )}
 
-            {error ? (
-                <div className="flex justify-center">
-                    <p>{error}</p>
-                </div>
-            ) : (<></>)}
-
             {/* Pagination */}
-            <div className="flex justify-center space-x-2 mt-6">
-                {Array.from({length: totalPages}, (_, i) => (
-                    <button
-                        key={i + 1}
-                        onClick={() => setCurrentPage(i + 1)}
-                        className={`px-4 py-2 rounded ${
-                            currentPage === i + 1
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-200'
-                        }`}
-                    >
-                        {i + 1}
-                    </button>
-                ))}
-            </div>
+            {!isLoading && totalPages > 1 && (
+                <div className="flex justify-center space-x-2 mt-6">
+                    {Array.from({length: totalPages}, (_, i) => (
+                        <button
+                            key={i + 1}
+                            onClick={() => setCurrentPage(i + 1)}
+                            className={`px-4 py-2 rounded ${
+                                currentPage === i + 1
+                                    ? "bg-blue-500 text-white"
+                                    : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                            }`}
+                        >
+                            {i + 1}
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
-    )
+    );
 }
 export default CoursesBrowser
