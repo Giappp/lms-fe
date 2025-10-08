@@ -1,13 +1,29 @@
 import {CourseResponse, CoursesFilterParams} from "@/types";
-import useSWR from "swr";
-import {CourseService} from "@/api/services/course-service";
+import useSWR, {mutate} from "swr";
+import {buildParamsFromOptions} from "@/api/core/utils";
+import {axios} from "@/api/core/axios";
 
+const fetcher = async (url: string) => {
+    const res = await axios.get(url);
+    return res.data;
+};
 
 export const useCourses = (filters: CoursesFilterParams) => {
-    const key = ['courses', filters];
-    const {data, error, isLoading, mutate} = useSWR<CourseResponse, any, any>(key, async () => {
-        await CourseService.getCourses(filters);
+    const queryString = buildParamsFromOptions(filters);
+    const {data, error, isLoading} = useSWR<CourseResponse, any, any>(`/courses?${queryString}`, fetcher, {
+        keepPreviousData: true,
+        revalidateOnFocus: false,
     })
 
-    return {courses: data?.courses || [], totalPages: data?.totalPages || 1, isLoading, isError: !!error, mutate}
+    const refreshCourses = async () => {
+        await mutate(`/courses?${queryString}`)
+    }
+
+    return {
+        courses: data?.courses || [],
+        totalPages: data?.totalPages || 1,
+        isLoading,
+        isError: !!error,
+        refreshCourses
+    }
 }

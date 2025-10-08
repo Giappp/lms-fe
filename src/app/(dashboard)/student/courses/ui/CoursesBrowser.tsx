@@ -16,7 +16,7 @@ const CoursesBrowser = () => {
     // Debounce search term to prevent excessive API calls
     const [debouncedSearch] = useDebounce(searchTerm, 500);
 
-    const {courses, totalPages, isLoading, isError} = useCourses({
+    const {courses, totalPages, isLoading, isError, refreshCourses} = useCourses({
         search: debouncedSearch || undefined,
         category: selectedCategory || undefined,
         difficulty: selectedDifficulty || undefined,
@@ -26,6 +26,11 @@ const CoursesBrowser = () => {
         page: currentPage,
         limit: 12, // items per page
     });
+
+    const handlePageChange = async (page: number) => {
+        setCurrentPage(page);
+        await refreshCourses();
+    };
 
     return (
         <div className="space-y-6">
@@ -132,7 +137,7 @@ const CoursesBrowser = () => {
                     {Array.from({length: totalPages}, (_, i) => (
                         <button
                             key={i + 1}
-                            onClick={() => setCurrentPage(i + 1)}
+                            onClick={() => handlePageChange(i + 1)}
                             className={`px-4 py-2 rounded ${
                                 currentPage === i + 1
                                     ? "bg-blue-500 text-white"

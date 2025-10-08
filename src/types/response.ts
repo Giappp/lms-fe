@@ -1,6 +1,13 @@
 /*
 * All the api response model goes here
 */
+export type UserResponse = {
+    fullName: string,
+    email: string,
+    accessToken: string,
+    refreshToken: string,
+}
+
 export type CourseResponse = {
     courses: Array<Course>;
     total: number;

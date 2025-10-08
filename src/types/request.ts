@@ -11,3 +11,25 @@ export type CoursesFilterParams = {
     page?: number;
     limit?: number;
 }
+
+export type StudentSignUp = {
+    fullName: string;
+    dob: Date;
+    email: string;
+    password: string;
+    confirmPassword: string;
+}
+
+
+export type TeacherSignUp = {
+    fullName: string;
+    dob: Date;
+    email: string;
+    password: string;
+    confirmPassword: string;
+}
+
+export type UserSignIn = {
+    email: string;
+    password: string;
+}
