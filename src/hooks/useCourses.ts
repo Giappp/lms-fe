@@ -10,11 +10,10 @@ const fetcher = async (url: string) => {
 
 export const useCourses = (filters: CoursesFilterParams) => {
     const queryString = buildParamsFromOptions(filters);
-    setTimeout(() => {
-    }, 3000)
     const {data, error, isLoading} = useSWR<any, any, any>(`/courses?${queryString}`, fetcher, {
         keepPreviousData: true,
         revalidateOnFocus: false,
+        fallbackData: {courses: [], total: 0, currentPage: 1, totalPages: 1}
     })
 
     const refreshCourses = async () => {

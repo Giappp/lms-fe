@@ -3,9 +3,9 @@ import {Button} from "@/components/ui/button";
 import {Card, CardContent} from "@/components/ui/card";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faBook, faCheckCircle, faClock, faFire} from "@fortawesome/free-solid-svg-icons";
-import CurrentCourses from "@/app/(dashboard)/student/ui/CurrentCourses";
-import StudyAnalystic from "@/app/(dashboard)/student/ui/StudyAnalystic";
-import OverAllProgress from "@/app/(dashboard)/student/ui/OverAllProgress";
+import CurrentCourses from "@/app/(dashboard)/student/ui/courses/CurrentCourses";
+import StudyAnalystic from "@/app/(dashboard)/student/ui/dashboard/StudyAnalystic";
+import OverAllProgress from "@/app/(dashboard)/student/ui/dashboard/OverAllProgress";
 
 const Page = () => {
     return (

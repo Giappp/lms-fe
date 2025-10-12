@@ -1,10 +1,10 @@
 import React, {Suspense} from 'react'
-import CoursesBrowser from "@/app/(dashboard)/student/ui/CoursesBrowser";
-import CoursesBrowserSkeleton from "@/app/(dashboard)/student/ui/CoursesBrowserSkeleton";
+import CoursesBrowser from "@/app/(dashboard)/student/ui/courses/CoursesBrowser";
+import CoursesBrowserSkeleton from "@/app/(dashboard)/student/ui/courses/CoursesBrowserSkeleton";
 
 const Page = () => {
     return (
-        <div className="p-6">
+        <div className="container mx-auto px-4 py-6">
             <div className="flex justify-between items-center flex-wrap">
                 <div className="mb-6">
                     <h1 className="md:text-3xl text-2xl">Courses to get you started</h1>
