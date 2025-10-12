@@ -1,10 +1,10 @@
 "use client"
 import React, {Suspense, useState} from 'react'
 import {useDebounce} from "use-debounce";
-import CourseList from "@/app/(dashboard)/student/ui/CourseList";
+import CourseList from "@/app/(dashboard)/student/ui/courses/CourseList";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {Input} from "@/components/ui/input";
-import CoursesBrowserSkeleton from "@/app/(dashboard)/student/ui/CoursesBrowserSkeleton";
+import CoursesBrowserSkeleton from "@/app/(dashboard)/student/ui/courses/CoursesBrowserSkeleton";
 
 
 const CoursesBrowser = () => {

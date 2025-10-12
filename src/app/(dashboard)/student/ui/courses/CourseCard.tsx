@@ -3,7 +3,6 @@ import React from 'react'
 import Image from "next/image";
 import Link from "next/link";
 import {Rating, RatingButton} from "@/components/ui/shadcn-io/rating";
-import {Button} from "@/components/ui/button";
 
 type CourseProps = {
     id: number
@@ -78,7 +77,6 @@ const CourseCard: React.FC<CourseProps> = ({
                 {/* Price */}
                 <div className="flex items-center justify-between">
                     <p className="text-base text-red-500 font-semibold">₫{price.toLocaleString()}</p>
-                    <Button size={"sm"} className="cursor-pointer">Add to Cart</Button>
                 </div>
             </div>
         </div>

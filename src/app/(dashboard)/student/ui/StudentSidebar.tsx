@@ -14,9 +14,11 @@ import {
 import {
     faBook,
     faBookOpen,
+    faCertificate,
     faChartBar,
     faChartLine,
     faFileAlt,
+    faMessage,
     faSignOutAlt,
     faTrophy,
     faUser
@@ -42,6 +44,13 @@ const menuList = [
             {title: "Quiz Results", url: "/student/results", icon: faTrophy},
         ]
     },
+    {
+        title: "Account",
+        subMenus: [
+            {title: "Certifications", url: "/student/certifications", icon: faCertificate},
+            {title: "Messages", url: "/student/messages", icon: faMessage}
+        ]
+    }
 ]
 
 export function StudentSidebar({className, ...props}: React.ComponentProps<typeof Sidebar>) {
