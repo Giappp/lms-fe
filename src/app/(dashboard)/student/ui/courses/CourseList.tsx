@@ -1,5 +1,5 @@
 import React from 'react'
-import CourseCard from "@/app/(dashboard)/student/ui/CourseCard";
+import CourseCard from "@/app/(dashboard)/student/ui/courses/CourseCard";
 import {useCourses} from "@/hooks/useCourses";
 import {Course} from "@/types";
 

@@ -1,6 +1,6 @@
 import React from 'react'
 import {Card, CardAction, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import CurrentCourseCard from "@/app/(dashboard)/student/ui/CurrentCourseCard";
+import CurrentCourseCard from "@/app/(dashboard)/student/ui/courses/CurrentCourseCard";
 import Link from "next/link";
 
 const CurrentCourses = () => {
@@ -32,7 +32,7 @@ const CurrentCourses = () => {
             <CardHeader>
                 <CardTitle className="text-2xl">Current Courses</CardTitle>
                 <CardAction>
-                    <Link href="/" className="underline">View All</Link>
+                    <Link href="/public" className="underline">View All</Link>
                 </CardAction>
             </CardHeader>
             <CardContent>
