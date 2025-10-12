@@ -35,15 +35,16 @@ const CourseCard: React.FC<CourseProps> = ({
                                                reviews,
                                            }: CourseProps) => {
     return (
-        <div className="flex flex-col justify-center items-center shadow-md py-6 px-4">
+        <div
+            className="flex flex-col justify-center items-center shadow-md p-4 rounded-lg hover:[transform:var(--card-hover-transform)] transition-transform ease duration-300 hover:shadow-lg">
             {/* Course Image */}
-            <Link href={`/course/${id}`}>
+            <Link href={`/student/learn/${id}`} className="flex justify-center w-full h-full items-center aspect-video">
                 <Image
                     src={thumbnail}
                     alt={title}
                     width={300}
                     height={135}
-                    className="rounded-md object-cover w-auto h-auto"
+                    className="rounded-md object-cover aspect-video max-w-none max-h-none "
                 />
             </Link>
 
@@ -51,7 +52,7 @@ const CourseCard: React.FC<CourseProps> = ({
             <div className="flex flex-col gap-1 mt-3">
                 {/* Title */}
                 <h3 className="text-base font-semibold line-clamp-2">
-                    <Link href={`/courses/${id}`} className="hover:underline">
+                    <Link href={`/student/learn/${id}`} className="hover:underline">
                         {title}
                     </Link>
                 </h3>
@@ -61,9 +62,9 @@ const CourseCard: React.FC<CourseProps> = ({
                 {/* Rating */}
                 <div className="flex items-center gap-1">
                     <Rating defaultValue={rating} readOnly>
-            <span className="text-sm text-yellow-500 font-semibold">
-              {rating.toFixed(1)}
-            </span>
+                            <span className="text-sm text-yellow-500 font-semibold">
+                                {rating.toFixed(1)}
+                            </span>
                         {Array.from({length: 5}).map((_, index) => (
                             <RatingButton
                                 className="text-yellow-500"
@@ -77,7 +78,7 @@ const CourseCard: React.FC<CourseProps> = ({
                 {/* Price */}
                 <div className="flex items-center justify-between">
                     <p className="text-base text-red-500 font-semibold">₫{price.toLocaleString()}</p>
-                    <Button>Add to Cart</Button>
+                    <Button size={"sm"} className="cursor-pointer">Add to Cart</Button>
                 </div>
             </div>
         </div>

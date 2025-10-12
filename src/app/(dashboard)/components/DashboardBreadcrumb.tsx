@@ -55,7 +55,7 @@ const DashboardBreadcrumb = () => {
     }
 
     return (
-        <div className="flex p-4 border-b bg-background">
+        <div className="hidden md:flex p-4 border-b bg-background">
             <Breadcrumb>
                 <BreadcrumbList>
                     {items.map((item, index) => (

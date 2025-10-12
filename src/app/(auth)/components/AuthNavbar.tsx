@@ -2,8 +2,8 @@ import React from 'react'
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faGraduationCap} from "@fortawesome/free-solid-svg-icons";
 import Link from "next/link";
-import {ModeToggle} from "@/app/components/ModeToggle";
-import LanguageToggle from "@/app/components/LanguageToggle";
+import {ModeToggle} from "@/app/ui/ModeToggle";
+import LanguageToggle from "@/app/ui/LanguageToggle";
 
 const AuthNavbar = () => {
     return (
