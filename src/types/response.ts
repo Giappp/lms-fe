@@ -29,3 +29,31 @@ export type Course = {
     status: string
     reviews: number
 }
+
+export type Quiz = {
+    id: number
+    name: string
+    description: string
+    instructor: string
+    courseName: string
+    lessonName: string
+    questions: Array<Question>
+    status: string
+    dueTo: Date
+    totalQuestions: number
+    difficulty: 'Easy' | 'Medium' | 'Hard'
+    timeLimit: number // in minutes
+    maxAttempts: number
+    attempts: number
+    lastScore?: number
+    averageScore?: number
+    bestScore?: number
+}
+
+export type Question = {
+    id: number
+    type: string
+    description: string
+    options: string[]
+    answer: string[]
+}

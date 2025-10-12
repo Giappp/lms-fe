@@ -235,5 +235,244 @@
       "isActive": false,
       "createdAt": "2024-01-01T00:00:00Z"
     }
+  ],
+  "quizzes": [
+    {
+      "id": 1,
+      "name": "JavaScript Fundamentals",
+      "description": "Test your knowledge of JavaScript basics including variables, functions, and control flow",
+      "instructor": "John Doe",
+      "courseName": "Web Development Bootcamp",
+      "lessonName": "JavaScript Basics",
+      "status": "Available",
+      "dueTo": "2024-01-01",
+      "totalQuestions": 5,
+      "difficulty": "Easy",
+      "timeLimit": 30,
+      "maxAttempts": 3,
+      "attempts": 1,
+      "lastScore": 85,
+      "averageScore": 85,
+      "bestScore": 85,
+      "questions": [
+        {
+          "id": 1,
+          "type": "multiple-choice",
+          "description": "What is the output of: console.log(typeof [])?",
+          "options": [
+            "array",
+            "object",
+            "undefined",
+            "null"
+          ],
+          "answer": [
+            "object"
+          ],
+          "explanation": "In JavaScript, arrays are actually objects, so typeof [] returns 'object'"
+        },
+        {
+          "id": 2,
+          "type": "multiple-answers",
+          "description": "Which of the following are valid ways to declare variables in JavaScript? (Select all that apply)",
+          "options": [
+            "var",
+            "let",
+            "const",
+            "def"
+          ],
+          "answer": [
+            "var",
+            "let",
+            "const"
+          ],
+          "explanation": "JavaScript has three ways to declare variables: var, let, and const"
+        },
+        {
+          "id": 3,
+          "type": "true-false",
+          "description": "The === operator checks both value and type in JavaScript.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "answer": [
+            "True"
+          ],
+          "explanation": "The strict equality operator === checks both value and type"
+        },
+        {
+          "id": 4,
+          "type": "multiple-choice",
+          "description": "What is the result of 3 + '3' in JavaScript?",
+          "options": [
+            "6",
+            "33",
+            "NaN",
+            "undefined"
+          ],
+          "answer": [
+            "33"
+          ],
+          "explanation": "When adding a number and string, JavaScript converts the number to a string and concatenates"
+        },
+        {
+          "id": 5,
+          "type": "multiple-answers",
+          "description": "Which methods can be used to add elements to an array? (Select all that apply)",
+          "options": [
+            "push()",
+            "add()",
+            "append()",
+            "unshift()"
+          ],
+          "answer": [
+            "push()",
+            "unshift()"
+          ],
+          "explanation": "push() adds to the end, unshift() adds to the beginning of an array"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "React Hooks Deep Dive",
+      "description": "Advanced quiz covering React Hooks, Context API, and Custom Hooks",
+      "instructor": "Jane Smith",
+      "courseName": "Advanced React",
+      "lessonName": "React Hooks",
+      "status": "Available",
+      "dueTo": "2024-01-15",
+      "totalQuestions": 4,
+      "difficulty": "Hard",
+      "timeLimit": 45,
+      "maxAttempts": 2,
+      "attempts": 0,
+      "questions": [
+        {
+          "id": 1,
+          "type": "multiple-choice",
+          "description": "Which hook should be used for side effects in React?",
+          "options": [
+            "useState",
+            "useEffect",
+            "useContext",
+            "useReducer"
+          ],
+          "answer": [
+            "useEffect"
+          ],
+          "explanation": "useEffect is designed for handling side effects in React components"
+        },
+        {
+          "id": 2,
+          "type": "multiple-answers",
+          "description": "Which of these are built-in React hooks? (Select all that apply)",
+          "options": [
+            "useState",
+            "useEffect",
+            "useLifecycle",
+            "useFetch"
+          ],
+          "answer": [
+            "useState",
+            "useEffect"
+          ],
+          "explanation": "useState and useEffect are built-in hooks, others are custom or non-existent"
+        },
+        {
+          "id": 3,
+          "type": "true-false",
+          "description": "Hooks can be called conditionally inside React components.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "answer": [
+            "False"
+          ],
+          "explanation": "Hooks must be called at the top level of components, not inside conditions"
+        },
+        {
+          "id": 4,
+          "type": "multiple-choice",
+          "description": "What is the correct way to update state based on previous state?",
+          "options": [
+            "setState(state + 1)",
+            "setState(prevState => prevState + 1)",
+            "setState(this.state + 1)",
+            "setState(current + 1)"
+          ],
+          "answer": [
+            "setState(prevState => prevState + 1)"
+          ],
+          "explanation": "Using the callback form ensures you're working with the latest state"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "CSS Grid & Flexbox",
+      "description": "Test your layout skills with CSS Grid and Flexbox challenges",
+      "instructor": "Sarah Johnson",
+      "courseName": "Modern CSS",
+      "lessonName": "Layouts",
+      "status": "Completed",
+      "dueTo": "2023-12-25",
+      "totalQuestions": 3,
+      "difficulty": "Medium",
+      "timeLimit": 40,
+      "maxAttempts": 3,
+      "attempts": 3,
+      "lastScore": 92,
+      "averageScore": 88,
+      "bestScore": 92,
+      "questions": [
+        {
+          "id": 1,
+          "type": "multiple-choice",
+          "description": "Which property is used to create a grid container?",
+          "options": [
+            "display: grid",
+            "display: flex",
+            "display: grid-container",
+            "grid: true"
+          ],
+          "answer": [
+            "display: grid"
+          ],
+          "explanation": "display: grid creates a grid container in CSS"
+        },
+        {
+          "id": 2,
+          "type": "multiple-answers",
+          "description": "Which properties are specific to Flexbox? (Select all that apply)",
+          "options": [
+            "justify-content",
+            "grid-template",
+            "align-items",
+            "flex-direction"
+          ],
+          "answer": [
+            "justify-content",
+            "align-items",
+            "flex-direction"
+          ],
+          "explanation": "These are Flexbox-specific properties, while grid-template is for Grid"
+        },
+        {
+          "id": 3,
+          "type": "true-false",
+          "description": "Grid and Flexbox can be used together in the same layout.",
+          "options": [
+            "True",
+            "False"
+          ],
+          "answer": [
+            "True"
+          ],
+          "explanation": "Grid and Flexbox can complement each other in complex layouts"
+        }
+      ]
+    }
   ]
 }
