@@ -1,5 +1,5 @@
 import React from 'react'
-import {ThemeProvider} from "@/app/components/ThemeProvider";
+import {ThemeProvider} from "@/app/ui/ThemeProvider";
 import {Toaster} from "@/components/ui/sonner";
 import "../globals.css";
 

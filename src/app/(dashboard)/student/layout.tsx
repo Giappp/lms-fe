@@ -1,9 +1,9 @@
 import React from 'react'
 import {SidebarInset, SidebarProvider} from "@/components/ui/sidebar";
-import {StudentSidebar} from "@/app/(dashboard)/student/components/StudentSidebar";
+import {StudentSidebar} from "@/app/(dashboard)/student/ui/StudentSidebar";
 import DashboardTopbar from "@/app/(dashboard)/components/DashboardTopbar";
 
-const StudentLayout = ({children}: { children: React.ReactNode }) => {
+const StudentLayout = (props: LayoutProps<"/student">) => {
     return (
         <SidebarProvider style={
             {
@@ -14,7 +14,7 @@ const StudentLayout = ({children}: { children: React.ReactNode }) => {
             <StudentSidebar variant="inset"/>
             <SidebarInset>
                 <DashboardTopbar/>
-                {children}
+                {props.children}
             </SidebarInset>
         </SidebarProvider>
     )

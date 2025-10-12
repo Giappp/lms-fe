@@ -13,6 +13,5 @@ export const buildParamsFromOptions = (options?: { [key: string]: any }) => {
             params[key] = value;
         }
     }
-    console.log(params);
     return params;
 };
