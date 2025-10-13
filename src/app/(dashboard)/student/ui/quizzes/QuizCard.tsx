@@ -48,16 +48,16 @@ const QuizCard = ({
     }
 
     return (
-        <div className="border border-border rounded-lg p-6 hover:shadow-md transition-shadow">
+        <div className="border border-border rounded-lg p-6 hover:shadow-md transition-shadow flex flex-col h-full">
             {/* Header */}
-            <div className="flex flex-row justify-between items-center mb-4">
+            <div className="flex flex-row justify-between items-center mb-4 gap-4">
                 <div>
                     <h3 className="text-xl font-semibold">{name}</h3>
-                    <p className="text-sm text-muted-foreground">{courseName} • {lessonName}</p>
+                    <p className="text-sm text-muted-foreground text-wrap">{courseName} • {lessonName}</p>
                 </div>
                 <Badge
                     variant={status === "Available" ? "success" : "secondary"}
-                    className="capitalize"
+                    className="capitalize end-0 px-4 py-2"
                 >
                     {status}
                 </Badge>
@@ -95,28 +95,32 @@ const QuizCard = ({
                 </div>
             </div>
 
-            {/* Quiz Results (if attempted) */}
-            {lastScore !== undefined && (
-                <div className="mb-6 space-y-4">
-                    <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                            <span>Latest Score</span>
-                            <span className="font-medium">{lastScore}%</span>
+            {/* Quiz Results and Empty Space */}
+            <div className="flex-grow mb-6">
+                {lastScore !== undefined ? (
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span>Latest Score</span>
+                                <span className="font-medium">{lastScore}%</span>
+                            </div>
+                            <Progress value={lastScore}/>
                         </div>
-                        <Progress value={lastScore}/>
+                        <div className="flex gap-4 text-sm">
+                            <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faChartLine}/>
+                                <span>Average: {averageScore}%</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <FontAwesomeIcon icon={faTrophy}/>
+                                <span>Best: {bestScore}%</span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex gap-4 text-sm">
-                        <div className="flex items-center gap-2">
-                            <FontAwesomeIcon icon={faChartLine}/>
-                            <span>Average: {averageScore}%</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <FontAwesomeIcon icon={faTrophy}/>
-                            <span>Best: {bestScore}%</span>
-                        </div>
-                    </div>
-                </div>
-            )}
+                ) : (
+                    <div className="h-[88px]"></div>
+                )}
+            </div>
 
             {/* Quiz Info */}
             <div className="flex justify-between items-center mb-6">

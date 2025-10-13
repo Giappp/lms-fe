@@ -1,11 +1,19 @@
 import React from 'react'
-import {useQuizzes} from "@/hooks/useQuizzes";
-import {Quiz} from "@/types";
+import { useQuizzes } from "@/hooks/useQuizzes";
 import QuizCard from "@/app/(dashboard)/student/ui/quizzes/QuizCard";
 
-const QuizzesList = () => {
+interface QuizzesListProps {
+    searchTerm: string;
+    dateFilter: string;
+    statusFilter: string;
+}
 
-    const {quizzes, isError, isLoading} = useQuizzes();
+const QuizzesList = ({ searchTerm, dateFilter, statusFilter }: QuizzesListProps) => {
+    const { quizzes, isError, isLoading, filteredCount, totalQuizzes } = useQuizzes({
+        searchTerm,
+        dateFilter,
+        statusFilter
+    });
 
     if (isError) {
         return (
@@ -14,16 +22,35 @@ const QuizzesList = () => {
             </div>
         );
     }
+
+    if (isLoading) {
+        return (
+            <div className="text-center text-muted-foreground py-12">
+                Loading quizzes...
+            </div>
+        );
+    }
+
     return (
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
-            {quizzes.length > 0 ? (
-                quizzes.map((item: Quiz) => <QuizCard key={item.id} {...item} />)
-            ) : (
-                <div className="col-span-full text-center text-gray-500">
-                    No Quizzes found
-                </div>
+        <>
+            {filteredCount < totalQuizzes && (
+                <p className="text-sm text-muted-foreground mb-4">
+                    Showing {filteredCount} of {totalQuizzes} quizzes
+                </p>
             )}
-        </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {quizzes.length > 0 ? (
+                    quizzes.map((quiz) => (
+                        <QuizCard key={quiz.id} {...quiz} />
+                    ))
+                ) : (
+                    <div className="col-span-full text-center text-muted-foreground py-12">
+                        No quizzes found matching your criteria
+                    </div>
+                )}
+            </div>
+        </>
     )
 }
 export default QuizzesList
