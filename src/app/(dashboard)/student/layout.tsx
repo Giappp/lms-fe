@@ -2,6 +2,7 @@ import React from 'react'
 import {SidebarInset, SidebarProvider} from "@/components/ui/sidebar";
 import {StudentSidebar} from "@/app/(dashboard)/student/ui/StudentSidebar";
 import DashboardTopbar from "@/app/(dashboard)/components/DashboardTopbar";
+import {ProtectedRoute} from "@/app/(dashboard)/components/ProtectedRoute";
 
 const StudentLayout = (props: LayoutProps<"/student">) => {
     return (
@@ -13,8 +14,10 @@ const StudentLayout = (props: LayoutProps<"/student">) => {
         }>
             <StudentSidebar variant="inset"/>
             <SidebarInset>
-                <DashboardTopbar/>
-                {props.children}
+                <ProtectedRoute requiredRole="student">
+                    <DashboardTopbar/>
+                    {props.children}
+                </ProtectedRoute>
             </SidebarInset>
         </SidebarProvider>
     )

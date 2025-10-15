@@ -1,7 +1,7 @@
-import { axios } from "@/api/core/axios";
-import useSWR, { mutate } from "swr";
-import { Quiz } from "@/types";
-import { isToday, isTomorrow, isThisWeek, isThisMonth } from 'date-fns';
+import {axiosInstance} from "@/api/core/axiosInstance";
+import useSWR, {mutate} from "swr";
+import {Quiz} from "@/types";
+import {isThisMonth, isThisWeek, isToday, isTomorrow} from 'date-fns';
 
 interface QuizzesFilters {
     searchTerm?: string;
@@ -10,21 +10,21 @@ interface QuizzesFilters {
 }
 
 const fetcher = async (url: string) => {
-    const res = await axios.get(url);
+    const res = await axiosInstance.get(url);
     return res.data;
 };
 
 export const useQuizzes = (filters?: QuizzesFilters) => {
-    const { data, error, isLoading } = useSWR<Quiz[]>('/quizzes', fetcher, {
+    const {data, error, isLoading} = useSWR<Quiz[]>('/quizzes', fetcher, {
         keepPreviousData: true,
         revalidateOnFocus: false,
     });
 
     const filterQuizzes = (quizzes: Quiz[]): Quiz[] => {
         if (!filters) return quizzes;
-        
-        const { searchTerm, dateFilter, statusFilter } = filters;
-        
+
+        const {searchTerm, dateFilter, statusFilter} = filters;
+
         return quizzes.filter(quiz => {
             // Search filter
             const matchesSearch = !searchTerm ? true : (
@@ -33,14 +33,14 @@ export const useQuizzes = (filters?: QuizzesFilters) => {
             );
 
             // Status filter
-            const matchesStatus = !statusFilter || statusFilter === 'all' ? true : 
+            const matchesStatus = !statusFilter || statusFilter === 'all' ? true :
                 statusFilter === quiz.status.toLowerCase();
 
             // Date filter
             let matchesDate = true;
             if (dateFilter && dateFilter !== 'all') {
                 const dueDate = new Date(quiz.dueTo);
-                
+
                 switch (dateFilter) {
                     case 'today':
                         matchesDate = isToday(dueDate);
