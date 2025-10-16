@@ -1,3 +1,4 @@
+"use client"
 import React from 'react'
 import {Button} from "@/components/ui/button";
 import {Card, CardContent} from "@/components/ui/card";
@@ -6,14 +7,17 @@ import {faBook, faCheckCircle, faClock, faFire} from "@fortawesome/free-solid-sv
 import CurrentCourses from "@/app/(dashboard)/student/ui/courses/CurrentCourses";
 import StudyAnalystic from "@/app/(dashboard)/student/ui/dashboard/StudyAnalystic";
 import OverAllProgress from "@/app/(dashboard)/student/ui/dashboard/OverAllProgress";
+import {useAuth} from "@/hooks/useAuth";
 
 const Page = () => {
+    const {user} = useAuth();
+
     return (
         <div className="p-6">
             <div className="mb-4">
                 <div className="flex justify-between items-center flex-wrap">
                     <div>
-                        <h1>Welcome back, Student!</h1>
+                        <h1>Welcome back, {user?.fullName || "Student"}!</h1>
                         <p>Track your learning progress and continue your educational journey</p>
                     </div>
                     <div className="flex gap-3">
@@ -63,4 +67,4 @@ const Page = () => {
         </div>
     )
 }
-export default Page
+export default Page;

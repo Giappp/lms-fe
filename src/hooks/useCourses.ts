@@ -1,10 +1,10 @@
 import {CoursesFilterParams} from "@/types";
 import useSWR, {mutate} from "swr";
 import {buildParamsFromOptions} from "@/api/core/utils";
-import {axios} from "@/api/core/axios";
+import {axiosInstance} from "@/api/core/axiosInstance";
 
 const fetcher = async (url: string) => {
-    const res = await axios.get(url);
+    const res = await axiosInstance.get(url);
     return res.data;
 };
 

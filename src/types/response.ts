@@ -2,10 +2,13 @@
 * All the api response model goes here
 */
 export type UserResponse = {
-    fullName: string,
-    email: string,
-    accessToken: string,
-    refreshToken: string,
+    id: number;
+    fullName: string;
+    email: string;
+    role: "student" | "teacher";
+    avatar?: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export type CourseResponse = {

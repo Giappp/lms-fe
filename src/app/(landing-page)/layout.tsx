@@ -8,6 +8,7 @@ import '@fortawesome/fontawesome-svg-core/styles.css'
 import {ThemeProvider} from "@/app/ui/ThemeProvider";
 import {Toaster} from "@/components/ui/sonner";
 import {SkeletonTheme} from "react-loading-skeleton";
+import { AuthProvider } from "@/contexts/auth-context";
 
 config.autoAddCss = false
 
@@ -37,7 +38,9 @@ export default function LandingPageLayout({
             disableTransitionOnChange
         >
             <SkeletonTheme baseColor="#202020" highlightColor="#444">
-                {children}
+                <AuthProvider>
+                    {children}
+                </AuthProvider>
             </SkeletonTheme>
             <Toaster/>
         </ThemeProvider>
