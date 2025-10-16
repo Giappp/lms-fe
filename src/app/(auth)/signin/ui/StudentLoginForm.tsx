@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import React, { useState } from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGoogle } from "@fortawesome/free-brands-svg-icons/faGoogle"
 import { faGithub } from "@fortawesome/free-brands-svg-icons"
@@ -23,7 +23,7 @@ const StudentLoginForm = () => {
     const handleOAuthSignIn = async (provider: "google" | "github") => {
         setIsOAuthLoading(prev => ({ ...prev, [provider]: true }));
         try {
-            await oauthSignIn(provider, "student");
+            oauthSignIn(provider, "student");
             router.push("/student/dashboard");
         } catch (error) {
             toast.error(`Failed to sign in with ${provider}. Please try again.`);
