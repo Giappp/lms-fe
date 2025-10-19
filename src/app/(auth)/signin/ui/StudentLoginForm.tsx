@@ -1,15 +1,33 @@
 'use client'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import React, { useState } from "react"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faGoogle } from "@fortawesome/free-brands-svg-icons/faGoogle"
-import { faGithub } from "@fortawesome/free-brands-svg-icons"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import { useAuth } from "@/hooks/useAuth"
+import {Button} from "@/components/ui/button"
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card"
+import {Input} from "@/components/ui/input"
+import {Label} from "@/components/ui/label"
+import React, {useState} from "react"
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome"
+import {faGoogle} from "@fortawesome/free-brands-svg-icons/faGoogle"
+import {faGithub} from "@fortawesome/free-brands-svg-icons"
+import {useRouter} from "next/navigation"
+import {toast} from "sonner"
+import {useAuth} from "@/hooks/useAuth"
+import {useForm} from "react-hook-form"
+import {zodResolver} from "@hookform/resolvers/zod"
+import * as z from "zod"
+
+// Validation schema with Zod
+const loginSchema = z.object({
+    email: z
+        .email({message: "Invalid email address"})
+        .min(1, "Email is required")
+        .max(100, "Email must be less than 100 characters"),
+    password: z
+        .string()
+        .min(1, "Password is required")
+        .min(6, "Password must be at least 6 characters")
+        .max(100, "Password must be less than 100 characters"),
+})
+
+type LoginFormData = z.infer<typeof loginSchema>
 
 const StudentLoginForm = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -17,46 +35,106 @@ const StudentLoginForm = () => {
         google: false,
         github: false
     });
-    const { signIn, oauthSignIn } = useAuth();
+    const {signIn, oauthSignIn} = useAuth();
     const router = useRouter();
 
+    // React Hook Form with Zod validation
+    const {
+        register,
+        handleSubmit,
+        formState: {errors, isSubmitting},
+        reset,
+    } = useForm<LoginFormData>({
+        resolver: zodResolver(loginSchema),
+        mode: "onBlur", // Validate on blur for better UX
+    })
+
     const handleOAuthSignIn = async (provider: "google" | "github") => {
-        setIsOAuthLoading(prev => ({ ...prev, [provider]: true }));
+        setIsOAuthLoading(prev => ({...prev, [provider]: true}));
+        console.log(`[OAuth Login] Starting ${provider} OAuth sign-in...`);
+
         try {
             oauthSignIn(provider, "student");
-            router.push("/student/dashboard");
-        } catch (error) {
+            console.log(`[OAuth Login] Redirecting to ${provider} OAuth provider`);
+            // Note: OAuth redirect happens immediately, so we don't need to handle response here
+        } catch (error: any) {
+            console.error(`[OAuth Login Error] ${provider} sign-in failed:`, {
+                error,
+                message: error?.message,
+                stack: error?.stack,
+            });
             toast.error(`Failed to sign in with ${provider}. Please try again.`);
-            console.error(`${provider} sign in error:`, error);
         } finally {
-            setIsOAuthLoading(prev => ({ ...prev, [provider]: false }));
+            setIsOAuthLoading(prev => ({...prev, [provider]: false}));
         }
     };
-    
-    const onSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+
+    const onSubmit = async (data: LoginFormData) => {
+        console.log("[Email Login] Starting email login process...");
+        console.log("[Email Login] Form data:", {
+            email: data.email,
+            password: "***hidden***"
+        });
+
         setIsLoading(true);
 
         try {
-            const form = e.target as HTMLFormElement;
-            const formData = new FormData(form);
-            const email = formData.get("email") as string;
-            const password = formData.get("password") as string;
+            console.log("[Email Login] Sending login request to backend...");
 
-            if (!email || !password) {
-                toast.error("Please fill in all fields");
-                return;
-            }
+            const response = await signIn(data.email, data.password, "student");
 
-            await signIn(email, password, "student");
+            console.log("[Email Login] Login successful!");
+            console.log("[Email Login] Response data:", {
+                user: response.user,
+                hasAccessToken: !!response.accessToken,
+                hasRefreshToken: !!response.refreshToken,
+            });
+
             toast.success("Successfully signed in!");
+
+            // Reset form after successful login
+            reset();
+
+            console.log("[Email Login] Redirecting to student dashboard...");
             router.push("/student/dashboard");
         } catch (error: any) {
-            const errorMessage = error?.response?.data?.message || "Failed to sign in. Please check your credentials.";
+            console.error("[Email Login Error] Login failed:", {
+                error,
+                message: error?.message,
+                response: error?.response?.data,
+                status: error?.response?.status,
+                stack: error?.stack,
+            });
+
+            // Extract error message from various possible error formats
+            let errorMessage = "Failed to sign in. Please check your credentials.";
+
+            if (error?.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            } else if (error?.response?.data?.error) {
+                errorMessage = error.response.data.error;
+            } else if (error?.message) {
+                errorMessage = error.message;
+            }
+
+            // Log specific error cases
+            if (error?.response?.status === 401) {
+                console.error("[Email Login Error] Invalid credentials provided");
+                errorMessage = "Invalid email or password";
+            } else if (error?.response?.status === 400) {
+                console.error("[Email Login Error] Bad request - validation error");
+            } else if (error?.response?.status === 500) {
+                console.error("[Email Login Error] Server error");
+                errorMessage = "Server error. Please try again later.";
+            } else if (!error?.response) {
+                console.error("[Email Login Error] Network error - no response from server");
+                errorMessage = "Network error. Please check your internet connection.";
+            }
+
             toast.error(errorMessage);
-            console.error("Sign in error:", error);
         } finally {
             setIsLoading(false);
+            console.log("[Email Login] Login process completed");
         }
     }
 
@@ -70,11 +148,11 @@ const StudentLoginForm = () => {
             </CardHeader>
             <CardContent className="grid gap-4">
                 <div className="grid grid-cols-2 gap-6">
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         className="w-full cursor-pointer"
                         onClick={() => handleOAuthSignIn("google")}
-                        disabled={isOAuthLoading.google}
+                        disabled={isOAuthLoading.google || isLoading}
                     >
                         {isOAuthLoading.google ? (
                             <svg
@@ -102,11 +180,11 @@ const StudentLoginForm = () => {
                         )}
                         Google
                     </Button>
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         className="w-full cursor-pointer"
                         onClick={() => handleOAuthSignIn("github")}
-                        disabled={isOAuthLoading.github}
+                        disabled={isOAuthLoading.github || isLoading}
                     >
                         {isOAuthLoading.github ? (
                             <svg
@@ -140,7 +218,7 @@ const StudentLoginForm = () => {
                     <span className="flex-shrink mx-4 text-sm text-text-secondary">Or continue with</span>
                     <div className="flex-grow border-t border-gray-300"></div>
                 </div>
-                <form onSubmit={onSubmit}>
+                <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="grid gap-2">
                         <div className="grid gap-1">
                             <Label htmlFor="email">Email</Label>
@@ -148,8 +226,15 @@ const StudentLoginForm = () => {
                                 id="email"
                                 type="email"
                                 placeholder="student@example.com"
-                                required
+                                {...register("email")}
+                                disabled={isLoading || isSubmitting}
+                                className={errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
+                            {errors.email && (
+                                <p className="text-sm text-red-500 mt-1">
+                                    {errors.email.message}
+                                </p>
+                            )}
                         </div>
                         <div className="grid gap-1">
                             <Label htmlFor="password">Password</Label>
@@ -157,11 +242,22 @@ const StudentLoginForm = () => {
                                 id="password"
                                 type="password"
                                 placeholder="Enter your password"
-                                required
+                                {...register("password")}
+                                disabled={isLoading || isSubmitting}
+                                className={errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
+                            {errors.password && (
+                                <p className="text-sm text-red-500 mt-1">
+                                    {errors.password.message}
+                                </p>
+                            )}
                         </div>
-                        <Button className="w-full mt-2" disabled={isLoading}>
-                            {isLoading && (
+                        <Button
+                            type="submit"
+                            className="w-full mt-2"
+                            disabled={isLoading || isSubmitting}
+                        >
+                            {(isLoading || isSubmitting) && (
                                 <svg
                                     className="mr-2 h-4 w-4 animate-spin"
                                     xmlns="http://www.w3.org/2000/svg"
@@ -183,7 +279,7 @@ const StudentLoginForm = () => {
                                     ></path>
                                 </svg>
                             )}
-                            Sign In
+                            {(isLoading || isSubmitting) ? "Signing in..." : "Sign In"}
                         </Button>
                     </div>
                 </form>

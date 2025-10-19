@@ -4,7 +4,7 @@ import {ModeToggle} from "@/app/ui/ModeToggle";
 import LanguageToggle from "@/app/ui/LanguageToggle";
 import {Button} from "@/components/ui/button";
 import {SidebarTrigger} from "@/components/ui/sidebar";
-import DashboardBreadcrumb from "@/app/(dashboard)/components/DashboardBreadcrumb";
+import DashboardBreadcrumb from "@/app/(dashboard)/ui/DashboardBreadcrumb";
 import {useAuth} from "@/hooks/useAuth";
 import {useRouter} from "next/navigation";
 import {toast} from "sonner";
