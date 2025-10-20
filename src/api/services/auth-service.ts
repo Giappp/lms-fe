@@ -9,11 +9,12 @@ interface SignInData {
 }
 
 interface SignUpData {
+    firstName: string;
+    lastName: string;
     email: string;
     password: string;
-    fullName: string;
+    confirmPassword: string;
     role: "student" | "teacher";
-    dob: Date;
 }
 
 interface AuthResponse {

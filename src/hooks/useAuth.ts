@@ -9,7 +9,17 @@ export const useAuth = () => {
         throw new Error("useAuth must be used within an AuthProvider");
     }
 
-    const {user, isAuthenticated, isLoading, error, signUp, signIn, signOut, oauthSignIn, mutate} = context;
+    const {
+        user,
+        isAuthenticated,
+        isLoading,
+        error,
+        signUp,
+        signIn,
+        signOut,
+        oauthSignIn,
+        mutate
+    } = context;
 
     const isAuthorized = (requiredRole: string) => {
         return isAuthenticated && user?.role === requiredRole;

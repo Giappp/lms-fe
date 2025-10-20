@@ -12,11 +12,12 @@ interface AuthContextState {
     error: any;
     signIn: (email: string, password: string, role: "student" | "teacher") => Promise<any>;
     signUp: (data: {
+        firstName: string;
+        lastName: string;
         email: string;
         password: string;
-        fullName: string;
+        confirmPassword: string;
         role: "student" | "teacher";
-        dob: Date;
     }) => Promise<any>;
     signOut: () => Promise<void>;
     oauthSignIn: (provider: "google" | "github", role: "student" | "teacher") => void;
@@ -26,8 +27,6 @@ interface AuthContextState {
 const TOKEN_FETCHER = async () => {
     const accessToken = localStorage.getItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
     if (!accessToken) return null;
-
-    // axiosInstance interceptor will handle token refresh automatically
     return await AuthService.verifyToken(accessToken);
 };
 
@@ -59,11 +58,12 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
     };
 
     const signUp = async (data: {
+        firstName: string;
+        lastName: string;
         email: string;
         password: string;
-        fullName: string;
+        confirmPassword: string;
         role: "student" | "teacher";
-        dob: Date;
     }) => {
         try {
             const response = await AuthService.signUp(data);

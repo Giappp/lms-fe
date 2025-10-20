@@ -1,204 +1,143 @@
-"use client"
-import React from 'react'
-
+// `src/app/(auth)/signup/ui/TeacherSignUpForm.tsx`
+'use client'
+import React, {useState} from "react";
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {toast} from "sonner";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
-import {Input} from "@/components/ui/input";
+import * as z from "zod";
 import {Button} from "@/components/ui/button";
-
-import {faGoogle} from "@fortawesome/free-brands-svg-icons/faGoogle";
-import Link from "next/link";
-import {z} from "zod";
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
+import {useRouter} from "next/navigation";
+import {toast} from "sonner";
+import {useAuth} from "@/hooks/useAuth";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import {cn} from "@/lib/utils";
-import {Calendar} from "@/components/ui/calendar";
-import {CalendarIcon} from "lucide-react";
-import {format} from "date-fns";
+import {faGithub, faGoogle} from "@fortawesome/free-brands-svg-icons";
+import Link from "next/link";
 
-const formSchema = z.object({
-    fullName: z.string(),
-    dob: z.coerce.date<Date>(),
-    email: z.email("Email không hợp lệ").min(1),
-    password: z.string(),
-    confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
+const schema = z.object({
+    firstName: z.string().min(2, "First name is required"),
+    lastName: z.string().min(2, "Last name is required"),
+    email: z.email("Invalid email"),
+    password: z.string().min(8, "Password must be at least 6 characters").regex(/[A-Z]/, "Must contain at least one uppercase letter")
+        .regex(/[a-z]/, "Must contain at least one lowercase letter")
+        .regex(/[0-9]/, "Must contain at least one number")
+        .regex(/[^A-Za-z0-9]/, "Must contain at least one special character")
+        .max(100, "Password must be less than 100 characters"),
+    confirmPassword: z.string().min(1),
+}).refine(data => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
 });
 
-type TeacherSignUpFormValues = z.infer<typeof formSchema>;
+type FormData = z.infer<typeof schema>;
 
-const TeacherSignUpForm = () => {
-    const form = useForm<TeacherSignUpFormValues>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            fullName: "",
-            dob: new Date(),
-            email: "",
-            password: "",
-            confirmPassword: "",
-        },
+export default function TeacherSignUpForm() {
+    const {register, handleSubmit, formState: {errors, isSubmitting}} = useForm<FormData>({
+        resolver: zodResolver(schema),
+        mode: "onBlur",
     });
+    const {signUp} = useAuth();
+    const router = useRouter();
+    const [isOAuthLoading, setIsOAuthLoading] = useState({google: false, github: false});
 
-    const onSubmit = (values: TeacherSignUpFormValues) => {
+    const onSubmit = async (data: FormData) => {
         try {
-            console.log(values);
-            toast(
-                <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-        </pre>
-            );
-        } catch (error) {
-            console.error("Form submission error", error);
-            toast.error("Failed to submit the form. Please try again.");
+            await signUp({
+                firstName: data.firstName,
+                lastName: data.lastName,
+                email: data.email,
+                password: data.password,
+                confirmPassword: data.confirmPassword,
+                role: "teacher"
+            });
+            toast.success("Account created. Redirecting...");
+            router.push("/teacher/dashboard");
+        } catch (err: any) {
+            console.error(err);
+            const msg = err?.response?.data?.message ?? err?.message ?? "Signup failed";
+            toast.error(msg);
         }
-    }
+    };
 
     return (
-        <>
-            <Card className="mt-4">
-                <CardHeader>
-                    <CardTitle className="text-text-primary">
-                        You&#39;re currently signing up as teacher
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
+        <Card>
+            <CardHeader className="space-y-1">
+                <CardTitle className="text-center">Teacher Sign up</CardTitle>
+                <CardDescription className="text-center">Set up your teacher account to manage classes and
+                    students</CardDescription>
+            </CardHeader>
 
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-text-primary">
-                            <FormField
-                                control={form.control}
-                                name="fullName"
-                                render={({field}) => (
-                                    <FormItem>
-                                        <FormLabel>Full Name</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                )}
-                            />
+            <CardContent className="grid gap-4">
+                <div className="grid grid-cols-2 gap-3">
+                    <Button variant="outline" disabled={isOAuthLoading.google}>
+                        {isOAuthLoading.google ? <span
+                                className="animate-spin mr-2 inline-block w-4 h-4 border-2 rounded-full border-current border-t-transparent"></span> :
+                            <FontAwesomeIcon icon={faGoogle} className="mr-2"/>}
+                        Google
+                    </Button>
+                    <Button variant="outline" disabled={isOAuthLoading.github}>
+                        {isOAuthLoading.github ? <span
+                                className="animate-spin mr-2 inline-block w-4 h-4 border-2 rounded-full border-current border-t-transparent"></span> :
+                            <FontAwesomeIcon icon={faGithub} className="mr-2"/>}
+                        Github
+                    </Button>
+                </div>
 
+                <div className="relative flex items-center py-2">
+                    <div className="flex-grow border-t border-gray-300"></div>
+                    <span className="mx-4 text-sm text-neutral-500">Or use your work email</span>
+                    <div className="flex-grow border-t border-gray-300"></div>
+                </div>
 
-                            <FormField
-                                control={form.control}
-                                name="dob"
-                                render={({field}) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel>Date of Birth</FormLabel>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button
-                                                        variant={"outline"}
-                                                        className={cn(
-                                                            "w-[240px] pl-3 text-left font-normal",
-                                                            !field.value && "text-muted-foreground"
-                                                        )}
-                                                    >
-                                                        {field.value ? (
-                                                            format(field.value, "PPP")
-                                                        ) : (
-                                                            <span>Chọn Ngày</span>
-                                                        )}
-                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50"/>
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    disabled={(date) =>
-                                                        date > new Date() || date < new Date("1900-01-01")
-                                                    }
-                                                    captionLayout="dropdown"
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    </FormItem>
-                                )}
-                            />
-
-
-                            <FormField
-                                control={form.control}
-                                name="email"
-                                render={({field}) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="email@teacher.com" {...field} />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                )}
-                            />
-
-
-                            <FormField
-                                control={form.control}
-                                name="password"
-                                render={({field}) => (
-                                    <FormItem>
-                                        <FormLabel>Password</FormLabel>
-                                        <FormControl>
-                                            <Input type="password" {...field} />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                )}
-                            />
-
-
-                            <FormField
-                                control={form.control}
-                                name="confirmPassword"
-                                render={({field}) => (
-                                    <FormItem>
-                                        <FormLabel>Confirm Password</FormLabel>
-                                        <FormControl>
-                                            <Input type="password" {...field} />
-                                        </FormControl>
-                                        <FormMessage/>
-                                    </FormItem>
-                                )}
-                            />
-
-
-                            <div className="flex flex-col gap-3">
-                                <Button type="submit" className="w-full" variant="default">
-                                    Sign Up
-                                </Button>
-                                <div className="relative flex py-2 items-center">
-                                    <div className="flex-grow border-t border-gray-300"></div>
-                                    <span className="flex-shrink mx-4 text-text-secondary">Or</span>
-                                    <div className="flex-grow border-t border-gray-300"></div>
-                                </div>
-                                <Button variant="outline" className="w-full" onClick={(e) => e.preventDefault()}>
-                                    <Link href="#" className="flex gap-1 justify-center items-center">
-                                        <FontAwesomeIcon icon={faGoogle}/>
-                                        Sign up with Google
-                                    </Link>
-                                </Button>
-                            </div>
-                        </form>
-                    </Form>
-                    <div className="mt-4 text-center text-sm text-text-primary">
-                        Already have an account? {" "}
-                        <Link href="/signin" className="underline underline-offset-4">
-                            Sign In
-                        </Link>
+                <form onSubmit={handleSubmit(onSubmit)} className="grid gap-3">
+                    <div className="grid grid-cols-2 gap-2">
+                        <div>
+                            <Label htmlFor="firstName">First name</Label>
+                            <Input id="firstName" {...register("firstName")} aria-invalid={!!errors.firstName}/>
+                            {errors.firstName &&
+                                <p className="text-sm text-red-500 mt-1">{errors.firstName.message}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="lastName">Last name</Label>
+                            <Input id="lastName" {...register("lastName")} aria-invalid={!!errors.lastName}/>
+                               {errors.lastName &&
+                                   <p className="text-sm text-red-500 mt-1">{errors.lastName.message}</p>}
+                        </div>
                     </div>
-                </CardContent>
-            </Card>
-        </>
-    )
+
+                    <div className="grid gap-1">
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" type="email" {...register("email")} aria-invalid={!!errors.email}/>
+                        {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>}
+                    </div>
+
+                    <div className="grid gap-1">
+                        <Label htmlFor="password">Password</Label>
+                        <Input id="password" type="password" {...register("password")}
+                               aria-invalid={!!errors.password}/>
+                        {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password.message}</p>}
+                    </div>
+
+                    <div className="grid gap-1">
+                        <Label htmlFor="confirmPassword">Confirm password</Label>
+                        <Input id="confirmPassword" type="password" {...register("confirmPassword")}
+                               aria-invalid={!!errors.confirmPassword}/>
+                        {errors.confirmPassword &&
+                            <p className="text-sm text-red-500 mt-1">{errors.confirmPassword.message}</p>}
+                    </div>
+
+                    <Button type="submit" disabled={isSubmitting} className="w-full mt-2">
+                        {isSubmitting ? "Creating account..." : "Create Teacher Account"}
+                    </Button>
+                </form>
+            </CardContent>
+
+            <CardFooter className="flex flex-col space-y-2">
+                <div className="text-sm text-center text-muted-foreground">
+                    Already registered? <Link className="underline" href="/signin/teacher">Sign in</Link>
+                </div>
+            </CardFooter>
+        </Card>
+    );
 }
-export default TeacherSignUpForm

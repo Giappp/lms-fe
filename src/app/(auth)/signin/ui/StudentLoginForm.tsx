@@ -13,6 +13,7 @@ import {useAuth} from "@/hooks/useAuth"
 import {useForm} from "react-hook-form"
 import {zodResolver} from "@hookform/resolvers/zod"
 import * as z from "zod"
+import Link from "next/link";
 
 // Validation schema with Zod
 const loginSchema = z.object({
@@ -139,7 +140,7 @@ const StudentLoginForm = () => {
     }
 
     return (
-        <Card className="w-[400px] text-text-primary">
+        <Card className="text-text-primary">
             <CardHeader className="space-y-1">
                 <CardTitle className="text-2xl text-center">Sign in to continue</CardTitle>
                 <CardDescription className="text-center">
@@ -287,14 +288,14 @@ const StudentLoginForm = () => {
             <CardFooter className="flex flex-col space-y-2">
                 <div className="text-sm text-center text-muted-foreground">
                     Don&#39;t have an account?{" "}
-                    <a className="underline text-color-primary hover:text-color-primary/90" href="/signup/student">
+                    <Link className="underline text-color-primary hover:text-color-primary/90" href="/signup/student">
                         Sign up
-                    </a>
+                    </Link>
                 </div>
                 <div className="text-sm text-center text-muted-foreground">
-                    <a className="underline text-primary hover:text-primary/90" href="/forgot-password">
+                    <Link className="underline text-primary hover:text-primary/90" href="/forgot-password">
                         Forgot your password?
-                    </a>
+                    </Link>
                 </div>
             </CardFooter>
         </Card>
