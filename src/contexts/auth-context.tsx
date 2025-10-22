@@ -21,7 +21,6 @@ interface AuthContextState {
 const fetcher: Fetcher<UserResponse, string> = async (url): Promise<UserResponse> => {
     try {
         const response = await axiosInstance.get(url).then(res => res.data);
-        console.log(response.data);
         return response.data;
     } catch (err) {
         if (axios.isAxiosError(err)) {

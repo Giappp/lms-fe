@@ -17,7 +17,6 @@ export const useProtectedRoute = (options: UseProtectedRouteOptions = {}) => {
     useEffect(() => {
         if (isLoading) return;
 
-        // Check if user has required role
         if (requiredRole && !isAuthorized(requiredRole)) {
             if (onUnauthorized) {
                 onUnauthorized();

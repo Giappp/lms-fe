@@ -14,7 +14,7 @@ const chartConfig = {
     },
 } satisfies ChartConfig
 
-const StudyAnalystic = () => {
+const StudyAnalytics = () => {
     const mockWeeklyStudyData = [
         {day: "Mon", hours: 2},
         {day: "Tue", hours: 3},
@@ -44,4 +44,4 @@ const StudyAnalystic = () => {
         </Card>
     )
 }
-export default StudyAnalystic
+export default StudyAnalytics
