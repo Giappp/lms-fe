@@ -11,9 +11,7 @@ import axios from "axios";
 
 interface AuthContextState {
     user: UserResponse | null;
-    isAuthenticated: boolean;
     isLoading: boolean;
-    error: any;
     signIn: (data: SignInData) => Promise<any>;
     logOut: () => Promise<void>;
     oauthSignIn: (provider: "google" | "github", role: "STUDENT" | "TEACHER") => void;
@@ -22,9 +20,14 @@ interface AuthContextState {
 
 const fetcher: Fetcher<UserResponse, string> = async (url): Promise<UserResponse> => {
     try {
-        const response = await axiosInstance.get(url);
+        const response = await axiosInstance.get(url).then(res => res.data);
+        console.log(response.data);
         return response.data;
-    } catch (e) {
+    } catch (err) {
+        if (axios.isAxiosError(err)) {
+            const errorMessage = err.response?.data?.message ?? "Login failed";
+            console.error(errorMessage);
+        }
         throw new Error("Failed to fetch user");
     }
 };
@@ -32,7 +35,7 @@ const fetcher: Fetcher<UserResponse, string> = async (url): Promise<UserResponse
 export const AuthContext = createContext<AuthContextState | undefined>(undefined);
 
 export const AuthProvider = ({children}: { children: React.ReactNode }) => {
-    const {data, error, isLoading, mutate: mutateUser} = useSWR<UserResponse | null>(
+    const {data, isLoading, mutate: mutateUser} = useSWR<UserResponse | null>(
         "/api/auth/me",
         fetcher,
         {
@@ -62,6 +65,7 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
     const logOut = useCallback(async () => {
         try {
             const res = await axiosInstance.post(Constants.AUTH_ROUTES.LOGOUT).then(res => res.data);
+            console.log(res.data);
             localStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
             await mutateUser(null);
         } catch (err: unknown) {
@@ -86,9 +90,7 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
     return (
         <AuthContext.Provider value={{
             user: data ?? null,
-            isAuthenticated: !!data,
             isLoading,
-            error,
             signIn,
             logOut,
             oauthSignIn,

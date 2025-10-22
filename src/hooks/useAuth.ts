@@ -11,9 +11,7 @@ export const useAuth = () => {
 
     const {
         user,
-        isAuthenticated,
         isLoading,
-        error,
         signIn,
         logOut,
         oauthSignIn,
@@ -21,14 +19,12 @@ export const useAuth = () => {
     } = context;
 
     const isAuthorized = (requiredRole: string) => {
-        return isAuthenticated && user?.role === requiredRole;
+        return user?.role === requiredRole;
     };
 
     return {
         user,
-        isAuthenticated,
         isLoading,
-        error,
         signIn,
         logOut,
         oauthSignIn,

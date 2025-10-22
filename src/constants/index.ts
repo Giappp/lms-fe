@@ -2,8 +2,8 @@ export class Constants {
     static readonly BACKEND_URL = 'http://localhost:8081';
 
     static readonly ROLES = {
-        STUDENT: "student",
-        TEACHER: "teacher"
+        STUDENT: "STUDENT",
+        TEACHER: "TEACHER"
     };
 
     static readonly AUTH_ROUTES = {

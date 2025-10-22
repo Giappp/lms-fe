@@ -3,12 +3,11 @@
 */
 export type UserResponse = {
     id: number;
-    fullName: string;
     email: string;
-    role: "student" | "teacher";
+    enable: boolean;
+    fullName: string;
+    role: "STUDENT" | "TEACHER";
     avatar?: string;
-    createdAt: string;
-    updatedAt: string;
 }
 
 export type AuthResponse = {

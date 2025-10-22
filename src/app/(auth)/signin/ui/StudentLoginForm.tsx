@@ -3,7 +3,7 @@ import {Button} from "@/components/ui/button"
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card"
 import {Input} from "@/components/ui/input"
 import {Label} from "@/components/ui/label"
-import React, {useState} from "react"
+import React from "react"
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome"
 import {faGoogle} from "@fortawesome/free-brands-svg-icons/faGoogle"
 import {faGithub} from "@fortawesome/free-brands-svg-icons"
@@ -15,6 +15,7 @@ import {zodResolver} from "@hookform/resolvers/zod"
 import * as z from "zod"
 import Link from "next/link";
 import {SignInData} from "@/types";
+import {Constants} from "@/constants";
 
 // Validation schema with Zod
 const loginSchema = z.object({
@@ -32,10 +33,6 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>
 
 const StudentLoginForm = () => {
-    const [isOAuthLoading, setIsOAuthLoading] = useState({
-        google: false,
-        github: false
-    });
     const {signIn, oauthSignIn, isLoading} = useAuth();
     const router = useRouter();
 
@@ -52,7 +49,6 @@ const StudentLoginForm = () => {
     })
 
     const handleOAuthSignIn = async (provider: "google" | "github") => {
-        setIsOAuthLoading(prev => ({...prev, [provider]: true}));
         console.log(`[OAuth Login] Starting ${provider} OAuth sign-in...`);
 
         try {
@@ -66,8 +62,6 @@ const StudentLoginForm = () => {
                 stack: error?.stack,
             });
             toast.error(`Failed to sign in with ${provider}. Please try again.`);
-        } finally {
-            setIsOAuthLoading(prev => ({...prev, [provider]: false}));
         }
     };
 
@@ -75,7 +69,7 @@ const StudentLoginForm = () => {
         const signInData: SignInData = {
             email: data.email,
             password: data.password,
-            role: "STUDENT"
+            role: Constants.ROLES.STUDENT,
         };
         try {
             await signIn(signInData);
@@ -102,9 +96,9 @@ const StudentLoginForm = () => {
                         variant="outline"
                         className="w-full cursor-pointer"
                         onClick={() => handleOAuthSignIn("google")}
-                        disabled={isOAuthLoading.google || isLoading}
+                        disabled={isLoading}
                     >
-                        {isOAuthLoading.google ? (
+                        {isLoading ? (
                             <svg
                                 className="mr-2 h-4 w-4 animate-spin"
                                 xmlns="http://www.w3.org/2000/svg"
@@ -134,9 +128,9 @@ const StudentLoginForm = () => {
                         variant="outline"
                         className="w-full cursor-pointer"
                         onClick={() => handleOAuthSignIn("github")}
-                        disabled={isOAuthLoading.github || isLoading}
+                        disabled={isLoading}
                     >
-                        {isOAuthLoading.github ? (
+                        {isLoading ? (
                             <svg
                                 className="mr-2 h-4 w-4 animate-spin"
                                 xmlns="http://www.w3.org/2000/svg"

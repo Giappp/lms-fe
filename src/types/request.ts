@@ -1,6 +1,7 @@
 /*
 * All the api request model goes here
 */
+
 export type CoursesFilterParams = {
     search?: string;
     category?: string;
@@ -15,7 +16,7 @@ export type CoursesFilterParams = {
 export type SignInData = {
     email: string;
     password: string;
-    role: "STUDENT" | "TEACHER"
+    role: string;
 }
 
 export type SignUpData = {
@@ -24,7 +25,7 @@ export type SignUpData = {
     email: string;
     password: string;
     confirmPassword: string;
-    role: "STUDENT" | "TEACHER";
+    role: string;
 }
 
 

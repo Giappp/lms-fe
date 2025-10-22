@@ -1,6 +1,6 @@
 // src/app/(auth)/signin/ui/TeacherLoginForm.tsx
 'use client'
-import React, {useState} from "react";
+import React from "react";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
@@ -15,31 +15,31 @@ import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
+import {SignInData} from "@/types";
+import {Constants} from "@/constants";
 
 const teacherSchema = z.object({
     email: z
         .email({message: "Invalid email address"})
         .min(1, "Email is required")
         .max(100, "Email must be less than 100 characters"),
-    password: z
-        .string()
-        .min(1, "Password is required")
-        .min(6, "Password must be at least 6 characters")
+    password: z.string().min(8, "Password must be at least 6 characters").regex(/[A-Z]/, "Must contain at least one uppercase letter")
+        .regex(/[a-z]/, "Must contain at least one lowercase letter")
+        .regex(/[0-9]/, "Must contain at least one number")
+        .regex(/[^A-Za-z0-9]/, "Must contain at least one special character")
         .max(100, "Password must be less than 100 characters"),
 });
 
 type TeacherFormData = z.infer<typeof teacherSchema>;
 
 export default function TeacherLoginForm() {
-    const {signIn, oauthSignIn} = useAuth();
+    const {signIn, oauthSignIn, isLoading} = useAuth();
     const router = useRouter();
-
-    const [isLoading, setIsLoading] = useState(false);
-    const [isOAuthLoading, setIsOAuthLoading] = useState({google: false, github: false});
 
     const {
         register,
         handleSubmit,
+        setError,
         formState: {errors, isSubmitting},
         reset
     } = useForm<TeacherFormData>({
@@ -48,39 +48,29 @@ export default function TeacherLoginForm() {
     });
 
     const handleOAuthSignIn = async (provider: "google" | "github") => {
-        setIsOAuthLoading(prev => ({...prev, [provider]: true}));
         try {
-            oauthSignIn(provider, "teacher");
+            oauthSignIn(provider, "TEACHER");
             // OAuth will redirect; no further handling here.
         } catch (error: any) {
             console.error(`[OAuth Login Error] ${provider} sign-in failed:`, error);
             toast.error(`Failed to sign in with ${provider}. Please try again.`);
-        } finally {
-            setIsOAuthLoading(prev => ({...prev, [provider]: false}));
         }
     };
 
     const onSubmit = async (data: TeacherFormData) => {
-        setIsLoading(true);
-        console.log("[Teacher Email Login] submitting", {email: data.email});
+        const signInData: SignInData = {
+            email: data.email,
+            password: data.password,
+            role: Constants.ROLES.TEACHER,
+        };
         try {
-            // Pass institution as 4th param if your signIn supports metadata; otherwise adjust to your API.
-            const response = await signIn(data.email, data.password, "teacher");
-            console.log("[Teacher Email Login] success", response);
+            await signIn(signInData);
             toast.success("Successfully signed in!");
             reset();
-            router.push("/teacher/dashboard");
-        } catch (error: any) {
-            console.error("[Teacher Email Login Error]", error);
-            let message = "Failed to sign in. Please check your credentials.";
-            if (error?.response?.data?.message) message = error.response.data.message;
-            else if (error?.message) message = error.message;
-            if (!error?.response) message = "Network error. Please check your internet connection.";
-            if (error?.response?.status === 401) message = "Invalid email or password";
-            if (error?.response?.status === 500) message = "Server error. Please try again later.";
-            toast.error(message);
-        } finally {
-            setIsLoading(false);
+            router.push("/teacher");
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "An unknown error occurred";
+            setError("root", {type: "manual", message: message});
         }
     };
 
@@ -99,9 +89,9 @@ export default function TeacherLoginForm() {
                         variant="outline"
                         className="w-full cursor-pointer"
                         onClick={() => handleOAuthSignIn("google")}
-                        disabled={isOAuthLoading.google || isLoading}
+                        disabled={isLoading}
                     >
-                        {isOAuthLoading.google ? (
+                        {isLoading ? (
                             <svg
                                 className="mr-2 h-4 w-4 animate-spin"
                                 xmlns="http://www.w3.org/2000/svg"
@@ -123,9 +113,9 @@ export default function TeacherLoginForm() {
                         variant="outline"
                         className="w-full cursor-pointer"
                         onClick={() => handleOAuthSignIn("github")}
-                        disabled={isOAuthLoading.github || isLoading}
+                        disabled={isLoading}
                     >
-                        {isOAuthLoading.github ? (
+                        {isLoading ? (
                             <svg
                                 className="mr-2 h-4 w-4 animate-spin"
                                 xmlns="http://www.w3.org/2000/svg"
@@ -151,6 +141,9 @@ export default function TeacherLoginForm() {
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+                    {errors.root && (
+                        <p className="text-sm text-red-500 mt-1">{errors.root.message}</p>
+                    )}
                     <div className="grid gap-1">
                         <Label htmlFor="email">Work Email</Label>
                         <Input
