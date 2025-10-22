@@ -1,6 +1,5 @@
-'use client'
-import React, {useEffect, useState} from "react";
-import {useRouter} from "next/navigation";
+"use client"
+import React from "react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowLeft, faChalkboardTeacher, faUserGraduate} from "@fortawesome/free-solid-svg-icons";
 import StudentSignUpForm from "../ui/StudentSignUpForm";
@@ -39,27 +38,17 @@ const asideVariants = {
     exit: {opacity: 0, x: 20}
 };
 
-export default function RoleSignUpPage({params}: { params: { role?: string } }) {
-    const router = useRouter();
-    const initialRole = (params?.role === "teacher" ? "teacher" : "student") as Role;
-    const [currentRole, setCurrentRole] = useState<Role>(initialRole);
+export default function RoleSignUpPage(props: { params: Promise<{ role?: string }> }) {
+    const {role} = React.use(props.params);
+    const selectedRole = role === "teacher" ? "teacher" : "student";
 
-    useEffect(() => {
-        setCurrentRole(initialRole);
-    }, [initialRole]);
-
-    const switchRole = (newRole: Role) => {
-        if (newRole === currentRole) return;
-        router.replace(`/signup/${newRole}`);
-    };
-
-    const meta = roleMeta[currentRole];
+    const meta = roleMeta[selectedRole];
 
     return (
         <div className="container relative min-h-screen grid lg:grid-cols-2">
             <AnimatePresence mode="wait">
                 <motion.aside
-                    key={currentRole}
+                    key={selectedRole}
                     variants={asideVariants}
                     initial="enter"
                     animate="center"
@@ -67,7 +56,7 @@ export default function RoleSignUpPage({params}: { params: { role?: string } }) 
                     transition={{duration: 0.3, ease: "easeInOut"}}
                     className={[
                         "hidden lg:flex flex-col justify-center p-12",
-                        currentRole === "student" ? "bg-sky-50 dark:bg-sky-900/30" : "bg-amber-50 dark:bg-amber-900/20",
+                        selectedRole === "student" ? "bg-sky-50 dark:bg-sky-900/30" : "bg-amber-50 dark:bg-amber-900/20",
                     ].join(" ")}
                 >
                     <div className="w-full text-center text-neutral-800 dark:text-neutral-100">
@@ -111,31 +100,35 @@ export default function RoleSignUpPage({params}: { params: { role?: string } }) 
                         animate={{opacity: 1, y: 0}}
                         transition={{duration: 0.3, delay: 0.1}}
                     >
-                        {["student", "teacher"].map((role) => (
-                            <button
-                                key={role}
-                                onClick={() => switchRole(role as Role)}
-                                className={`flex-1 py-2 text-center rounded-md focus:outline-none transition-all duration-200 
-                                    ${currentRole === role ? "bg-white dark:bg-neutral-800 shadow" : "opacity-80 hover:opacity-100"}`}
-                                aria-pressed={currentRole === role}
-                            >
-                                {role.charAt(0).toUpperCase() + role.slice(1)}
-                            </button>
-                        ))}
+                        {/* Role switcher - obvious toggle */}
+                        <Link
+                            href="/signup/student"
+                            className={`flex-1 py-2 text-center rounded-md ${role === "student" ? "bg-white dark:bg-neutral-800 shadow" : "opacity-80"}`}
+                            aria-pressed={role === "student"}
+                        >
+                            Student
+                        </Link>
+                        <Link
+                            href="/signup/teacher"
+                            className={`flex-1 py-2 text-center rounded-md ${role === "teacher" ? "bg-white dark:bg-neutral-800 shadow" : "opacity-80"}`}
+                            aria-pressed={role === "teacher"}
+                        >
+                            Teacher
+                        </Link>
                     </motion.div>
 
                     <section aria-labelledby="role-form" className="w-full">
                         <div id="role-form" className="sr-only">{meta.title}</div>
                         <AnimatePresence mode="wait">
                             <motion.div
-                                key={currentRole}
+                                key={selectedRole}
                                 variants={formVariants}
                                 initial="enter"
                                 animate="center"
                                 exit="exit"
                                 transition={{duration: 0.3, ease: "easeInOut"}}
                             >
-                                {currentRole === "student" ? <StudentSignUpForm/> : <TeacherSignUpForm/>}
+                                {selectedRole === "student" ? <StudentSignUpForm/> : <TeacherSignUpForm/>}
                             </motion.div>
                         </AnimatePresence>
                     </section>

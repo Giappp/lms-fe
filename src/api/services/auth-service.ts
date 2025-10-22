@@ -1,27 +1,8 @@
 import {Constants} from "@/constants";
-import {UserResponse} from "@/types/response";
+import {AuthResponse, UserResponse} from "@/types/response";
 import {axiosInstance} from "@/api/core/axiosInstance";
+import {SignInData, SignUpData} from "@/types";
 
-interface SignInData {
-    email: string;
-    password: string;
-    role: "student" | "teacher";
-}
-
-interface SignUpData {
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
-    confirmPassword: string;
-    role: "student" | "teacher";
-}
-
-interface AuthResponse {
-    user: UserResponse;
-    accessToken: string;
-    refreshToken: string;
-}
 
 export const AuthService = {
     signIn: async (data: SignInData): Promise<AuthResponse> => {
@@ -35,7 +16,7 @@ export const AuthService = {
     },
 
     verifyToken: async (token: string): Promise<UserResponse> => {
-        const response = await axiosInstance.get(Constants.AUTH_ROUTES.VERIFY, {
+        const response = await axiosInstance.get(Constants.AUTH_ROUTES.VERIFY_EMAIL, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -56,7 +37,7 @@ export const AuthService = {
         });
     },
 
-    oauthSignIn: async (provider: "google" | "github", role: "student" | "teacher") => {
+    oauthSignIn: async (provider: "google" | "github", role: "STUDENT" | "TEACHER") => {
         const providerRoute = provider === "google"
             ? Constants.AUTH_ROUTES.OAUTH.GOOGLE
             : Constants.AUTH_ROUTES.OAUTH.GITHUB;

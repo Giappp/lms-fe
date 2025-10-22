@@ -1,100 +1,87 @@
 "use client"
-import React, {createContext} from "react";
+import React, {createContext, useCallback, useEffect} from "react";
 import {UserResponse} from "@/types/response";
-import useSWR, {SWRConfiguration} from "swr";
+import useSWR, {Fetcher} from "swr";
 import {AuthService} from "@/api/services/auth-service";
 import {Constants} from "@/constants";
+import {SignInData} from "@/types";
+import {axiosInstance} from "@/api/core/axiosInstance";
+import {setupRefreshInterceptor} from "@/api/core/setupRefreshInterceptor";
+import axios from "axios";
 
 interface AuthContextState {
     user: UserResponse | null;
     isAuthenticated: boolean;
     isLoading: boolean;
     error: any;
-    signIn: (email: string, password: string, role: "student" | "teacher") => Promise<any>;
-    signUp: (data: {
-        firstName: string;
-        lastName: string;
-        email: string;
-        password: string;
-        confirmPassword: string;
-        role: "student" | "teacher";
-    }) => Promise<any>;
-    signOut: () => Promise<void>;
-    oauthSignIn: (provider: "google" | "github", role: "student" | "teacher") => void;
-    mutate: () => Promise<any>;
+    signIn: (data: SignInData) => Promise<any>;
+    logOut: () => Promise<void>;
+    oauthSignIn: (provider: "google" | "github", role: "STUDENT" | "TEACHER") => void;
+    mutateUser: () => void;
 }
 
-const TOKEN_FETCHER = async () => {
-    const accessToken = localStorage.getItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
-    if (!accessToken) return null;
-    return await AuthService.verifyToken(accessToken);
+const fetcher: Fetcher<UserResponse, string> = async (url): Promise<UserResponse> => {
+    try {
+        const response = await axiosInstance.get(url);
+        return response.data;
+    } catch (e) {
+        throw new Error("Failed to fetch user");
+    }
 };
 
 export const AuthContext = createContext<AuthContextState | undefined>(undefined);
 
 export const AuthProvider = ({children}: { children: React.ReactNode }) => {
-    const {data, error, isLoading, mutate} = useSWR<UserResponse | null>(
-        typeof window !== 'undefined' && localStorage.getItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN)
-            ? "auth-user"
-            : null,
-        TOKEN_FETCHER,
+    const {data, error, isLoading, mutate: mutateUser} = useSWR<UserResponse | null>(
+        "/api/auth/me",
+        fetcher,
         {
-            revalidateOnFocus: false,
-            refreshInterval: 5 * 60 * 1000, // Refresh every 5 minutes
-        } as SWRConfiguration
+            revalidateOnFocus: false,      // prevents refetch when switching tabs
+            revalidateOnReconnect: false,  // no refetch when internet reconnects
+            dedupingInterval: 86400000,    // 24h - prevents multiple refetches in this period
+            shouldRetryOnError: false,     // optional: prevents loops on 401 errors
+        }
     );
 
-    const signIn = async (email: string, password: string, role: "student" | "teacher") => {
+    const signIn = useCallback(async (data: SignInData) => {
         try {
-            const response = await AuthService.signIn({email, password, role});
-            localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN, response.accessToken);
-            localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
-            await mutate(response.user);
-            return response;
-        } catch (error) {
-            await mutate(null, {revalidate: false});
-            throw error;
-        }
-    };
-
-    const signUp = async (data: {
-        firstName: string;
-        lastName: string;
-        email: string;
-        password: string;
-        confirmPassword: string;
-        role: "student" | "teacher";
-    }) => {
-        try {
-            const response = await AuthService.signUp(data);
-            localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN, response.accessToken);
-            localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
-            await mutate(response.user);
-            return response;
-        } catch (error) {
-            await mutate(null, {revalidate: false});
-            throw error;
-        }
-    };
-
-    const signOut = async () => {
-        try {
-            const refreshToken = localStorage.getItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN);
-            if (refreshToken) {
-                await AuthService.logout(refreshToken);
+            const res = await axiosInstance.post(Constants.AUTH_ROUTES.SIGN_IN, data).then(res => res.data);
+            localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
+            localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN, res.data.refreshToken);
+            await mutateUser();
+        } catch (err: unknown) {
+            let errorMessage = "Unknown error";
+            if (axios.isAxiosError(err)) {
+                errorMessage = err.response?.data?.message ?? "Login failed";
             }
-        } catch (error) {
-            console.error("Logout failed:", error);
-        } finally {
-            localStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
-            localStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN);
-            await mutate(null, {revalidate: false});
+            // ✅ Throw the error so UI can catch it or SWR UI logic can handle it
+            throw new Error(errorMessage);
         }
-    };
+    }, [mutateUser]);
 
-    const oauthSignIn = (provider: "google" | "github", role: "student" | "teacher") => {
+    const logOut = useCallback(async () => {
+        try {
+            const res = await axiosInstance.post(Constants.AUTH_ROUTES.LOGOUT).then(res => res.data);
+            localStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
+            await mutateUser(null);
+        } catch (err: unknown) {
+            let errorMessage = "Unknown error";
+            if (axios.isAxiosError(err)) {
+                errorMessage = err.response?.data?.message ?? "Login failed";
+            }
+            // ✅ Throw the error so UI can catch it or SWR UI logic can handle it
+            throw new Error(errorMessage);
+        }
+    }, [mutateUser]);
+
+
+    const oauthSignIn = (provider: "google" | "github", role: "STUDENT" | "TEACHER") => {
         return AuthService.oauthSignIn(provider, role);
     };
+
+    useEffect(() => {
+        setupRefreshInterceptor(mutateUser);
+    }, [mutateUser]);
 
     return (
         <AuthContext.Provider value={{
@@ -103,10 +90,9 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
             isLoading,
             error,
             signIn,
-            signUp,
-            signOut,
+            logOut,
             oauthSignIn,
-            mutate,
+            mutateUser,
         }}>
             {children}
         </AuthContext.Provider>

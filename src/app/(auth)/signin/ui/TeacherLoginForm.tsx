@@ -17,7 +17,6 @@ import * as z from "zod";
 import Link from "next/link";
 
 const teacherSchema = z.object({
-    institution: z.string().min(0).max(100).optional(),
     email: z
         .email({message: "Invalid email address"})
         .min(1, "Email is required")
@@ -45,8 +44,7 @@ export default function TeacherLoginForm() {
         reset
     } = useForm<TeacherFormData>({
         resolver: zodResolver(teacherSchema),
-        mode: "onBlur",
-        defaultValues: {institution: ""}
+        mode: "onSubmit",
     });
 
     const handleOAuthSignIn = async (provider: "google" | "github") => {
@@ -64,7 +62,7 @@ export default function TeacherLoginForm() {
 
     const onSubmit = async (data: TeacherFormData) => {
         setIsLoading(true);
-        console.log("[Teacher Email Login] submitting", {email: data.email, institution: data.institution});
+        console.log("[Teacher Email Login] submitting", {email: data.email});
         try {
             // Pass institution as 4th param if your signIn supports metadata; otherwise adjust to your API.
             const response = await signIn(data.email, data.password, "teacher");
@@ -153,22 +151,6 @@ export default function TeacherLoginForm() {
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-                    <div className="grid gap-1">
-                        <Label htmlFor="institution">Institution / School Code</Label>
-                        <Input
-                            id="institution"
-                            placeholder="e.g. school-xyz"
-                            {...register("institution")}
-                            disabled={isLoading || isSubmitting}
-                            className={errors.institution ? "border-red-500 focus-visible:ring-red-500" : ""}
-                            autoComplete="organization"
-                        />
-                        {errors.institution &&
-                            <p className="text-sm text-red-500 mt-1">{errors.institution.message}</p>}
-                        <p className="text-xs text-neutral-500 mt-1">Enter the institution identifier provided by your
-                            admin (optional).</p>
-                    </div>
-
                     <div className="grid gap-1">
                         <Label htmlFor="email">Work Email</Label>
                         <Input

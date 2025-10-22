@@ -14,11 +14,10 @@ export const useAuth = () => {
         isAuthenticated,
         isLoading,
         error,
-        signUp,
         signIn,
-        signOut,
+        logOut,
         oauthSignIn,
-        mutate
+        mutateUser
     } = context;
 
     const isAuthorized = (requiredRole: string) => {
@@ -30,11 +29,10 @@ export const useAuth = () => {
         isAuthenticated,
         isLoading,
         error,
-        signUp,
         signIn,
-        signOut,
+        logOut,
         oauthSignIn,
-        mutate,
+        mutateUser,
         isAuthorized
     };
 };

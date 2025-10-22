@@ -15,7 +15,29 @@ const DashboardBreadcrumb = () => {
     const pathname = usePathname()
     const paths = pathname.split("/").filter(Boolean)
 
+    // Detect role from pathname
+    const role = paths.includes('teacher') ? 'teacher' : 'student'
+
     const generateTitle = (path: string) => {
+        // Special cases for specific paths
+        const specialTitles: Record<string, string> = {
+            'quizzes': 'Quizzes',
+            'courses': 'Courses',
+            'enrollments': 'Enrollments',
+            'analytics': 'Analytics',
+            'new': 'Create New',
+            'templates': 'Templates',
+            'import': 'Import',
+            'my-courses': 'My Courses',
+            'my-progress': 'My Progress',
+            'results': 'Results',
+            'profile': 'Profile'
+        }
+
+        if (specialTitles[path]) {
+            return specialTitles[path]
+        }
+
         // Convert kebab-case to Title Case
         return path
             .split("-")
@@ -27,20 +49,22 @@ const DashboardBreadcrumb = () => {
         const items = []
         let currentPath = ""
 
-        // Always start with dashboard
+        // Always start with dashboard with the correct role path
         items.push({
-            title: "Student",
-            href: "/student",
+            title: "Dashboard",
+            href: `/${role}`,
         })
 
-        // Skip 'dashboard' in the paths array since we already added it
-        const relevantPaths = paths.slice(paths.indexOf("student") + 1)
+        // Skip role name in the paths array since we already added it as dashboard
+        const relevantPaths = paths.slice(paths.indexOf(role) + 1)
 
         for (const path of relevantPaths) {
             currentPath += `/${path}`
+            // Construct the full path with the role prefix
+            const fullPath = `/${role}${currentPath}`
             items.push({
                 title: generateTitle(path),
-                href: currentPath,
+                href: fullPath,
             })
         }
 
@@ -49,9 +73,9 @@ const DashboardBreadcrumb = () => {
 
     const items = generateBreadcrumbItems()
 
-    // Hide breadcrumb if we're at the root student path
-    if (pathname === "/student") {
-        return null;
+    // Hide breadcrumb if we're at the root path for either role
+    if (pathname === `/${role}`) {
+        return null
     }
 
     return (

@@ -1,17 +1,27 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { Constants } from "./constants";
+import {NextRequest, NextResponse} from "next/server";
+import {Constants} from "@/constants";
 
 export function middleware(request: NextRequest) {
-    const { pathname } = request.nextUrl;
+    const {pathname} = request.nextUrl;
+    const url = new URL(request.url);
     const token = request.cookies.get("accessToken")?.value;
 
     // Public routes that don't require authentication
-    if (pathname.startsWith("/signin") || 
-        pathname.startsWith("/signup") || 
+    if (pathname.startsWith("/signin") ||
+        pathname.startsWith("/signup") ||
         pathname.startsWith("/forgot-password") ||
+        pathname.startsWith("/reset-password") ||
+        pathname.startsWith("/verify") ||
+        pathname.startsWith("/unauthorized") ||
+        pathname.startsWith("/oauth") ||
+        pathname.startsWith("/check-email") ||
         pathname === "/") {
         return NextResponse.next();
+    }
+
+    // Redirect to signup if verifying email and no email provided
+    if (pathname === "/verify" && !url.searchParams.get("email")) {
+        return NextResponse.redirect(new URL("/signup", request.url));
     }
 
     // Check for protected routes

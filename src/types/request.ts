@@ -12,12 +12,19 @@ export type CoursesFilterParams = {
     limit?: number;
 }
 
-export type StudentSignUp = {
-    fullName: string;
-    dob: Date;
+export type SignInData = {
+    email: string;
+    password: string;
+    role: "STUDENT" | "TEACHER"
+}
+
+export type SignUpData = {
+    firstName: string;
+    lastName: string;
     email: string;
     password: string;
     confirmPassword: string;
+    role: "STUDENT" | "TEACHER";
 }
 
 

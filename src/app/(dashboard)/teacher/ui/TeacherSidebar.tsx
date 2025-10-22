@@ -1,17 +1,5 @@
 "use client"
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import {
     faBook,
     faBookOpen,
     faCertificate,
@@ -23,44 +11,67 @@ import {
     faTrophy,
     faUser
 } from "@fortawesome/free-solid-svg-icons";
-import Link from "next/link";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem
+} from "@/components/ui/sidebar";
 import {usePathname} from "next/navigation";
 import {cn} from "@/lib/utils";
+import Link from "next/link";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import React from "react";
 
-const menuList = [
+const menuGroups = [
     {
-        title: "Learning",
+        title: "Courses",
         subMenus: [
-            {title: "Browse Courses", url: "/student/courses", icon: faBook},
-            {title: "My Courses", url: "/student/my-courses", icon: faBookOpen},
-            {title: "My Progress", url: "/student/my-progress", icon: faChartBar},
+            {title: "All Courses", url: "/teacher/courses", icon: faBookOpen},
+            {title: "Create Course", url: "/teacher/courses/new", icon: faBook},
+        ],
+    },
+    {
+        title: "Students",
+        subMenus: [
+            {title: "Enrollments", url: "/teacher/enrollments", icon: faTrophy},
         ],
     },
     {
         title: "Assessment",
         subMenus: [
-            {title: "Available Quizzes", url: "/student/quizzes", icon: faFileAlt},
-            {title: "Quiz Results", url: "/student/results", icon: faTrophy},
-        ]
+            {title: "Quizzes", url: "/teacher/quizzes", icon: faFileAlt},
+            {title: "Templates", url: "/teacher/quizzes/templates", icon: faCertificate},
+            {title: "Import (Excel)", url: "/(teacher/quizzes/import", icon: faFileAlt},
+        ],
+    },
+    {
+        title: "Insights",
+        subMenus: [
+            {title: "Analytics", url: "/teacher/analytics", icon: faChartBar},
+        ],
     },
     {
         title: "Account",
         subMenus: [
-            {title: "Certifications", url: "/student/certifications", icon: faCertificate},
-            {title: "Messages", url: "/student/messages", icon: faMessage}
-        ]
-    }
-]
+            {title: "Messages", url: "/teacher/messages", icon: faMessage},
+            {title: "Certifications", url: "/teacher/certifications", icon: faCertificate},
+        ],
+    },
+];
 
-export function StudentSidebar({className, ...props}: React.ComponentProps<typeof Sidebar>) {
+export function TeacherSidebar({className, ...props}: React.ComponentProps<typeof Sidebar>) {
     const pathname = usePathname();
 
     const isActive = (url: string) => {
         return pathname === url;
     };
-
     return (
         <Sidebar collapsible="icon" className={cn("border-r", className)} {...props}>
             <SidebarHeader className="h-14 flex items-center justify-between px-3 border-b">
@@ -77,10 +88,10 @@ export function StudentSidebar({className, ...props}: React.ComponentProps<typeo
                                     asChild
                                     className={cn(
                                         "transition-colors",
-                                        isActive("/student") && "bg-accent text-accent-foreground"
+                                        isActive("/teacher") && "bg-accent text-accent-foreground"
                                     )}
                                 >
-                                    <Link href="/student">
+                                    <Link href="/teacher">
                                         <FontAwesomeIcon icon={faChartLine} className="w-4 h-4"/>
                                         <span>Dashboard</span>
                                     </Link>
@@ -89,7 +100,7 @@ export function StudentSidebar({className, ...props}: React.ComponentProps<typeo
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
-                {menuList.map((item) => (
+                {menuGroups.map((item) => (
                     <SidebarGroup key={item.title}>
                         <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-3">
                             {item.title}

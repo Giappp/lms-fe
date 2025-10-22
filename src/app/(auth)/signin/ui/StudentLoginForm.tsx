@@ -14,6 +14,7 @@ import {useForm} from "react-hook-form"
 import {zodResolver} from "@hookform/resolvers/zod"
 import * as z from "zod"
 import Link from "next/link";
+import {SignInData} from "@/types";
 
 // Validation schema with Zod
 const loginSchema = z.object({
@@ -21,33 +22,33 @@ const loginSchema = z.object({
         .email({message: "Invalid email address"})
         .min(1, "Email is required")
         .max(100, "Email must be less than 100 characters"),
-    password: z
-        .string()
-        .min(1, "Password is required")
-        .min(6, "Password must be at least 6 characters")
+    password: z.string().min(8, "Password must be at least 6 characters").regex(/[A-Z]/, "Must contain at least one uppercase letter")
+        .regex(/[a-z]/, "Must contain at least one lowercase letter")
+        .regex(/[0-9]/, "Must contain at least one number")
+        .regex(/[^A-Za-z0-9]/, "Must contain at least one special character")
         .max(100, "Password must be less than 100 characters"),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
 
 const StudentLoginForm = () => {
-    const [isLoading, setIsLoading] = useState(false);
     const [isOAuthLoading, setIsOAuthLoading] = useState({
         google: false,
         github: false
     });
-    const {signIn, oauthSignIn} = useAuth();
+    const {signIn, oauthSignIn, isLoading} = useAuth();
     const router = useRouter();
 
     // React Hook Form with Zod validation
     const {
         register,
         handleSubmit,
+        setError,
         formState: {errors, isSubmitting},
         reset,
     } = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
-        mode: "onBlur", // Validate on blur for better UX
+        mode: "onSubmit", // Validate on blur for better UX
     })
 
     const handleOAuthSignIn = async (provider: "google" | "github") => {
@@ -55,7 +56,7 @@ const StudentLoginForm = () => {
         console.log(`[OAuth Login] Starting ${provider} OAuth sign-in...`);
 
         try {
-            oauthSignIn(provider, "student");
+            oauthSignIn(provider, "STUDENT");
             console.log(`[OAuth Login] Redirecting to ${provider} OAuth provider`);
             // Note: OAuth redirect happens immediately, so we don't need to handle response here
         } catch (error: any) {
@@ -71,71 +72,19 @@ const StudentLoginForm = () => {
     };
 
     const onSubmit = async (data: LoginFormData) => {
-        console.log("[Email Login] Starting email login process...");
-        console.log("[Email Login] Form data:", {
+        const signInData: SignInData = {
             email: data.email,
-            password: "***hidden***"
-        });
-
-        setIsLoading(true);
-
+            password: data.password,
+            role: "STUDENT"
+        };
         try {
-            console.log("[Email Login] Sending login request to backend...");
-
-            const response = await signIn(data.email, data.password, "student");
-
-            console.log("[Email Login] Login successful!");
-            console.log("[Email Login] Response data:", {
-                user: response.user,
-                hasAccessToken: !!response.accessToken,
-                hasRefreshToken: !!response.refreshToken,
-            });
-
+            await signIn(signInData);
             toast.success("Successfully signed in!");
-
-            // Reset form after successful login
             reset();
-
-            console.log("[Email Login] Redirecting to student dashboard...");
-            router.push("/student/dashboard");
-        } catch (error: any) {
-            console.error("[Email Login Error] Login failed:", {
-                error,
-                message: error?.message,
-                response: error?.response?.data,
-                status: error?.response?.status,
-                stack: error?.stack,
-            });
-
-            // Extract error message from various possible error formats
-            let errorMessage = "Failed to sign in. Please check your credentials.";
-
-            if (error?.response?.data?.message) {
-                errorMessage = error.response.data.message;
-            } else if (error?.response?.data?.error) {
-                errorMessage = error.response.data.error;
-            } else if (error?.message) {
-                errorMessage = error.message;
-            }
-
-            // Log specific error cases
-            if (error?.response?.status === 401) {
-                console.error("[Email Login Error] Invalid credentials provided");
-                errorMessage = "Invalid email or password";
-            } else if (error?.response?.status === 400) {
-                console.error("[Email Login Error] Bad request - validation error");
-            } else if (error?.response?.status === 500) {
-                console.error("[Email Login Error] Server error");
-                errorMessage = "Server error. Please try again later.";
-            } else if (!error?.response) {
-                console.error("[Email Login Error] Network error - no response from server");
-                errorMessage = "Network error. Please check your internet connection.";
-            }
-
-            toast.error(errorMessage);
-        } finally {
-            setIsLoading(false);
-            console.log("[Email Login] Login process completed");
+            router.push("/student");
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "An unknown error occurred";
+            setError("root", {type: "manual", message: message});
         }
     }
 
@@ -221,6 +170,9 @@ const StudentLoginForm = () => {
                 </div>
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="grid gap-2">
+                        {errors.root && (
+                            <p className="text-sm text-red-500 mt-1">{errors.root.message}</p>
+                        )}
                         <div className="grid gap-1">
                             <Label htmlFor="email">Email</Label>
                             <Input

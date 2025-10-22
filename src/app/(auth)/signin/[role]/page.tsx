@@ -24,9 +24,10 @@ const roleMeta: Record<Role, { title: string; subtitle: string; accent: string; 
     },
 };
 
-export default function RoleSignInPage({params}: { params: { role?: string } }) {
-    const role = (params?.role === "teacher" ? "teacher" : "student") as Role;
-    const meta = roleMeta[role];
+export default async function RoleSignInPage(props: { params: Promise<{ role?: string }> }) {
+    const {role} = await props.params;
+    const selectedRole = role === "teacher" ? "teacher" : "student";
+    const meta = roleMeta[selectedRole];
 
     return (
         <div className="container relative min-h-screen grid lg:grid-cols-2">

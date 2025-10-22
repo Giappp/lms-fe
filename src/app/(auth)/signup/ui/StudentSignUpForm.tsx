@@ -1,5 +1,4 @@
-// `src/app/(auth)/signup/ui/StudentSignUpForm.tsx`
-'use client'
+"use client";
 import React, {useState} from "react";
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -8,12 +7,15 @@ import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
-import {useRouter} from "next/navigation";
 import {toast} from "sonner";
-import {useAuth} from "@/hooks/useAuth";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faGithub, faGoogle} from "@fortawesome/free-brands-svg-icons";
 import Link from "next/link";
+import {faEye, faEyeSlash} from "@fortawesome/free-solid-svg-icons";
+import {axiosInstance} from "@/api/core/axiosInstance";
+import {Constants} from "@/constants";
+import {SignUpData} from "@/types";
+import {useRouter} from "next/navigation";
 
 const schema = z.object({
     firstName: z.string().min(2, "First name is required"),
@@ -33,13 +35,13 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function StudentSignUpForm() {
-    const {register, handleSubmit, formState: {errors, isSubmitting}} = useForm<FormData>({
+    const [showPassword, setShowPassword] = useState(false);
+    const {register, handleSubmit, formState: {errors, isSubmitting}, setError} = useForm<FormData>({
         resolver: zodResolver(schema),
         mode: "onBlur",
     });
-    const {signUp} = useAuth();
-    const router = useRouter();
     const [isOAuthLoading, setIsOAuthLoading] = useState({google: false, github: false});
+    const router = useRouter();
 
     const onOAuth = async (provider: "google" | "github") => {
         setIsOAuthLoading(prev => ({...prev, [provider]: true}));
@@ -56,20 +58,32 @@ export default function StudentSignUpForm() {
 
     const onSubmit = async (data: FormData) => {
         try {
-            await signUp({
+            const signUpData: SignUpData = {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 email: data.email,
                 password: data.password,
                 confirmPassword: data.confirmPassword,
-                role: "student"
-            });
+                role: "STUDENT",
+            };
+
+            await axiosInstance.post(Constants.AUTH_ROUTES.SIGN_UP, signUpData);
             toast.success("Account created. Redirecting...");
-            router.push("/student/dashboard");
+
+            setTimeout(() => {
+                router.push('/check-email?email=' + data.email);
+            }, 1200);
+
         } catch (err: any) {
             console.error(err);
-            const msg = err?.response?.data?.message ?? err?.message ?? "Signup failed";
-            toast.error(msg);
+            // Safely extract backend response (if exists)
+            const backendMessage: string = err.response?.data?.message;
+
+            if (backendMessage.includes("email")) {
+                setError("email", {type: "server", message: backendMessage});
+            } else {
+                toast.error(backendMessage || "Something went wrong");
+            }
         }
     };
 
@@ -124,19 +138,43 @@ export default function StudentSignUpForm() {
                         {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>}
                     </div>
 
-                    <div className="grid gap-1">
+                    <div className="grid gap-1 relative">
                         <Label htmlFor="password">Password</Label>
-                        <Input id="password" type="password" {...register("password")}
-                               aria-invalid={!!errors.password}/>
+                        <div className="relative">
+                            <Input id="password" type={showPassword ? "text" : "password"} {...register("password")}
+                                   aria-invalid={!!errors.password}/>
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword((prev) => !prev)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2"
+                            >
+                                <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye}/>
+                            </button>
+                        </div>
                         {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password.message}</p>}
                     </div>
 
-                    <div className="grid gap-1">
+                    <div className="grid gap-1 relative">
                         <Label htmlFor="confirmPassword">Confirm password</Label>
-                        <Input id="confirmPassword" type="password" {...register("confirmPassword")}
-                               aria-invalid={!!errors.confirmPassword}/>
-                        {errors.confirmPassword &&
-                            <p className="text-sm text-red-500 mt-1">{errors.confirmPassword.message}</p>}
+                        <div className="relative">
+                            <Input
+                                id="confirmPassword"
+                                type={showPassword ? "text" : "password"}
+                                {...register("confirmPassword")}
+                                aria-invalid={!!errors.confirmPassword}
+                                className="pr-10"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword((prev) => !prev)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2"
+                            >
+                                <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye}/>
+                            </button>
+                        </div>
+                        {errors.confirmPassword && (
+                            <p className="text-sm text-red-500 mt-1">{errors.confirmPassword.message}</p>
+                        )}
                     </div>
 
                     <Button type="submit" disabled={isSubmitting} className="w-full mt-2">

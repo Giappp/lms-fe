@@ -11,6 +11,12 @@ export type UserResponse = {
     updatedAt: string;
 }
 
+export type AuthResponse = {
+    user: UserResponse;
+    accessToken: string;
+    refreshToken: string;
+}
+
 export type CourseResponse = {
     courses: Array<Course>;
     total: number;

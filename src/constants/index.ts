@@ -1,23 +1,26 @@
 export class Constants {
     static readonly BACKEND_URL = 'http://localhost:8081';
-    
+
     static readonly ROLES = {
         STUDENT: "student",
         TEACHER: "teacher"
     };
-    
+
     static readonly AUTH_ROUTES = {
-        SIGN_IN: "/api/auth/signin",
-        SIGN_UP: "/api/auth/signup",
+        SIGN_IN: "/api/auth/signIn",
+        SIGN_UP: "/api/auth/signUp",
         REFRESH: "/api/auth/refresh",
         LOGOUT: "/api/auth/logout",
-        VERIFY: "/api/auth/verify",
+        VERIFY_EMAIL: "/api/auth/verify-email",
+        FORGOT_PASSWORD: "/api/auth/forgot-password",
+        RESET_PASSWORD: "/api/auth/reset-password",
+        CHANGE_PASSWORD: "/api/auth/change-password",
         OAUTH: {
             GOOGLE: "/api/auth/google",
             GITHUB: "/api/auth/github"
         }
     };
-    
+
     static readonly APP_ROUTES = {
         STUDENT: {
             DASHBOARD: "/student/dashboard",
@@ -40,7 +43,7 @@ export class Constants {
             }
         }
     };
-    
+
     static readonly LOCAL_STORAGE_KEYS = {
         ACCESS_TOKEN: "accessToken",
         REFRESH_TOKEN: "refreshToken"
