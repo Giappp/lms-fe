@@ -21,6 +21,16 @@ export class Constants {
         }
     };
 
+    static readonly COURSES_ROUTES = {
+        LIST: "/api/courses/search",
+        TOP_RATED: "/api/courses/top-rated",
+        MY_COURSES: "/api/courses/my-courses",
+        DETAIL: "/api/courses/:id",
+        CREATE: "/api/courses",
+        UPDATE: "/api/courses/:id",
+        DELETE: "/api/courses/:id"
+    };
+
     static readonly APP_ROUTES = {
         STUDENT: {
             DASHBOARD: "/student/dashboard",

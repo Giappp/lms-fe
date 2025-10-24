@@ -1,4 +1,4 @@
-import Axios from "axios";
+import Axios, {AxiosError} from "axios";
 import {Constants} from "@/constants";
 import {axiosInstance} from "@/api/core/axiosInstance";
 
@@ -19,8 +19,9 @@ const processQueue = (error: any, token: string | null = null) => {
 export const setupRefreshInterceptor = (mutateUser: () => void) => {
     axiosInstance.interceptors.response.use(
         (response) => response,
-        async (error) => {
-            const originalRequest = error.config;
+        async (error: AxiosError) => {
+            console.log("aaa");
+            const originalRequest: any = error.config;
 
             if (error.response?.status !== 401 || originalRequest._retry) {
                 return Promise.reject(error);
@@ -42,23 +43,25 @@ export const setupRefreshInterceptor = (mutateUser: () => void) => {
             try {
                 const refreshToken =
                     typeof window !== "undefined"
-                        ? sessionStorage.getItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN)
+                        ? localStorage.getItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN)
                         : null;
 
                 if (!refreshToken) throw new Error("No refresh token available");
 
                 const refreshResponse = await Axios.post(
                     `${Constants.BACKEND_URL}${Constants.AUTH_ROUTES.REFRESH}`,
-                    {refreshToken},
+                    {refreshToken: refreshToken},
                     {withCredentials: true}
                 );
+
+                console.log(refreshResponse.data);
 
                 const {accessToken, refreshToken: newRefreshToken} = refreshResponse.data;
 
                 if (typeof window !== "undefined") {
-                    sessionStorage.setItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+                    localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN, accessToken);
                     if (newRefreshToken) {
-                        sessionStorage.setItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
+                        localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
                     }
                 }
 
@@ -72,8 +75,8 @@ export const setupRefreshInterceptor = (mutateUser: () => void) => {
                 processQueue(refreshError, null);
 
                 if (typeof window !== "undefined") {
-                    sessionStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
-                    sessionStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN);
+                    localStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
+                    localStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN);
 
                     if (
                         !window.location.pathname.includes("/signin") &&

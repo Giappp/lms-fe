@@ -1,12 +1,11 @@
 "use client"
-import React, {createContext, useCallback, useEffect} from "react";
+import React, {createContext, useCallback} from "react";
 import {UserResponse} from "@/types/response";
 import useSWR, {Fetcher} from "swr";
 import {AuthService} from "@/api/services/auth-service";
 import {Constants} from "@/constants";
 import {SignInData} from "@/types";
 import {axiosInstance} from "@/api/core/axiosInstance";
-import {setupRefreshInterceptor} from "@/api/core/setupRefreshInterceptor";
 import axios from "axios";
 
 interface AuthContextState {
@@ -38,8 +37,8 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
         "/api/auth/me",
         fetcher,
         {
-            revalidateOnFocus: false,      // prevents refetch when switching tabs
-            revalidateOnReconnect: false,  // no refetch when internet reconnects
+            revalidateOnFocus: true,      // prevents refetch when switching tabs
+            revalidateOnReconnect: true,  // no refetch when internet reconnects
             dedupingInterval: 86400000,    // 24h - prevents multiple refetches in this period
             shouldRetryOnError: false,     // optional: prevents loops on 401 errors
         }
@@ -72,7 +71,7 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
             if (axios.isAxiosError(err)) {
                 errorMessage = err.response?.data?.message ?? "Login failed";
             }
-            // ✅ Throw the error so UI can catch it or SWR UI logic can handle it
+            // Throw error to the UI to handle
             throw new Error(errorMessage);
         }
     }, [mutateUser]);
@@ -81,10 +80,6 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
     const oauthSignIn = (provider: "google" | "github", role: "STUDENT" | "TEACHER") => {
         return AuthService.oauthSignIn(provider, role);
     };
-
-    useEffect(() => {
-        setupRefreshInterceptor(mutateUser);
-    }, [mutateUser]);
 
     return (
         <AuthContext.Provider value={{

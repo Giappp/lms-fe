@@ -3,14 +3,13 @@
 */
 
 export type CoursesFilterParams = {
-    search?: string;
-    category?: string;
+    keyword?: string;
+    courseStatus?: string;
     difficulty?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    minRating?: number;
-    page?: number;
-    limit?: number;
+    teacherId?: number;
+    categoryId?: number;
+    pageNumber?: number;
+    pageSize?: number;
 }
 
 export type SignInData = {

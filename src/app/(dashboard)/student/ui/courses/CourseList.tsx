@@ -18,7 +18,7 @@ const CourseList = ({
     currentPage: number;
     setCurrentPage: (page: number) => void;
 }) => {
-    const {courses, totalPages, isError, refreshCourses} = useCourses({
+    const {courses, totalPages, refreshCourses} = useCourses({
         search: search || undefined,
         category: category || undefined,
         difficulty: difficulty || undefined,
@@ -32,13 +32,6 @@ const CourseList = ({
         await refreshCourses();
     };
 
-    if (isError) {
-        return (
-            <div className="text-center text-red-500 mt-6">
-                Failed to load courses.
-            </div>
-        );
-    }
 
     return (
         <>
