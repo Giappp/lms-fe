@@ -1,5 +1,4 @@
-// `src/app/(auth)/signup/ui/TeacherSignUpForm.tsx`
-'use client'
+"use client"
 import React, {useState} from "react";
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -10,53 +9,50 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {useRouter} from "next/navigation";
 import {toast} from "sonner";
-import {useAuth} from "@/hooks/useAuth";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faGithub, faGoogle} from "@fortawesome/free-brands-svg-icons";
 import Link from "next/link";
+import {signupSchema} from "@/app/(auth)/signup/types";
+import {SignUpData} from "@/types";
+import {axiosInstance} from "@/api/core/axiosInstance";
+import {Constants} from "@/constants";
 
-const schema = z.object({
-    firstName: z.string().min(2, "First name is required"),
-    lastName: z.string().min(2, "Last name is required"),
-    email: z.email("Invalid email"),
-    password: z.string().min(8, "Password must be at least 6 characters").regex(/[A-Z]/, "Must contain at least one uppercase letter")
-        .regex(/[a-z]/, "Must contain at least one lowercase letter")
-        .regex(/[0-9]/, "Must contain at least one number")
-        .regex(/[^A-Za-z0-9]/, "Must contain at least one special character")
-        .max(100, "Password must be less than 100 characters"),
-    confirmPassword: z.string().min(1),
-}).refine(data => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-});
-
-type FormData = z.infer<typeof schema>;
+type FormData = z.infer<typeof signupSchema>;
 
 export default function TeacherSignUpForm() {
-    const {register, handleSubmit, formState: {errors, isSubmitting}} = useForm<FormData>({
-        resolver: zodResolver(schema),
+    const {register, handleSubmit, setError, formState: {errors, isSubmitting}} = useForm<FormData>({
+        resolver: zodResolver(signupSchema),
         mode: "onBlur",
     });
-    const {signUp} = useAuth();
     const router = useRouter();
     const [isOAuthLoading, setIsOAuthLoading] = useState({google: false, github: false});
 
     const onSubmit = async (data: FormData) => {
         try {
-            await signUp({
+            const signUpData: SignUpData = {
                 firstName: data.firstName,
                 lastName: data.lastName,
                 email: data.email,
                 password: data.password,
                 confirmPassword: data.confirmPassword,
-                role: "teacher"
-            });
+                role: "TEACHER",
+            };
+
+            await axiosInstance.post(Constants.AUTH_ROUTES.SIGN_UP, signUpData);
             toast.success("Account created. Redirecting...");
-            router.push("/teacher/dashboard");
+
+            setTimeout(() => {
+                router.push('/check-email?email=' + data.email);
+            }, 1200);
+
         } catch (err: any) {
-            console.error(err);
-            const msg = err?.response?.data?.message ?? err?.message ?? "Signup failed";
-            toast.error(msg);
+            // Safely extract backend response (if exists)
+            const backendMessage: string = err.response?.data?.message;
+            if (backendMessage.includes("Email")) {
+                setError("email", {type: "server", message: backendMessage});
+            } else {
+                toast.error(backendMessage || "Something went wrong");
+            }
         }
     };
 
@@ -101,8 +97,8 @@ export default function TeacherSignUpForm() {
                         <div>
                             <Label htmlFor="lastName">Last name</Label>
                             <Input id="lastName" {...register("lastName")} aria-invalid={!!errors.lastName}/>
-                               {errors.lastName &&
-                                   <p className="text-sm text-red-500 mt-1">{errors.lastName.message}</p>}
+                            {errors.lastName &&
+                                <p className="text-sm text-red-500 mt-1">{errors.lastName.message}</p>}
                         </div>
                     </div>
 

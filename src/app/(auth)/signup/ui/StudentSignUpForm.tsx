@@ -16,28 +16,15 @@ import {axiosInstance} from "@/api/core/axiosInstance";
 import {Constants} from "@/constants";
 import {SignUpData} from "@/types";
 import {useRouter} from "next/navigation";
+import {signupSchema} from "@/app/(auth)/signup/types";
 
-const schema = z.object({
-    firstName: z.string().min(2, "First name is required"),
-    lastName: z.string().min(2, "Last name is required"),
-    email: z.email("Invalid email"),
-    password: z.string().min(8, "Password must be at least 6 characters").regex(/[A-Z]/, "Must contain at least one uppercase letter")
-        .regex(/[a-z]/, "Must contain at least one lowercase letter")
-        .regex(/[0-9]/, "Must contain at least one number")
-        .regex(/[^A-Za-z0-9]/, "Must contain at least one special character")
-        .max(100, "Password must be less than 100 characters"),
-    confirmPassword: z.string().min(1),
-}).refine(data => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-});
 
-type FormData = z.infer<typeof schema>;
+type FormData = z.infer<typeof signupSchema>;
 
 export default function StudentSignUpForm() {
     const [showPassword, setShowPassword] = useState(false);
     const {register, handleSubmit, formState: {errors, isSubmitting}, setError} = useForm<FormData>({
-        resolver: zodResolver(schema),
+        resolver: zodResolver(signupSchema),
         mode: "onBlur",
     });
     const [isOAuthLoading, setIsOAuthLoading] = useState({google: false, github: false});
@@ -46,8 +33,6 @@ export default function StudentSignUpForm() {
     const onOAuth = async (provider: "google" | "github") => {
         setIsOAuthLoading(prev => ({...prev, [provider]: true}));
         try {
-            //await oauthSignUp(provider, "student");
-            // OAuth handled by provider redirect
         } catch (err: any) {
             console.error(err);
             toast.error("OAuth signup failed");
@@ -75,7 +60,6 @@ export default function StudentSignUpForm() {
             }, 1200);
 
         } catch (err: any) {
-            console.error(err);
             // Safely extract backend response (if exists)
             const backendMessage: string = err.response?.data?.message;
 

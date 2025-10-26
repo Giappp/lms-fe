@@ -2,6 +2,8 @@
 * All the api request model goes here
 */
 
+import {CourseStatus, Difficulty, LessonType} from "@/types/enum";
+
 export type CoursesFilterParams = {
     keyword?: string;
     courseStatus?: string;
@@ -39,4 +41,34 @@ export type TeacherSignUp = {
 export type UserSignIn = {
     email: string;
     password: string;
+}
+
+export type CourseCreationRequest = {
+    title: string;
+    description: string;
+    difficulty: Difficulty
+    price: number;
+    instructorId: number;
+    instructorName: string;
+    categoryId: number[];
+    status: CourseStatus
+    thumbnail: string;
+    duration: string;
+    rating: number;
+}
+
+export type Chapter = {
+    title: string;
+    courseId: number;
+}
+
+export type Lesson = {
+    title: string;
+    type: LessonType;
+    content: string;
+    description: string;
+    duration: number;
+    videoUrl: string;
+    pdfUrl: string;
+    chapterId: number;
 }

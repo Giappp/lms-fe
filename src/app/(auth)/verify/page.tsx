@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
 import {useRouter, useSearchParams} from 'next/navigation';
 import {useEffect, useState} from 'react';
 import {CheckCircle, Loader2, XCircle} from 'lucide-react';
-import {axiosInstance} from "@/api/core/axiosInstance";
 import {Constants} from "@/constants";
+import axios from "axios";
 
 export default function VerifyEmailPage() {
     const searchParams = useSearchParams();
@@ -13,21 +13,33 @@ export default function VerifyEmailPage() {
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
     useEffect(() => {
+        console.log("Verify page mounted with token:", token);
+
         if (!token) {
             setStatus('error');
             return;
         }
 
-        axiosInstance
-            .post(Constants.AUTH_ROUTES.VERIFY_EMAIL, token)
+        let isMounted = true;
+
+        axios.post(`http://localhost:8081${Constants.AUTH_ROUTES.VERIFY_EMAIL}?verifyCode=${token}`)
             .then(() => {
+                if (!isMounted) return;
+                console.log("Verification success");
                 setStatus('success');
-                // Let the success message show first
                 setTimeout(() => {
                     router.push('/signin?verified=true');
                 }, 2000);
             })
-            .catch(() => setStatus('error'));
+            .catch((err) => {
+                console.error('Error verifying email:', err.response || err);
+                if (isMounted) setStatus('error');
+            });
+
+        return () => {
+            console.log("Verify page unmounted");
+            isMounted = false;
+        };
     }, [token, router]);
 
     return (

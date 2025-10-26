@@ -1,12 +1,13 @@
 "use client"
-import React, {createContext, useCallback} from "react";
+import React, {createContext, useCallback, useEffect} from "react";
 import {UserResponse} from "@/types/response";
-import useSWR, {Fetcher} from "swr";
+import useSWR from "swr";
 import {AuthService} from "@/api/services/auth-service";
 import {Constants} from "@/constants";
 import {SignInData} from "@/types";
 import {axiosInstance} from "@/api/core/axiosInstance";
 import axios from "axios";
+import {usePathname} from "next/navigation";
 
 interface AuthContextState {
     user: UserResponse | null;
@@ -17,39 +18,51 @@ interface AuthContextState {
     mutateUser: () => void;
 }
 
-const fetcher: Fetcher<UserResponse, string> = async (url): Promise<UserResponse> => {
+const fetcher = async (url: string): Promise<UserResponse | null> => {
     try {
-        const response = await axiosInstance.get(url).then(res => res.data);
-        return response.data;
+        const res = await axiosInstance.get(url);
+        return res.data.data;
     } catch (err) {
-        if (axios.isAxiosError(err)) {
-            const errorMessage = err.response?.data?.message ?? "Login failed";
-            console.error(errorMessage);
+        if (axios.isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 419)) {
+            return null;
         }
-        throw new Error("Failed to fetch user");
+        throw err;
     }
 };
 
 export const AuthContext = createContext<AuthContextState | undefined>(undefined);
 
 export const AuthProvider = ({children}: { children: React.ReactNode }) => {
-    const {data, isLoading, mutate: mutateUser} = useSWR<UserResponse | null>(
-        "/api/auth/me",
+    const pathname = usePathname();
+
+    const disableAuthCheckRoutes = [
+        "/verify",
+        "/signin",
+        "/signup",
+    ];
+
+    const shouldFetchUser = !disableAuthCheckRoutes.some((route) =>
+        pathname.startsWith(route)
+    );
+
+    const {data, isLoading, mutate} = useSWR<UserResponse | null>(
+        shouldFetchUser ? "/api/auth/me" : null, // ✅ SWR won't run when key is null
         fetcher,
         {
-            revalidateOnFocus: true,      // prevents refetch when switching tabs
-            revalidateOnReconnect: true,  // no refetch when internet reconnects
-            dedupingInterval: 86400000,    // 24h - prevents multiple refetches in this period
-            shouldRetryOnError: false,     // optional: prevents loops on 401 errors
+            revalidateOnFocus: false,
+            revalidateOnReconnect: false,
+            shouldRetryOnError: false,
         }
     );
+
 
     const signIn = useCallback(async (data: SignInData) => {
         try {
             const res = await axiosInstance.post(Constants.AUTH_ROUTES.SIGN_IN, data).then(res => res.data);
-            localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN, res.data.accessToken);
-            localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN, res.data.refreshToken);
-            await mutateUser();
+            const {accessToken, refreshToken} = res.data;
+            localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+            localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+            await mutate();
         } catch (err: unknown) {
             let errorMessage = "Unknown error";
             if (axios.isAxiosError(err)) {
@@ -58,28 +71,40 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
             // ✅ Throw the error so UI can catch it or SWR UI logic can handle it
             throw new Error(errorMessage);
         }
-    }, [mutateUser]);
+    }, [mutate]);
 
     const logOut = useCallback(async () => {
         try {
-            const res = await axiosInstance.post(Constants.AUTH_ROUTES.LOGOUT).then(res => res.data);
-            console.log(res.data);
-            localStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
-            await mutateUser(null);
-        } catch (err: unknown) {
-            let errorMessage = "Unknown error";
-            if (axios.isAxiosError(err)) {
-                errorMessage = err.response?.data?.message ?? "Login failed";
-            }
-            // Throw error to the UI to handle
-            throw new Error(errorMessage);
+            await axiosInstance.post(Constants.AUTH_ROUTES.LOGOUT);
+        } catch (err) {
+            console.warn("Logout failed silently", err);
         }
-    }, [mutateUser]);
+        localStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN);
+        await mutate(null);
+        window.location.href = "/signin";
+    }, [mutate]);
 
 
     const oauthSignIn = (provider: "google" | "github", role: "STUDENT" | "TEACHER") => {
         return AuthService.oauthSignIn(provider, role);
     };
+
+    useEffect(() => {
+        const handleGlobalLogout = async () => {
+            localStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
+            localStorage.removeItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN);
+
+            await mutate(null, false); // ✅ SET STATE TO NULL & DO NOT REFETCH
+
+            if (window.location.pathname !== "/signin") {
+                window.location.href = "/signin"; // ✅ Redirect AFTER SWR state is null
+            }
+        };
+
+        window.addEventListener("auth:logout", handleGlobalLogout);
+        return () => window.removeEventListener("auth:logout", handleGlobalLogout);
+    }, [mutate]);
 
     return (
         <AuthContext.Provider value={{
@@ -88,7 +113,7 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
             signIn,
             logOut,
             oauthSignIn,
-            mutateUser,
+            mutateUser: async () => await mutate(),
         }}>
             {children}
         </AuthContext.Provider>

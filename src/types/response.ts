@@ -1,6 +1,8 @@
 /*
 * All the api response model goes here
 */
+import {CourseStatus, Difficulty} from "@/types/enum";
+
 export type UserResponse = {
     id: number;
     email: string;
@@ -8,6 +10,7 @@ export type UserResponse = {
     fullName: string;
     role: "STUDENT" | "TEACHER";
     avatar?: string;
+    isVerified?: boolean;
 }
 
 export type AuthResponse = {
@@ -16,7 +19,7 @@ export type AuthResponse = {
     refreshToken: string;
 }
 
-export type CourseResponse = {
+export type CoursesPage = {
     courses: Array<Course>;
     total: number;
     currentPage: number;
@@ -25,17 +28,28 @@ export type CourseResponse = {
 
 export type Course = {
     id: number
-    thumbnail: string
     title: string
     description: string
-    category: string[]
-    instructor: string
-    duration: string
-    difficulty: string
+    thumbnail: string
+    teacherName: string
+    teacherId: number
+    difficulty: Difficulty
     price: number
     rating: number
-    status: string
-    reviews: number
+    status: CourseStatus
+    category: Category[]
+}
+
+export type Category = {
+    name: string;
+    description: string;
+    icon: string;
+    color: string;
+}
+
+export type CourseTableContent = {
+    course: Course;
+    enrolledCount: number;
 }
 
 export type Quiz = {

@@ -1,5 +1,5 @@
-// src/app/(auth)/signin/ui/TeacherLoginForm.tsx
-'use client'
+"use client"
+
 import React from "react";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card";
@@ -50,7 +50,6 @@ export default function TeacherLoginForm() {
     const handleOAuthSignIn = async (provider: "google" | "github") => {
         try {
             oauthSignIn(provider, "TEACHER");
-            // OAuth will redirect; no further handling here.
         } catch (error: any) {
             console.error(`[OAuth Login Error] ${provider} sign-in failed:`, error);
             toast.error(`Failed to sign in with ${provider}. Please try again.`);
@@ -70,6 +69,7 @@ export default function TeacherLoginForm() {
             router.push("/teacher");
         } catch (error) {
             const message = error instanceof Error ? error.message : "An unknown error occurred";
+            console.log(error);
             setError("root", {type: "manual", message: message});
         }
     };
