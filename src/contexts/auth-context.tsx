@@ -37,8 +37,6 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
 
     const disableAuthCheckRoutes = [
         "/verify",
-        "/signin",
-        "/signup",
     ];
 
     const shouldFetchUser = !disableAuthCheckRoutes.some((route) =>

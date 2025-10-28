@@ -2,6 +2,7 @@
 import Axios from "axios";
 import axios, {AxiosError, InternalAxiosRequestConfig} from "axios";
 import {Constants} from "@/constants";
+import {RefreshTokenRequest} from "@/types";
 
 let isRefreshing = false;
 let failedQueue: { resolve: (value?: unknown) => void; reject: (reason?: any) => void }[] = [];
@@ -39,6 +40,8 @@ axiosInstance.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        console.log(error);
+
         originalRequest._retry = true;
 
         if (isRefreshing) {
@@ -56,9 +59,13 @@ axiosInstance.interceptors.response.use(
             const refreshToken = localStorage.getItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN);
             if (!refreshToken) throw new Error("No refresh token available");
 
+            const refreshTokenRequest: RefreshTokenRequest = {
+                refreshToken: refreshToken
+            }
+
             const refreshResponse = await axios.post(
                 `${Constants.BACKEND_URL}${Constants.AUTH_ROUTES.REFRESH}`,
-                {refreshToken},
+                refreshTokenRequest,
                 {withCredentials: true}
             );
 

@@ -6,7 +6,7 @@ import {useAuth} from "@/hooks/useAuth";
 import {Constants} from "@/constants";
 
 export const RedirectIfAuthenticated = ({children}: { children: React.ReactNode }) => {
-    const {user} = useAuth();
+    const {user, isLoading} = useAuth();
     const router = useRouter();
 
     useEffect(() => {
@@ -18,5 +18,7 @@ export const RedirectIfAuthenticated = ({children}: { children: React.ReactNode 
             }
         }
     }, [user, router]);
+
+    if (!isLoading && user) return; // or loading screen
     return <>{children}</>;
 };

@@ -14,6 +14,10 @@ export type CoursesFilterParams = {
     pageSize?: number;
 }
 
+export type RefreshTokenRequest = {
+    refreshToken: string;
+}
+
 export type SignInData = {
     email: string;
     password: string;
@@ -52,7 +56,7 @@ export type CourseCreationRequest = {
     instructorName: string;
     categoryId: number[];
     status: CourseStatus
-    thumbnail: string;
+    thumbnail?: string;
     duration: string;
     rating: number;
 }
