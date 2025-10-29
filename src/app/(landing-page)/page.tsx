@@ -1,4 +1,4 @@
-import {NavBar} from "@/app/ui/NavBar";
+import {NavBar} from "@/components/shared/NavBar";
 import HeroSection from "@/app/(landing-page)/ui/HeroSection";
 import FeaturesSection from "@/app/(landing-page)/ui/FeaturesSection";
 import StatsSection from "@/app/(landing-page)/ui/StatsSection";

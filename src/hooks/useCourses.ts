@@ -1,4 +1,4 @@
-import {CourseResponse, CoursesFilterParams} from "@/types";
+import {CoursesFilterParams, CoursesPage} from "@/types";
 import useSWR, {mutate} from "swr";
 import {buildParamsFromOptions} from "@/api/core/utils";
 import {axiosInstance} from "@/api/core/axiosInstance";
@@ -24,7 +24,7 @@ export const useCourses = (filters: CoursesFilterParams) => {
     const {
         data,
         isLoading
-    } = useSWR<CourseResponse | null>(`${Constants.COURSES_ROUTES.LIST}?${queryString}`, fetcher, {
+    } = useSWR<CoursesPage | null>(`${Constants.COURSES_ROUTES.LIST}?${queryString}`, fetcher, {
         keepPreviousData: true,
         revalidateOnFocus: false,
         fallbackData: {courses: [], total: 0, currentPage: 1, totalPages: 1}

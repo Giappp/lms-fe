@@ -5,7 +5,7 @@ import {Be_Vietnam_Pro, Inter, Poppins} from "next/font/google"
 
 import {config} from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
-import {ThemeProvider} from "@/app/ui/ThemeProvider";
+import {ThemeProvider} from "@/components/shared/ThemeProvider";
 import {Toaster} from "@/components/ui/sonner";
 import {SkeletonTheme} from "react-loading-skeleton";
 import {AuthProvider} from "@/contexts/auth-context";

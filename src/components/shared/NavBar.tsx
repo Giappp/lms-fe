@@ -3,15 +3,15 @@ import React from 'react'
 import Link from "next/link";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faGraduationCap} from "@fortawesome/free-solid-svg-icons";
-import {ModeToggle} from "@/app/ui/ModeToggle";
-import LanguageToggle from "@/app/ui/LanguageToggle";
+import {ModeToggle} from "@/components/shared/ModeToggle";
+import LanguageToggle from "@/components/shared/LanguageToggle";
 
 export const NavBar = () => {
     return (
         <header
             className="fixed top-0 left-0 right-0 z-10 backdrop-blur-[20px] shadow-sm bg-white/5">
             <div className="max-w-[1400px] mx-auto flex flex-row justify-between items-center px-4 py-6">
-                <Link href="/"
+                <Link href="/public"
                       className="flex text-white items-center text-xl md:text-3xl gap-1 font-extrabold transition-all hover:transform-[scale(1.05)]">
                     <FontAwesomeIcon icon={faGraduationCap} className="w-8 h-8 inline-block align-middle mr-2"/>
                     <span className="leading-none align-middle">EduLearn LMS</span>

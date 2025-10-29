@@ -2,8 +2,8 @@ import React from "react";
 import Link from "next/link";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowLeft, faChalkboardTeacher, faUserGraduate} from "@fortawesome/free-solid-svg-icons";
-import StudentLoginForm from "../ui/StudentLoginForm";
-import TeacherLoginForm from "../ui/TeacherLoginForm";
+import StudentLoginForm from "../../../../components/auth/StudentLoginForm";
+import TeacherLoginForm from "../../../../components/auth/TeacherLoginForm";
 
 type Role = "student" | "teacher";
 

@@ -1,5 +1,5 @@
 import React from 'react'
-import RedirectIfNotAuthenticated from "@/app/ui/RedirectIfNotAuthenticated";
+import RedirectIfNotAuthenticated from "@/components/shared/RedirectIfNotAuthenticated";
 
 const Layout = ({
                     children,

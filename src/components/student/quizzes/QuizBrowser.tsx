@@ -3,7 +3,7 @@ import React, {Suspense, useState} from "react";
 import {Input} from "@/components/ui/input";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faRefresh} from "@fortawesome/free-solid-svg-icons";
-import QuizzesList from "@/app/(dashboard)/student/ui/quizzes/QuizzesList";
+import QuizzesList from "@/components/student/quizzes/QuizzesList";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 
 const QuizBrowser = () => {

@@ -2,8 +2,8 @@ import React from 'react'
 import {Button} from "@/components/ui/button";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faRefresh} from "@fortawesome/free-solid-svg-icons";
-import QuizzesStat from "@/app/(dashboard)/student/ui/quizzes/QuizzesStat";
-import QuizBrowser from "@/app/(dashboard)/student/ui/quizzes/QuizBrowser";
+import QuizzesStat from "@/components/student/quizzes/QuizzesStat";
+import QuizBrowser from "@/components/student/quizzes/QuizBrowser";
 
 const Page = () => {
     return (

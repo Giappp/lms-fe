@@ -1,6 +1,6 @@
 import React from 'react'
-import { useQuizzes } from "@/hooks/useQuizzes";
-import QuizCard from "@/app/(dashboard)/student/ui/quizzes/QuizCard";
+import {useQuizzes} from "@/hooks/useQuizzes";
+import QuizCard from "@/components/student/quizzes/QuizCard";
 
 interface QuizzesListProps {
     searchTerm: string;
@@ -8,8 +8,8 @@ interface QuizzesListProps {
     statusFilter: string;
 }
 
-const QuizzesList = ({ searchTerm, dateFilter, statusFilter }: QuizzesListProps) => {
-    const { quizzes, isError, isLoading, filteredCount, totalQuizzes } = useQuizzes({
+const QuizzesList = ({searchTerm, dateFilter, statusFilter}: QuizzesListProps) => {
+    const {quizzes, isError, isLoading, filteredCount, totalQuizzes} = useQuizzes({
         searchTerm,
         dateFilter,
         statusFilter
@@ -38,7 +38,7 @@ const QuizzesList = ({ searchTerm, dateFilter, statusFilter }: QuizzesListProps)
                     Showing {filteredCount} of {totalQuizzes} quizzes
                 </p>
             )}
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {quizzes.length > 0 ? (
                     quizzes.map((quiz) => (

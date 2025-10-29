@@ -1,6 +1,6 @@
 import React from 'react'
 import {Card, CardAction, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
-import CurrentCourseCard from "@/app/(dashboard)/student/ui/courses/CurrentCourseCard";
+import CurrentCourseCard from "@/components/student/courses/CurrentCourseCard";
 import Link from "next/link";
 
 const CurrentCourses = () => {

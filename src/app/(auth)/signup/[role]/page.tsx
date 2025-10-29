@@ -2,12 +2,10 @@
 import React from "react";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faArrowLeft, faChalkboardTeacher, faUserGraduate} from "@fortawesome/free-solid-svg-icons";
-import StudentSignUpForm from "../ui/StudentSignUpForm";
-import TeacherSignUpForm from "../ui/TeacherSignUpForm";
+import StudentSignUpForm from "../../../../components/auth/StudentSignUpForm";
+import TeacherSignUpForm from "../../../../components/auth/TeacherSignUpForm";
 import Link from "next/link";
 import {AnimatePresence, motion} from "framer-motion";
-
-type Role = "student" | "teacher";
 
 const roleMeta = {
     student: {

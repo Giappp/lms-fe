@@ -68,8 +68,7 @@ axiosInstance.interceptors.response.use(
                 refreshTokenRequest,
                 {withCredentials: true}
             );
-
-            const {accessToken, refreshToken: newRefreshToken} = refreshResponse.data;
+            const {accessToken, refreshToken: newRefreshToken} = refreshResponse.data.data;
             localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN, accessToken);
             if (newRefreshToken) {
                 localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);

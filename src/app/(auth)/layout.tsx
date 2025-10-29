@@ -1,6 +1,6 @@
 import React from 'react'
-import AuthNavbar from "@/app/(auth)/ui/AuthNavbar";
-import {RedirectIfAuthenticated} from "@/app/ui/RedirectIfAuthenticated";
+import AuthNavbar from "@/components/auth/AuthNavbar";
+import {RedirectIfAuthenticated} from "@/components/shared/RedirectIfAuthenticated";
 
 const AuthLayout = ({
                         children,

@@ -1,21 +1,21 @@
 "use client"
 import React from 'react'
-import {ModeToggle} from "@/app/ui/ModeToggle";
-import LanguageToggle from "@/app/ui/LanguageToggle";
+import {ModeToggle} from "@/components/shared/ModeToggle";
+import LanguageToggle from "@/components/shared/LanguageToggle";
 import {Button} from "@/components/ui/button";
 import {SidebarTrigger} from "@/components/ui/sidebar";
-import DashboardBreadcrumb from "@/app/(dashboard)/ui/DashboardBreadcrumb";
+import DashboardBreadcrumb from "@/components/dashboard/DashboardBreadcrumb";
 import {useAuth} from "@/hooks/useAuth";
 import {useRouter} from "next/navigation";
 import {toast} from "sonner";
 
 const DashboardTopbar = () => {
-    const {signOut} = useAuth();
+    const {logOut} = useAuth();
     const router = useRouter();
 
     const handleSignOut = async () => {
         try {
-            await signOut();
+            await logOut();
             toast.success("Successfully signed out!");
             router.push("/signin/student");
         } catch (error) {

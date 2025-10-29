@@ -1,7 +1,7 @@
 import React from 'react'
 import {SidebarInset, SidebarProvider} from "@/components/ui/sidebar";
-import {StudentSidebar} from "@/app/(dashboard)/student/ui/StudentSidebar";
-import DashboardTopbar from "@/app/(dashboard)/ui/DashboardTopbar";
+import {StudentSidebar} from "@/components/student/StudentSidebar";
+import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
 
 const StudentLayout = (props: LayoutProps<"/student">) => {
     return (

@@ -1,6 +1,6 @@
 import React, {Suspense} from 'react'
-import CoursesBrowser from "@/app/(dashboard)/student/ui/courses/CoursesBrowser";
-import CoursesBrowserSkeleton from "@/app/(dashboard)/student/ui/courses/CoursesBrowserSkeleton";
+import CoursesBrowser from "@/components/student/courses/CoursesBrowser";
+import CoursesBrowserSkeleton from "@/components/student/courses/CoursesBrowserSkeleton";
 
 const Page = () => {
     return (
