@@ -1,6 +1,6 @@
 "use client"
-import React, {useState} from 'react'
-import {CourseFormData} from "@/app/(dashboard)/teacher/courses/new/types";
+import React, {useEffect, useState} from 'react'
+import {CourseFormData} from "@/types/types";
 import {Card} from "@/components/ui/card";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import TemplateChooser from "@/components/teacher/TemplateChooser";
@@ -9,30 +9,42 @@ import LessonEditor from "@/components/teacher/LessonEditor";
 import MaterialsEditor from "@/components/teacher/MaterialsEditor";
 import ReviewPublish from "@/components/teacher/ReviewPublish";
 import {Button} from "@/components/ui/button";
+import {useAuth} from "@/hooks/useAuth";
+import {CourseStatus} from "@/types/enum";
 
 type StepId = 'template' | 'basic-info' | 'lessons' | 'materials' | 'review';
 
 type Step = {
     id: StepId;
     title: string;
+    touched: boolean;
 }
 
 const steps: Step[] = [
-    {id: 'template', title: 'Choose Template'},
-    {id: 'basic-info', title: 'Basic Information'},
-    {id: 'lessons', title: 'Lessons'},
-    {id: 'materials', title: 'Materials'},
-    {id: 'review', title: 'Review & Publish'},
+    {id: 'template', title: 'Choose Template', touched: false},
+    {id: 'basic-info', title: 'Basic Information', touched: false},
+    {id: 'lessons', title: 'Lessons', touched: false},
+    {id: 'materials', title: 'Materials', touched: false},
+    {id: 'review', title: 'Review & Publish', touched: false},
 ];
 
 const CreateNewCourseForm = () => {
+    const {user} = useAuth();
     const [currentStep, setCurrentStep] = useState<StepId>('template');
     const [courseData, setCourseData] = useState<CourseFormData>({
         template: null,
-        basicInfo: null,
+        basicInfo: {
+            teacherId: user?.id,
+            teacherName: user?.fullName,
+            status: CourseStatus.DRAFT,
+        },
         chapters: [],
         materials: [],
     });
+
+    useEffect(() => {
+        console.log(courseData);
+    })
 
     const handleNext = () => {
         const currentIndex = steps.findIndex(step => step.id === currentStep);
@@ -48,8 +60,12 @@ const CreateNewCourseForm = () => {
         }
     };
 
+    function handleChangeTab(id: StepId) {
+        console.log('Changing tab to:', id);
+    }
+
     return (
-        <div className="container mx-auto py-6">
+        <div className="container mx-auto p-6">
             <div className="mb-6">
                 <h1 className="text-2xl font-bold">Create New Course</h1>
                 <p className="text-muted-foreground">Follow the steps to create your course</p>
@@ -62,6 +78,8 @@ const CreateNewCourseForm = () => {
                             <TabsTrigger
                                 key={step.id}
                                 value={step.id}
+                                disabled={step.touched}
+                                onClick={() => handleChangeTab(step.id)}
                                 className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                             >
                                 {step.title}
@@ -90,7 +108,6 @@ const CreateNewCourseForm = () => {
 
                     <TabsContent value="lessons">
                         <LessonEditor
-                            lessons={courseData.chapters}
                             onSaveAction={(chapters) => {
                                 setCourseData({...courseData, chapters});
                                 handleNext();

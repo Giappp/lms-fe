@@ -9,7 +9,7 @@ import {Alert, AlertDescription} from "@/components/ui/alert";
 import {AlertCircle, CheckCircle2} from "lucide-react";
 import {CourseStatus, Difficulty, LessonType} from "@/types/enum";
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger,} from "@/components/ui/accordion";
-import {ChapterWithLessons, Material, ReviewPublishProps} from "@/app/(dashboard)/teacher/courses/new/types";
+import {ChapterWithLessons, Material, ReviewPublishProps} from "@/types/types";
 
 export default function ReviewPublish({courseData}: ReviewPublishProps) {
     const [publishing, setPublishing] = useState(false);
@@ -117,7 +117,7 @@ export default function ReviewPublish({courseData}: ReviewPublishProps) {
                 <h3 className="text-lg font-medium">Course Structure</h3>
                 <Separator className="my-4"/>
                 <Accordion type="single" collapsible className="w-full">
-                    {courseData.lessons.map((chapter: ChapterWithLessons, index) => (
+                    {courseData.chapters.map((chapter: ChapterWithLessons, index) => (
                         <AccordionItem key={index} value={`chapter-${index}`}>
                             <AccordionTrigger className="hover:no-underline">
                                 <div className="flex items-center">

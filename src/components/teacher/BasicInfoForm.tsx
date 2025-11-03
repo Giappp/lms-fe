@@ -1,6 +1,6 @@
 'use client';
 
-import {useForm} from 'react-hook-form';
+import {Controller, useForm} from 'react-hook-form';
 import {Card} from '@/components/ui/card';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
@@ -8,8 +8,12 @@ import {Textarea} from '@/components/ui/textarea';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import {CourseStatus, Difficulty} from '@/types/enum';
 import {CourseCreationRequest} from '@/types/request';
-import {useState} from 'react';
-import ImageUploader from "@/components/teacher/ImageUploader";
+import React, {useEffect, useRef, useState} from 'react';
+import ImagePreview from "@/components/teacher/ImagePreview";
+import {axiosInstance} from "@/api/core/axiosInstance";
+import {isAxiosError} from "axios";
+import {toast} from "sonner";
+import {Button} from "@/components/ui/button";
 
 export interface BasicInfoFormProps {
     initialData: Partial<CourseCreationRequest> | null
@@ -18,22 +22,96 @@ export interface BasicInfoFormProps {
 
 export default function BasicInfoForm({initialData, onSaveAction}: BasicInfoFormProps) {
     const [saving, setSaving] = useState(false);
-
-    const {register, handleSubmit, formState: {errors}, setValue} = useForm<Partial<CourseCreationRequest>>({
+    const {
+        register,
+        handleSubmit,
+        control,
+        formState: {errors},
+        setValue,
+        setError
+    } = useForm<Partial<CourseCreationRequest>>({
         defaultValues: initialData || {
             status: CourseStatus.DRAFT,
-            rating: 0,
         },
     });
 
-    const onSubmit = async (data: Partial<CourseCreationRequest>) => {
-        setSaving(true);
-        onSaveAction?.(data as CourseCreationRequest);
+    useEffect(() => {
+        if (initialData?.thumbnail) {
+            setPreviewUrl(URL.createObjectURL(initialData.thumbnail));
+        }
+    }, [initialData?.thumbnail]);
+
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const abortController = useRef<AbortController | null>(null);
+
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) {
+            setPreviewUrl(null);
+            setValue('thumbnail', undefined); // reset
+            return;
+        }
+
+        setPreviewUrl(URL.createObjectURL(file));
+        setValue('thumbnail', file);
     };
 
-    function handleUploaded(url: string) {
-        console.log('Uploaded image URL:', url);
-    }
+    const handleRemoveImage = () => {
+        setPreviewUrl(null);
+        if (abortController.current) abortController.current.abort();
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
+    const onSubmit = async (data: Partial<CourseCreationRequest>) => {
+        setSaving(true);
+        try {
+            setSaving(true);
+            const formData = new FormData();
+            formData.append(
+                'request',
+                new Blob([JSON.stringify(data)], {type: 'application/json'})
+            );
+
+            const file = fileInputRef.current?.files?.[0];
+            if (file) {
+                formData.append('thumbnail', file);
+            }
+            const response = await axiosInstance.post('/api/courses', formData, {
+                headers: {'Content-Type': 'multipart/form-data'},
+            });
+            if (response.status === 200) {
+                toast.success("Course created successfully");
+            } else {
+                console.log(response);
+                toast.error("Failed to create course");
+            }
+            onSaveAction(data as CourseCreationRequest);
+        } catch (err: any) {
+            if (isAxiosError(err)) {
+                const backendMessage = err.response?.data?.message;
+                const errors = err.response?.data?.errors;
+                console.log(err.response?.data);
+                console.log(errors);
+                if (backendMessage) {
+                    toast.error(backendMessage);
+                }
+                if (errors) {
+                    console.log(errors);
+                    Object.keys(errors).forEach(key => {
+                        const message = errors[key];
+                        setError(key as keyof Partial<CourseCreationRequest>, {
+                            type: 'server',
+                            message: message as string
+                        });
+                    });
+                }
+            }
+        } finally {
+            abortController.current = null;
+            setSaving(false);
+        }
+    };
 
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -43,6 +121,7 @@ export default function BasicInfoForm({initialData, onSaveAction}: BasicInfoForm
                         <Label htmlFor="title">Course Title</Label>
                         <Input
                             id="title"
+                            className={errors.title ? 'border-red-500' : ''}
                             {...register('title', {required: 'Title is required'})}
                             placeholder="Enter course title"
                         />
@@ -55,6 +134,7 @@ export default function BasicInfoForm({initialData, onSaveAction}: BasicInfoForm
                         <Label htmlFor="description">Description</Label>
                         <Textarea
                             id="description"
+                            className={errors.description ? 'border-red-500' : ''}
                             {...register('description', {required: 'Description is required'})}
                             placeholder="Enter course description"
                             rows={5}
@@ -67,21 +147,25 @@ export default function BasicInfoForm({initialData, onSaveAction}: BasicInfoForm
                     <div className="grid grid-cols-2 gap-2">
                         <div>
                             <Label htmlFor="difficulty">Difficulty Level</Label>
-                            <Select
-                                {...register('difficulty', {required: 'Difficulty is required'})}
-                                defaultValue={initialData?.difficulty}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select difficulty"/>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {Object.values(Difficulty).map((level) => (
-                                        <SelectItem key={level} value={level}>
-                                            {level.charAt(0) + level.slice(1).toLowerCase()}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <Controller
+                                name="difficulty"
+                                control={control}
+                                rules={{required: 'Difficulty is required'}}
+                                render={({field}) => (
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select difficulty"/>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.values(Difficulty).map((level) => (
+                                                <SelectItem key={level} value={level}>
+                                                    {level.charAt(0) + level.slice(1).toLowerCase()}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
                         </div>
 
                         <div>
@@ -89,12 +173,16 @@ export default function BasicInfoForm({initialData, onSaveAction}: BasicInfoForm
                             <Input
                                 id="price"
                                 type="number"
+                                className={errors.price ? 'border-red-500' : ''}
                                 {...register('price', {
                                     required: 'Price is required',
                                     min: {value: 0, message: 'Price must be positive'}
                                 })}
                                 placeholder="Enter course price"
                             />
+                            {errors.price && (
+                                <p className="text-sm text-red-500 mt-1">{errors.price?.message as string}</p>
+                            )}
                         </div>
                     </div>
 
@@ -102,15 +190,44 @@ export default function BasicInfoForm({initialData, onSaveAction}: BasicInfoForm
                         <Label htmlFor="duration">Estimated Duration</Label>
                         <Input
                             id="duration"
+                            className={errors.duration ? 'border-red-500' : ''}
                             {...register('duration', {required: 'Duration is required'})}
                             placeholder="e.g., 2 weeks, 10 hours"
                         />
+                        {errors.duration && (
+                            <p className="text-sm text-red-500 mt-1">{errors.duration?.message as string}</p>
+                        )}
                     </div>
 
                     <div>
                         <Label htmlFor="thumbnail">Thumbnail Image</Label>
-                        <ImageUploader onUploaded={handleUploaded}/>
-                        <input type="hidden" {...register('thumbnail', {required: 'Thumbnail is required'})} />
+                        <div className="flex w-full max-w-lg flex-col mx-auto p-2 space-y-3">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleFileSelect}
+                            />
+
+                            <div className="flex flex-col   w-full items-center justify-center">
+                                {previewUrl ? (
+                                    <div className="flex justify-center items-center space-x-4">
+                                        <ImagePreview previewUrl={previewUrl} onRemove={handleRemoveImage}/>
+                                    </div>
+                                ) : (
+                                    <div
+                                        role="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="border-2 border-dashed rounded-xl p-12 text-center cursor-pointer hover:bg-gray-50 focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <p className="text-gray-500">Click or drag an image here</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <Input id="thumbnail"
+                               type="hidden" {...register('thumbnail')} />
                         {errors.thumbnail && (
                             <p className="text-sm text-red-500 mt-1">{errors.thumbnail?.message as string}</p>
                         )}
@@ -118,13 +235,13 @@ export default function BasicInfoForm({initialData, onSaveAction}: BasicInfoForm
                 </div>
 
                 <div className="flex justify-end space-x-4">
-                    <button
+                    <Button
                         type="submit"
-                        className="px-4 py-2 bg-primary text-primary-foreground rounded-md disabled:opacity-50"
+                        variant="default"
                         disabled={saving}
                     >
                         {saving ? 'Saving...' : 'Save & Continue'}
-                    </button>
+                    </Button>
                 </div>
             </Card>
         </form>

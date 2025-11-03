@@ -2,7 +2,7 @@
 * All the api request model goes here
 */
 
-import {CourseStatus, Difficulty, LessonType} from "@/types/enum";
+import {CourseStatus, Difficulty} from "@/types/enum";
 
 export type CoursesFilterParams = {
     keyword?: string;
@@ -52,27 +52,15 @@ export type CourseCreationRequest = {
     description: string;
     difficulty: Difficulty
     price: number;
-    instructorId: number;
-    instructorName: string;
+    teacherId: number;
+    teacherName: string;
     categoryId: number[];
     status: CourseStatus
-    thumbnail?: string;
+    thumbnail?: File;
     duration: string;
-    rating: number;
 }
 
 export type Chapter = {
     title: string;
     courseId: number;
-}
-
-export type Lesson = {
-    title: string;
-    type: LessonType;
-    content: string;
-    description: string;
-    duration: number;
-    videoUrl: string;
-    pdfUrl: string;
-    chapterId: number;
 }

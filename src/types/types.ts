@@ -1,4 +1,5 @@
-import {CourseCreationRequest, Lesson} from '@/types/request';
+import {CourseCreationRequest} from '@/types/request';
+import {LessonType} from "@/types/enum";
 
 export type Material = {
     id: string;
@@ -9,12 +10,23 @@ export type Material = {
 }
 
 export type ChapterWithLessons = {
+    id: string;
     title: string;
-    courseId: number;
     lessons: Lesson[];
 }
 
-type CourseTemplate = {
+export type Lesson = {
+    id: string;
+    title: string;
+    type: LessonType;
+    content: string;
+    description: string;
+    duration: number;
+    videoUrl?: string;
+    pdfUrl?: string;
+}
+
+export type CourseTemplate = {
     id: number;
     title: string;
     description: string;
