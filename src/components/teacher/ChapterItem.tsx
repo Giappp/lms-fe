@@ -4,28 +4,38 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Button} from "@/components/ui/button";
 import LessonItem from "@/components/teacher/LessonItem";
-import {Plus, Trash} from 'lucide-react';
-import React, {useState} from 'react';
+import {GripVertical, Plus, Trash} from 'lucide-react';
+import React, {forwardRef, HTMLAttributes, useState} from 'react';
 import {LessonType} from "@/types/enum";
 import {Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
 
-type Props = {
+export interface Props extends Omit<HTMLAttributes<HTMLLIElement>, 'id'> {
     chapter: ChapterWithLessons;
     index?: number;
+    ghost?: boolean;
+    handleProps?: any;
+    disableInteraction?: boolean;
     onChangeAction?: (updated: ChapterWithLessons) => void;
     onRemoveAction?: () => void;
     onAddLessonAction?: () => void;
     onUpdateLessonsAction?: (lessons: Lesson[]) => void;
-};
 
-export default function ChapterItem({
-                                        chapter,
-                                        index: _index,
-                                        onChangeAction,
-                                        onRemoveAction,
-                                        onAddLessonAction,
-                                        onUpdateLessonsAction
-                                    }: Props) {
+    wrapperRef?(node: HTMLDivElement): void;
+}
+
+export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
+                                                                  chapter,
+                                                                  index,
+                                                                  ghost,
+                                                                  wrapperRef,
+                                                                  disableInteraction,
+                                                                  style,
+                                                                  onChangeAction,
+                                                                  onRemoveAction,
+                                                                  handleProps,
+                                                                  onAddLessonAction,
+                                                                  onUpdateLessonsAction,
+                                                              }, ref) => {
     const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
     const [editingIdx, setEditingIdx] = useState<number | null>(null);
     const [open, setOpen] = useState(false);
@@ -89,19 +99,31 @@ export default function ChapterItem({
     };
 
     return (
-        <div className="w-full">
-            {/* Chapter container */}
-            <div
-                className="w-full rounded-lg bg-gray-50/60 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 p-4">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div
+            className={`w-full ${ghost ? 'opacity-50' : ''} ${disableInteraction ? 'pointer-events-none' : ''}`}
+            ref={wrapperRef}>
+            <div ref={ref}
+                 style={style}
+                 className="w-full rounded-lg bg-gray-50/60 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 p-4">
+                <div className="flex items-center gap-2 flex-1">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        {...handleProps}
+                        className="cursor-grab active:cursor-grabbing"
+                    >
+                        <GripVertical className="w-4 h-4 text-muted-foreground"/>
+                    </Button>
+
                     <div className="flex-1">
                         <Label
-                            htmlFor={`chapter-title-${chapter.id}`}>Chapter {typeof _index === 'number' ? _index + 1 : ''} Title</Label>
+                            htmlFor={`chapter-title-${chapter.id}`}>Chapter {typeof index === 'number' ? index + 1 : ''} Title</Label>
                         <Input
                             id={`chapter-title-${chapter.id}`}
                             value={chapter.title}
                             onChange={handleTitleChange}
                             placeholder="Enter chapter title"
+                            className="mt-1"
                         />
                     </div>
 
@@ -119,7 +141,6 @@ export default function ChapterItem({
                     {chapter.lessons.length === 0 ? (
                         <div className="text-sm text-muted-foreground">No lessons yet. Add one to get started.</div>
                     ) : (
-                        // Lessons panel: lighter background to contrast with chapter container
                         <div
                             className="flex flex-col overflow-auto max-h-[400px] bg-white dark:bg-[#0b1220] rounded-md p-2">
                             {chapter.lessons.map((lesson, idx) => (
@@ -180,4 +201,4 @@ export default function ChapterItem({
             </div>
         </div>
     );
-}
+});

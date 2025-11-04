@@ -13,6 +13,7 @@ export type ChapterWithLessons = {
     id: string;
     title: string;
     lessons: Lesson[];
+    collapsed?: boolean;
 }
 
 export type Lesson = {
