@@ -46,7 +46,7 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
 
     const handleAddLesson = () => {
         const newLesson: Lesson = {
-            id: Math.random().toString(36).slice(2, 9),
+            id: chapter.lessons.length + 1,
             title: 'Untitled Lesson',
             type: LessonType.VIDEO,
             orderIndex: chapter.lessons.length + 1,

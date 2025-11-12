@@ -4,7 +4,6 @@ import {
     defaultDropAnimation,
     DndContext,
     DragEndEvent,
-    DragMoveEvent,
     DragOverlay,
     DragStartEvent,
     DropAnimation,
@@ -14,9 +13,7 @@ import {
 } from "@dnd-kit/core";
 import {ChapterWithLessons, Lesson} from "@/types/types";
 import {arrayMove, SortableContext, verticalListSortingStrategy} from "@dnd-kit/sortable";
-import {setProperty} from "@/lib/utils";
 import {createPortal} from "react-dom";
-import {CSS} from "@dnd-kit/utilities";
 import {Button} from "@/components/ui/button";
 import {Plus, Save} from "lucide-react";
 import {ChapterList} from "@/components/teacher/ChapterList";
@@ -36,29 +33,8 @@ const measuring = {
     },
 };
 
-const dropAnimationConfig: DropAnimation = {
-    keyframes({transform}) {
-        return [
-            {opacity: 1, transform: CSS.Transform.toString(transform.initial)},
-            {
-                opacity: 0,
-                transform: CSS.Transform.toString({
-                    ...transform.final,
-                    x: transform.final.x + 5,
-                    y: transform.final.y + 5,
-                }),
-            },
-        ];
-    },
-    easing: 'ease-out',
-    sideEffects({active}) {
-        active.node.animate([{opacity: 0}, {opacity: 1}], {
-            duration: defaultDropAnimation.duration,
-            easing: defaultDropAnimation.easing,
-        });
-    },
-};
-
+// Use the default drop animation to avoid unused-property warnings from the checker
+const dropAnimationConfig: DropAnimation = defaultDropAnimation as DropAnimation;
 
 const adjustTranslate: Modifier = ({transform}) => {
     return {
@@ -73,28 +49,32 @@ const ChaptersTree = ({
                           onSaveAction
                       }: Props) => {
     const [chapters, setChapters] = useState<ChapterWithLessons[]>(defaultItems || [] as ChapterWithLessons[]);
-    const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-    const [overId, setOverId] = useState<UniqueIdentifier | null>(null);
-    const [offsetLeft, setOffsetLeft] = useState(0);
-    const [currentPosition, setCurrentPosition] = useState<{
-        overId: UniqueIdentifier;
-    } | null>(null);
-
     const [activeType, setActiveType] = useState<"chapter" | "lesson" | null>(null);
     const [activeItem, setActiveItem] = useState<any>(null);
 
+    // Find an item (chapter or lesson) by a dnd-kit id like "chapter:1" or "lesson:2"
     const findItemById = (id: UniqueIdentifier) => {
-        for (const chapter of chapters) {
-            if (chapter.id === id) return {type: "chapter", item: chapter};
-            const lesson = chapter.lessons.find((l) => l.id === id);
-            if (lesson) return {type: "lesson", item: lesson};
+        const idStr = id?.toString() || '';
+        const [type, idPart] = idStr.split(":");
+        const numericId = Number(idPart);
+        if (type === 'chapter') {
+            const chapter = chapters.find((c) => c.id === numericId);
+            if (chapter) return {type: 'chapter', item: chapter};
+            return null;
+        }
+        if (type === 'lesson') {
+            for (const chapter of chapters) {
+                const lesson = chapter.lessons.find((l) => l.id === numericId);
+                if (lesson) return {type: 'lesson', item: lesson, parentChapterId: chapter.id};
+            }
+            return null;
         }
         return null;
     };
 
     const handleAddChapter = () => {
         const newChapter: ChapterWithLessons = {
-            id: Math.random().toString(36).slice(2, 9),
+            id: chapters.length + 1,
             title: "Untitled Chapter",
             lessons: []
         };
@@ -121,7 +101,6 @@ const ChaptersTree = ({
                     measuring={measuring}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
-                    onDragMove={handleDragMove}
                     onDragCancel={handleDragCancel}>
             {chapters.length === 0 && (
                 <div className="p-6 border-2 border-dashed rounded-lg text-center text-muted-foreground">
@@ -143,7 +122,8 @@ const ChaptersTree = ({
                     >
                         {activeItem ? (
                             activeType === "chapter" ? (
-                                <ChapterList chapter={activeItem} id={activeItem.id}/>
+                                // When rendering the overlay for a chapter, pass the same id format used by SortableContext
+                                <ChapterList chapter={activeItem} id={`chapter:${activeItem.id}`}/>
                             ) : (
                                 <div className="p-2 rounded-lg bg-gray-100 shadow-md border border-gray-300">
                                     {activeItem.title}
@@ -177,40 +157,39 @@ const ChaptersTree = ({
         const {active} = event;
         const found = findItemById(active.id);
         if (found) {
-            setActiveId(active.id);
             setActiveType(found.type as "chapter" | "lesson");
             setActiveItem(found.item);
         }
     }
 
-    function handleDragMove({delta}: DragMoveEvent) {
-        setOffsetLeft(delta.x);
-    }
-
     function handleDragEnd({active, over}: DragEndEvent) {
         resetState();
         if (!over || active.id === over.id) return;
-        const [activeType, activeId] = active.id.toString().split(':');
-        const [overType, overId] = over.id.toString().split(':');
 
-        if (activeType === "chapter" && overType === "chapter") {
-            const oldIndex = chapters.findIndex((c) => c.id === activeId);
-            const newIndex = chapters.findIndex((c) => c.id === overId);
-            setChapters(arrayMove(chapters, oldIndex, newIndex));
+        const [overTypeStr, overIdPart] = over.id.toString().split(':');
+        const [activeTypeStr, activeIdPart] = active.id.toString().split(':');
+        const overIdNum = Number(overIdPart);
+        const activeIdNum = Number(activeIdPart);
+
+        if (activeTypeStr === "chapter" && overTypeStr === "chapter") {
+            const oldIndex = chapters.findIndex((c) => c.id === activeIdNum);
+            const newIndex = chapters.findIndex((c) => c.id === overIdNum);
+            if (oldIndex === -1 || newIndex === -1) return;
+            setChapters((prev) => arrayMove(prev, oldIndex, newIndex));
             return;
         }
 
-        if (activeType === "lesson" && overType === "lesson") {
+        if (activeTypeStr === "lesson" && overTypeStr === "lesson") {
             const chapter = chapters.find((c) =>
-                c.lessons.some((l) => l.id === activeId)
+                c.lessons.some((l) => l.id === activeIdNum)
             );
             const overChapter = chapters.find((c) =>
-                c.lessons.some((l) => l.id === overId)
+                c.lessons.some((l) => l.id === overIdNum)
             );
             if (!chapter || !overChapter) return;
 
-            const oldIndex = chapter.lessons.findIndex((l) => l.id === activeId);
-            const newIndex = overChapter.lessons.findIndex((l) => l.id === overId);
+            const oldIndex = chapter.lessons.findIndex((l) => l.id === activeIdNum);
+            const newIndex = overChapter.lessons.findIndex((l) => l.id === overIdNum);
 
             if (chapter.id === overChapter.id) {
                 // Reorder lessons within same chapter
@@ -226,11 +205,12 @@ const ChaptersTree = ({
             } else {
                 // (Optional) Move lessons between chapters
                 const movedLesson = chapter.lessons[oldIndex];
+                if (!movedLesson) return;
                 const updated = chapters.map((c) => {
                     if (c.id === chapter.id) {
                         return {
                             ...c,
-                            lessons: c.lessons.filter((l) => l.id !== activeId),
+                            lessons: c.lessons.filter((l) => l.id !== activeIdNum),
                         };
                     }
                     if (c.id === overChapter.id) {
@@ -246,24 +226,14 @@ const ChaptersTree = ({
     }
 
     function resetState() {
-        setOverId(null);
-        setActiveId(null);
-        setOffsetLeft(0);
-        setCurrentPosition(null);
+        setActiveItem(null);
+        setActiveType(null);
 
         document.body.style.setProperty('cursor', '');
     }
 
     function handleDragCancel() {
         resetState();
-    }
-
-    function handleCollapse(id: UniqueIdentifier) {
-        setChapters((items) =>
-            setProperty(items, id, 'collapsed', (value) => {
-                return !value;
-            }),
-        );
     }
 }
 export default ChaptersTree

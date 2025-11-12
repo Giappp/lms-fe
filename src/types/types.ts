@@ -2,7 +2,7 @@ import {CourseCreationRequest} from '@/types/request';
 import {LessonType} from "@/types/enum";
 
 export type Material = {
-    id: string;
+    id: number;
     name: string;
     type: 'video' | 'pdf' | 'link';
     url: string;
@@ -10,20 +10,20 @@ export type Material = {
 }
 
 export type ChapterWithLessons = {
-    id: string;
+    id: number;
     title: string;
     lessons: Lesson[];
     collapsed?: boolean;
 }
 
 export type Lesson = {
-    id: string;
+    id: number;
     title: string;
     content: string;
     description: string;
     duration: number;
     orderIndex?: number;
-    chapterId?: string;
+    chapterId?: number;
     type: LessonType;
     materials?: File[];
 }
