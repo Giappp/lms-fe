@@ -25,21 +25,21 @@ export class Constants {
         LIST: "/api/courses/search",
         TOP_RATED: "/api/courses/top-rated",
         MY_COURSES: "/api/courses/my-courses",
-        DETAIL: "/api/courses/:id",
+        DETAIL: "/api/courses",
         CREATE: "/api/courses",
-        UPDATE: "/api/courses/:id",
-        DELETE: "/api/courses/:id"
+        UPDATE: "/api/courses",
+        DELETE: "/api/courses"
     };
 
     static readonly APP_ROUTES = {
         STUDENT: {
             DASHBOARD: "/student/dashboard",
-            COURSES: "/student/courses",
+            COURSES: "/student/my-courses",
             QUIZZES: "/student/quizzes"
         },
         TEACHER: {
             DASHBOARD: "/teacher/dashboard",
-            COURSES: "/teacher/courses",
+            COURSES: "/teacher/my-courses",
             QUIZZES: "/teacher/quizzes"
         },
         AUTH: {

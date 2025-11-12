@@ -19,7 +19,7 @@ import {createPortal} from "react-dom";
 import {CSS} from "@dnd-kit/utilities";
 import {Button} from "@/components/ui/button";
 import {Plus, Save} from "lucide-react";
-import {SortableChapterItem} from "@/components/teacher/SortableChapterItem";
+import {ChapterList} from "@/components/teacher/ChapterList";
 
 type Props = {
     collapsible?: boolean;
@@ -67,7 +67,7 @@ const adjustTranslate: Modifier = ({transform}) => {
     };
 };
 
-const SortableTree = ({
+const ChaptersTree = ({
                           defaultItems,
                           indicator = false,
                           onSaveAction
@@ -86,7 +86,7 @@ const SortableTree = ({
     const findItemById = (id: UniqueIdentifier) => {
         for (const chapter of chapters) {
             if (chapter.id === id) return {type: "chapter", item: chapter};
-            const lesson = chapter.lessons.find((l) => l.title === id);
+            const lesson = chapter.lessons.find((l) => l.id === id);
             if (lesson) return {type: "lesson", item: lesson};
         }
         return null;
@@ -95,7 +95,7 @@ const SortableTree = ({
     const handleAddChapter = () => {
         const newChapter: ChapterWithLessons = {
             id: Math.random().toString(36).slice(2, 9),
-            title: "",
+            title: "Untitled Chapter",
             lessons: []
         };
         setChapters(prev => [...prev, newChapter]);
@@ -114,7 +114,7 @@ const SortableTree = ({
     };
 
     const handleSave = () => {
-        onSaveAction(chapters);
+        onSaveAction?.(chapters as ChapterWithLessons[]);
     };
     return (
         <DndContext collisionDetection={closestCenter}
@@ -131,10 +131,10 @@ const SortableTree = ({
             <SortableContext items={chapters.map((c) => `chapter:${c.id}`)}
                              strategy={verticalListSortingStrategy}>
                 {chapters.map((chapter, index) => (
-                    <SortableChapterItem key={chapter.id} id={`chapter:${chapter.id}`} chapter={chapter} index={index}
-                                         onChangeAction={(updated) => handleUpdateChapter(index, updated)}
-                                         onRemoveAction={() => handleRemoveChapter(index)}
-                                         onUpdateLessonsAction={(lessons) => handleUpdateLessons(index, lessons)}/>
+                    <ChapterList key={chapter.id} id={`chapter:${chapter.id}`} chapter={chapter} index={index}
+                                 onChangeAction={(updated) => handleUpdateChapter(index, updated)}
+                                 onRemoveAction={() => handleRemoveChapter(index)}
+                                 onUpdateLessonsAction={(lessons) => handleUpdateLessons(index, lessons)}/>
                 ))}
                 {createPortal(
                     <DragOverlay
@@ -143,7 +143,7 @@ const SortableTree = ({
                     >
                         {activeItem ? (
                             activeType === "chapter" ? (
-                                <SortableChapterItem chapter={activeItem} id={activeItem.id}/>
+                                <ChapterList chapter={activeItem} id={activeItem.id}/>
                             ) : (
                                 <div className="p-2 rounded-lg bg-gray-100 shadow-md border border-gray-300">
                                     {activeItem.title}
@@ -266,4 +266,4 @@ const SortableTree = ({
         );
     }
 }
-export default SortableTree
+export default ChaptersTree

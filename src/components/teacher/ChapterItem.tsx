@@ -39,7 +39,6 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
     const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
     const [editingIdx, setEditingIdx] = useState<number | null>(null);
     const [open, setOpen] = useState(false);
-
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const updated = {...chapter, title: e.target.value};
         onChangeAction?.(updated);
@@ -48,8 +47,10 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
     const handleAddLesson = () => {
         const newLesson: Lesson = {
             id: Math.random().toString(36).slice(2, 9),
-            title: '',
+            title: 'Untitled Lesson',
             type: LessonType.VIDEO,
+            orderIndex: chapter.lessons.length + 1,
+            chapterId: chapter.id,
             content: '',
             description: '',
             duration: 0
@@ -100,24 +101,24 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
 
     return (
         <div
-            className={`w-full ${ghost ? 'opacity-50' : ''} ${disableInteraction ? 'pointer-events-none' : ''}`}
+            className={`w-full h-full ${ghost ? 'opacity-50' : ''} ${disableInteraction ? 'pointer-events-none' : ''}`}
             ref={wrapperRef}>
             <div ref={ref}
                  style={style}
                  className="w-full rounded-lg bg-gray-50/60 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 p-4">
-                <div className="flex items-center gap-2 flex-1">
+                <div className="flex justify-center items-center gap-2 flex-1">
                     <Button
                         variant="ghost"
-                        size="icon"
+                        size="sm"
                         {...handleProps}
                         className="cursor-grab active:cursor-grabbing"
                     >
                         <GripVertical className="w-4 h-4 text-muted-foreground"/>
                     </Button>
 
-                    <div className="flex-1">
+                    <div className="flex-1 justify-center items-center gap-2">
                         <Label
-                            htmlFor={`chapter-title-${chapter.id}`}>Chapter {typeof index === 'number' ? index + 1 : ''} Title</Label>
+                            htmlFor={`chapter-title-${chapter.id}`}>Chapter {typeof index === 'number' ? index + 1 : ''}</Label>
                         <Input
                             id={`chapter-title-${chapter.id}`}
                             value={chapter.title}
@@ -125,15 +126,14 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
                             placeholder="Enter chapter title"
                             className="mt-1"
                         />
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-2 md:pt-0">
-                        <Button variant="default" size="sm" onClick={handleAddLesson} title="Add lesson">
-                            <Plus className="w-4 h-4"/> Add Lesson
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={onRemoveAction} title="Remove chapter">
-                            <Trash className="w-4 h-4"/> Remove
-                        </Button>
+                        <div className="mt-3 flex items-center gap-2">
+                            <Button variant="default" size="sm" onClick={handleAddLesson} title="Add lesson">
+                                <Plus className="w-4 h-4"/> Add Lesson
+                            </Button>
+                            <Button variant="destructive" size="sm" onClick={onRemoveAction} title="Remove chapter">
+                                <Trash className="w-4 h-4"/> Remove
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
@@ -142,7 +142,7 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
                         <div className="text-sm text-muted-foreground">No lessons yet. Add one to get started.</div>
                     ) : (
                         <div
-                            className="flex flex-col overflow-auto max-h-[400px] bg-white dark:bg-[#0b1220] rounded-md p-2">
+                            className="flex flex-col overflow-auto max-h-[300px] bg-white dark:bg-[#0b1220] rounded-md p-2">
                             {chapter.lessons.map((lesson, idx) => (
                                 <div
                                     key={lesson.id}
@@ -151,7 +151,7 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
                                     <div className="rounded-md bg-white dark:bg-[#071123] p-2 flex items-center gap-3">
                                         <div className="flex-1 min-w-0">
                                             <div
-                                                className="text-sm font-medium truncate">{lesson.title || 'Untitled lesson'}</div>
+                                                className="text-sm font-medium truncate">{typeof index === 'number' ? (index + 1 + '.' + (idx + 1)) : ''} {lesson.title}</div>
                                             <div className="text-xs text-muted-foreground flex items-center gap-3 mt-1">
                                                 <span
                                                     className="inline-flex items-center gap-2">{renderTypeIcon(lesson.type)}</span>

@@ -16,7 +16,7 @@ import {axiosInstance} from "@/api/core/axiosInstance";
 import {Constants} from "@/constants";
 import {SignUpData} from "@/types";
 import {useRouter} from "next/navigation";
-import {signupSchema} from "@/app/(auth)/signup/types";
+import {signupSchema} from "@/types/schemas";
 
 
 type FormData = z.infer<typeof signupSchema>;

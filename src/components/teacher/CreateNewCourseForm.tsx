@@ -11,6 +11,10 @@ import ReviewPublish from "@/components/teacher/ReviewPublish";
 import {Button} from "@/components/ui/button";
 import {useAuth} from "@/hooks/useAuth";
 import {CourseStatus} from "@/types/enum";
+import {CourseResponse} from '@/types';
+import {CourseCreationRequest} from '@/types/request';
+import {toast} from "sonner";
+import {useCourses} from "@/hooks/useCourses";
 
 type StepId = 'template' | 'basic-info' | 'lessons' | 'materials' | 'review';
 
@@ -30,14 +34,18 @@ const steps: Step[] = [
 
 const CreateNewCourseForm = () => {
     const {user} = useAuth();
+    const {createCourse, updateCourse, isError} = useCourses();
     const [currentStep, setCurrentStep] = useState<StepId>('template');
+    const [basicInfoErrors, setBasicInfoErrors] = useState<Record<string, string> | null>(null);
     const [courseData, setCourseData] = useState<CourseFormData>({
         template: null,
         basicInfo: {
             teacherId: user?.id,
             teacherName: user?.fullName,
             status: CourseStatus.DRAFT,
+            submitted: false,
         },
+        courseId: undefined,
         chapters: [],
         materials: [],
     });
@@ -60,8 +68,47 @@ const CreateNewCourseForm = () => {
         }
     };
 
-    function handleChangeTab(id: StepId) {
-        console.log('Changing tab to:', id);
+    const onSaveBasicInfo = async (data: CourseCreationRequest) => {
+        // Build FormData and call create/update via CourseService
+        const formData = new FormData();
+        formData.append('request', new Blob([JSON.stringify(data)], {type: 'application/json'}));
+        if (data.thumbnail) formData.append('thumbnail', data.thumbnail as File);
+
+        // Decide if updating existing course or creating new
+        try {
+            let result = null;
+            if (courseData.courseId) {
+                result = await updateCourse(courseData.courseId, formData);
+            } else {
+                result = await createCourse(formData);
+            }
+
+            if (!result.success) {
+                // surface server validation errors back to BasicInfoForm
+                setBasicInfoErrors(result.errors || null);
+                toast.error(result.message || 'Failed to save course');
+                return;
+            }
+
+            // clear previous validation errors on success
+            setBasicInfoErrors(null);
+
+            const saved = result.data as CourseResponse | undefined;
+            if (saved) {
+                setCourseData({
+                    ...courseData,
+                    basicInfo: {
+                        ...saved,
+                        submitted: true,
+                    } as any,
+                    courseId: saved.id,
+                });
+                handleNext();
+            }
+        } catch (err) {
+            console.error('Error saving basic info', err);
+            toast.error('An unexpected error occurred while saving the course.');
+        }
     }
 
     return (
@@ -79,7 +126,6 @@ const CreateNewCourseForm = () => {
                                 key={step.id}
                                 value={step.id}
                                 disabled={step.touched}
-                                onClick={() => handleChangeTab(step.id)}
                                 className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                             >
                                 {step.title}
@@ -99,9 +145,9 @@ const CreateNewCourseForm = () => {
                     <TabsContent value="basic-info">
                         <BasicInfoForm
                             initialData={courseData.basicInfo}
-                            onSaveAction={(basicInfo) => {
-                                setCourseData({...courseData, basicInfo});
-                                handleNext();
+                            serverErrors={basicInfoErrors}
+                            onSaveAction={(response) => {
+                                onSaveBasicInfo(response);
                             }}
                         />
                     </TabsContent>
@@ -112,6 +158,7 @@ const CreateNewCourseForm = () => {
                                 setCourseData({...courseData, chapters});
                                 handleNext();
                             }}
+                            initial={courseData.chapters}
                         />
                     </TabsContent>
 

@@ -33,8 +33,8 @@ const menuGroups = [
     {
         title: "Courses",
         subMenus: [
-            {title: "Your Courses", url: "/teacher/courses", icon: faBookOpen},
-            {title: "Create Course", url: "/teacher/courses/new", icon: faBook},
+            {title: "My Courses", url: "/teacher/my-courses", icon: faBookOpen},
+            {title: "Publish Course", url: "/teacher/create-curriculum", icon: faBook},
         ],
     },
     {

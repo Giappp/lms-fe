@@ -57,7 +57,17 @@ export type CourseCreationRequest = {
     categoryId: number[];
     status: CourseStatus
     thumbnail?: File;
-    duration: string;
+    thumbnailUrl?: string;
+}
+
+export type CourseUpdateRequest = {
+    title: string;
+    description: string;
+    difficulty: Difficulty
+    price: number;
+    status: CourseStatus
+    categoryId: number[];
+    thumbnail?: File;
 }
 
 export type Chapter = {

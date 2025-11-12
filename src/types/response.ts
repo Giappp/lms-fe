@@ -19,27 +19,6 @@ export type AuthResponse = {
     refreshToken: string;
 }
 
-export type CoursesPage = {
-    courses: Array<Course>;
-    total: number;
-    currentPage: number;
-    totalPages: number;
-}
-
-export type Course = {
-    id: number
-    title: string
-    description: string
-    thumbnail: string
-    teacherName: string
-    teacherId: number
-    difficulty: Difficulty
-    price: number
-    rating: number
-    status: CourseStatus
-    category: Category[]
-}
-
 export type Category = {
     name: string;
     description: string;
@@ -48,7 +27,7 @@ export type Category = {
 }
 
 export type CourseTableContent = {
-    course: Course;
+    course: CourseResponse;
     enrolledCount: number;
 }
 
@@ -78,4 +57,19 @@ export type Question = {
     description: string
     options: string[]
     answer: string[]
+}
+
+export interface CourseResponse {
+    id: number;
+    title: string;
+    description: string;
+    thumbnailUrl: string;
+    teacherName: string;
+    teacherId: number;
+    difficulty: Difficulty;
+    price: number;
+    status: CourseStatus;
+    categories?: Category[];
+    createdAt: Date;
+    updatedAt: Date;
 }

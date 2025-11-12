@@ -19,12 +19,13 @@ export type ChapterWithLessons = {
 export type Lesson = {
     id: string;
     title: string;
-    type: LessonType;
     content: string;
     description: string;
     duration: number;
-    videoUrl?: string;
-    pdfUrl?: string;
+    orderIndex?: number;
+    chapterId?: string;
+    type: LessonType;
+    materials?: File[];
 }
 
 export type CourseTemplate = {
@@ -37,7 +38,8 @@ export type CourseTemplate = {
 // Form data during creation
 export type CourseFormData = {
     template: CourseTemplate | null;
-    basicInfo: Partial<CourseCreationRequest> | null;
+    basicInfo: Partial<CourseCreationRequest> & { submitted: boolean } | null;
+    courseId?: number;
     chapters: ChapterWithLessons[];
     materials: Material[];
 }
@@ -62,4 +64,11 @@ export interface MaterialsEditorProps {
 
 export interface ReviewPublishProps {
     courseData: ReviewCourseData;
+}
+
+export interface PaginatedResponse<T> {
+    items: T[];
+    total: number;
+    page: number;
+    size: number;
 }

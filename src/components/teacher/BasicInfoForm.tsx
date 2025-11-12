@@ -7,20 +7,20 @@ import {Label} from '@/components/ui/label';
 import {Textarea} from '@/components/ui/textarea';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import {CourseStatus, Difficulty} from '@/types/enum';
-import {CourseCreationRequest} from '@/types/request';
+import {CourseCreationRequest, CourseCreationRequest as CourseCreationRequestType} from '@/types/request';
 import React, {useEffect, useRef, useState} from 'react';
 import ImagePreview from "@/components/teacher/ImagePreview";
-import {axiosInstance} from "@/api/core/axiosInstance";
-import {isAxiosError} from "axios";
-import {toast} from "sonner";
 import {Button} from "@/components/ui/button";
 
 export interface BasicInfoFormProps {
-    initialData: Partial<CourseCreationRequest> | null
-    onSaveAction: (data: CourseCreationRequest) => void;
+    initialData: Partial<CourseCreationRequest> & { submitted?: boolean } | null
+    // Emit raw form data to parent; parent will handle create/update
+    onSaveAction: (data: CourseCreationRequestType) => void;
+    // Optional server-side validation errors mapped by field name
+    serverErrors?: Record<string, string> | null;
 }
 
-export default function BasicInfoForm({initialData, onSaveAction}: BasicInfoFormProps) {
+export default function BasicInfoForm({initialData, onSaveAction, serverErrors}: BasicInfoFormProps) {
     const [saving, setSaving] = useState(false);
     const {
         register,
@@ -28,18 +28,34 @@ export default function BasicInfoForm({initialData, onSaveAction}: BasicInfoForm
         control,
         formState: {errors},
         setValue,
-        setError
+        setError,
+        clearErrors,
     } = useForm<Partial<CourseCreationRequest>>({
         defaultValues: initialData || {
             status: CourseStatus.DRAFT,
         },
     });
 
+    // If parent passes server-side validation errors, map them to form fields
+    React.useEffect(() => {
+        if (serverErrors && Object.keys(serverErrors).length > 0) {
+            Object.entries(serverErrors).forEach(([key, msg]) => {
+                setError(key as any, {type: 'server', message: msg});
+            });
+        } else {
+            // clear previous server errors when there are none
+            clearErrors();
+        }
+    }, [serverErrors, setError, clearErrors]);
+
     useEffect(() => {
         if (initialData?.thumbnail) {
             setPreviewUrl(URL.createObjectURL(initialData.thumbnail));
         }
-    }, [initialData?.thumbnail]);
+        if (initialData?.thumbnailUrl) {
+            setPreviewUrl(initialData.thumbnailUrl);
+        }
+    }, [initialData?.thumbnail, initialData?.thumbnailUrl]);
 
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,49 +82,9 @@ export default function BasicInfoForm({initialData, onSaveAction}: BasicInfoForm
     const onSubmit = async (data: Partial<CourseCreationRequest>) => {
         setSaving(true);
         try {
-            setSaving(true);
-            const formData = new FormData();
-            formData.append(
-                'request',
-                new Blob([JSON.stringify(data)], {type: 'application/json'})
-            );
-
-            const file = fileInputRef.current?.files?.[0];
-            if (file) {
-                formData.append('thumbnail', file);
-            }
-            const response = await axiosInstance.post('/api/courses', formData, {
-                headers: {'Content-Type': 'multipart/form-data'},
-            });
-            if (response.status === 200) {
-                toast.success("Course created successfully");
-            } else {
-                console.log(response);
-                toast.error("Failed to create course");
-            }
-            onSaveAction(data as CourseCreationRequest);
-        } catch (err: any) {
-            if (isAxiosError(err)) {
-                const backendMessage = err.response?.data?.message;
-                const errors = err.response?.data?.errors;
-                console.log(err.response?.data);
-                console.log(errors);
-                if (backendMessage) {
-                    toast.error(backendMessage);
-                }
-                if (errors) {
-                    console.log(errors);
-                    Object.keys(errors).forEach(key => {
-                        const message = errors[key];
-                        setError(key as keyof Partial<CourseCreationRequest>, {
-                            type: 'server',
-                            message: message as string
-                        });
-                    });
-                }
-            }
+            // Emit raw data (including thumbnail File if selected) to parent
+            onSaveAction?.(data as CourseCreationRequestType);
         } finally {
-            abortController.current = null;
             setSaving(false);
         }
     };
@@ -184,19 +160,6 @@ export default function BasicInfoForm({initialData, onSaveAction}: BasicInfoForm
                                 <p className="text-sm text-red-500 mt-1">{errors.price?.message as string}</p>
                             )}
                         </div>
-                    </div>
-
-                    <div>
-                        <Label htmlFor="duration">Estimated Duration</Label>
-                        <Input
-                            id="duration"
-                            className={errors.duration ? 'border-red-500' : ''}
-                            {...register('duration', {required: 'Duration is required'})}
-                            placeholder="e.g., 2 weeks, 10 hours"
-                        />
-                        {errors.duration && (
-                            <p className="text-sm text-red-500 mt-1">{errors.duration?.message as string}</p>
-                        )}
                     </div>
 
                     <div>

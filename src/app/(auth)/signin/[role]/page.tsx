@@ -10,7 +10,7 @@ type Role = "student" | "teacher";
 const roleMeta: Record<Role, { title: string; subtitle: string; accent: string; icon: any; quote: string }> = {
     student: {
         title: "Sign in as Student",
-        subtitle: "Access your courses, assignments, and grades.",
+        subtitle: "Access your my-courses, assignments, and grades.",
         accent: "text-sky-600",
         icon: faUserGraduate,
         quote: "Learning never exhausts the mind. — Leonardo da Vinci",

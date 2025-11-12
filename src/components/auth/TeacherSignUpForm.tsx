@@ -12,7 +12,7 @@ import {toast} from "sonner";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faGithub, faGoogle} from "@fortawesome/free-brands-svg-icons";
 import Link from "next/link";
-import {signupSchema} from "@/app/(auth)/signup/types";
+import {signupSchema} from "@/types/schemas";
 import {SignUpData} from "@/types";
 import {axiosInstance} from "@/api/core/axiosInstance";
 import {Constants} from "@/constants";

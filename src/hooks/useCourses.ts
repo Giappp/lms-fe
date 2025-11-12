@@ -1,43 +1,74 @@
-import {CoursesFilterParams, CoursesPage} from "@/types";
-import useSWR, {mutate} from "swr";
-import {buildParamsFromOptions} from "@/api/core/utils";
-import {axiosInstance} from "@/api/core/axiosInstance";
-import axios from "axios";
+import useSWR from "swr";
 import {Constants} from "@/constants";
+import {PaginatedResponse} from "@/types/types";
+import {CourseResponse} from "@/types";
+import {CourseService} from "@/api/services/course-service";
+import {CourseStatus} from "@/types/enum";
+import {buildParamsFromOptions} from '@/api/core/utils';
 
-const fetcher = async (url: string) => {
-    try {
-        const res = await axiosInstance.get(url).then(res => res.data);
-        return res.data;
-    } catch (err) {
-        if (axios.isAxiosError(err)) {
-            const errorMessage = err.response?.data?.message ?? "Unknown error";
-            console.log(errorMessage);
+export interface CourseFilter {
+    page?: number;
+    size?: number;
+    teacherId?: number;
+    status?: CourseStatus;
+    q?: string;
+}
+
+function toQueryString(paramsObj: Record<string, any> = {}) {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(paramsObj)) {
+        if (v === undefined || v === null) continue;
+        if (Array.isArray(v)) {
+            v.forEach((item) => qs.append(k, String(item)));
+        } else {
+            qs.append(k, String(v));
         }
-        throw new Error("Failed to fetch courses");
     }
-};
+    return qs.toString();
+}
 
-export const useCourses = (filters: CoursesFilterParams) => {
-    const queryString = buildParamsFromOptions(filters);
-    console.log(queryString);
-    const {
-        data,
-        isLoading
-    } = useSWR<CoursesPage | null>(`${Constants.COURSES_ROUTES.LIST}?${queryString}`, fetcher, {
-        keepPreviousData: true,
-        revalidateOnFocus: false,
-        fallbackData: {courses: [], total: 0, currentPage: 1, totalPages: 1}
-    })
+export function useCourses(filters?: CourseFilter) {
+    const opts = {
+        page: filters?.page ?? 1,
+        size: filters?.size ?? 20,
+        teacherId: filters?.teacherId,
+        status: filters?.status,
+        q: filters?.q,
+    } as any;
 
-    const refreshCourses = async () => {
-        await mutate(`/courses?${queryString}`)
-    }
+    const params = buildParamsFromOptions(opts);
+    const queryString = toQueryString(params);
+    const key = `${Constants.COURSES_ROUTES.LIST}?${queryString}`;
+
+    const {data, error, isLoading, mutate} = useSWR<PaginatedResponse<CourseResponse> | null>(
+        key,
+        {
+            revalidateOnFocus: false,
+            fallbackData: {items: [], total: 0, page: opts.page, size: opts.size},
+        }
+    );
+
+    const createCourse = async (courseData: FormData) => {
+        const result = await CourseService.createCourseWithBasicInfo(courseData);
+        if ((result as any)?.success) await mutate();
+        return result;
+    };
+
+    const updateCourse = async (courseId: number, courseData: FormData) => {
+        const result = await CourseService.updateCourseBasicInfo(courseId, courseData);
+        if ((result as any)?.success) await mutate();
+        return result;
+    };
 
     return {
-        courses: data?.courses || [],
-        totalPages: data?.totalPages || 1,
+        courses: data?.items ?? [],
+        total: data?.total ?? 0,
+        page: data?.page ?? opts.page,
+        size: data?.size ?? opts.size,
         isLoading,
-        refreshCourses
-    }
+        isError: !!error,
+        createCourse,
+        updateCourse,
+        mutate,
+    };
 }

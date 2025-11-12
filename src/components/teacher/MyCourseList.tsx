@@ -2,7 +2,7 @@ import React from 'react'
 import useSWR from "swr";
 
 const MyCourseList = () => {
-    const {data,} = useSWR('/api/teacher/courses');
+    const {data,} = useSWR('/api/teacher/my-courses');
     return (
         <div>MyCourseList</div>
     )
