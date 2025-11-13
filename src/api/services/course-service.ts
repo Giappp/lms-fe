@@ -3,6 +3,7 @@ import {axiosInstance} from "@/api/core/axiosInstance";
 import {buildParamsFromOptions} from "@/api/core/utils";
 import {apiCall} from "@/api/core/apiCall";
 import {Constants} from "@/constants";
+import {ChapterWithLessons} from "@/types/types";
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -38,8 +39,15 @@ export const CourseService = {
     // Update course curriculum (chapters / lessons)
     // Assumes backend endpoint: PUT /api/courses/{id}/curriculum accepts JSON body { chapters: [...] }
     updateCourseCurriculum: async (courseId: number, curriculumPayload: any) => {
-        return await apiCall(() =>
-            axiosInstance.put(`${Constants.COURSES_ROUTES.UPDATE}/${courseId}/curriculum`, curriculumPayload)
+        return await apiCall<ChapterWithLessons[]>(() =>
+            axiosInstance.put(`${Constants.COURSES_ROUTES.UPDATE}/${courseId}`, curriculumPayload)
         );
+    },
+
+    getChaptersWithLessons: async (courseId: number) => {
+        return await apiCall<ChapterWithLessons[]>(() => axiosInstance.get(`${Constants.COURSES_ROUTES.DETAIL}/${courseId}`));
+    },
+    deleteCourse: async (courseId: number) => {
+        return await apiCall(() => axiosInstance.delete(`${Constants.COURSES_ROUTES.DELETE}/${courseId}`));
     }
 };

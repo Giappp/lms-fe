@@ -5,6 +5,8 @@ import {CourseResponse} from "@/types";
 import {CourseService} from "@/api/services/course-service";
 import {CourseStatus} from "@/types/enum";
 import {buildParamsFromOptions} from '@/api/core/utils';
+import {useCallback} from "react";
+import {swrFetcher} from "@/lib/swrFetcher";
 
 export interface CourseFilter {
     page?: number;
@@ -38,27 +40,77 @@ export function useCourses(filters?: CourseFilter) {
 
     const params = buildParamsFromOptions(opts);
     const queryString = toQueryString(params);
-    const key = `${Constants.COURSES_ROUTES.LIST}?${queryString}`;
+    const key = queryString ? `${Constants.COURSES_ROUTES.LIST}?${queryString}` : Constants.COURSES_ROUTES.LIST;
 
-    const {data, error, isLoading, mutate} = useSWR<PaginatedResponse<CourseResponse> | null>(
+    const {data, error, isLoading, isValidating, mutate} = useSWR<PaginatedResponse<CourseResponse> | null>(
         key,
+        swrFetcher,
         {
             revalidateOnFocus: false,
-            fallbackData: {items: [], total: 0, page: opts.page, size: opts.size},
+            revalidateOnReconnect: true,
+            shouldRetryOnError: true,
+            errorRetryCount: 3,
+            dedupingInterval: 2000,
         }
     );
 
-    const createCourse = async (courseData: FormData) => {
-        const result = await CourseService.createCourseWithBasicInfo(courseData);
-        if ((result as any)?.success) await mutate();
-        return result;
-    };
+    const createCourse = useCallback(async (courseData: FormData) => {
+        try {
+            const result = await CourseService.createCourseWithBasicInfo(courseData);
 
-    const updateCourse = async (courseId: number, courseData: FormData) => {
-        const result = await CourseService.updateCourseBasicInfo(courseId, courseData);
-        if ((result as any)?.success) await mutate();
-        return result;
-    };
+            if (result?.success) {
+                // Optimistically update the cache
+                await mutate();
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Failed to create course:', error);
+            throw error;
+        }
+    }, [mutate]);
+
+    const updateCourse = useCallback(async (courseId: number, courseData: FormData) => {
+        try {
+            const result = await CourseService.updateCourseBasicInfo(courseId, courseData);
+
+            if (result?.success) {
+                // Optimistically update the cache
+                await mutate();
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Failed to update course:', error);
+            throw error;
+        }
+    }, [mutate]);
+
+    const deleteCourse = useCallback(async (courseId: number) => {
+        try {
+            const result = await CourseService.deleteCourse(courseId);
+
+            if (result?.success) {
+                // Optimistic update: remove from local cache
+                await mutate(
+                    (currentData) => {
+                        if (!currentData) return currentData;
+                        return {
+                            ...currentData,
+                            items: currentData.items.filter(course => course.id !== courseId),
+                            total: currentData.total - 1,
+                        };
+                    },
+                    {revalidate: true}
+                );
+            }
+
+            return result;
+        } catch (error) {
+            console.error('Failed to delete course:', error);
+            throw error;
+        }
+    }, [mutate]);
 
     return {
         courses: data?.items ?? [],
@@ -66,9 +118,13 @@ export function useCourses(filters?: CourseFilter) {
         page: data?.page ?? opts.page,
         size: data?.size ?? opts.size,
         isLoading,
+        isValidating,
         isError: !!error,
+        error,
         createCourse,
         updateCourse,
+        deleteCourse,
         mutate,
+        refresh: () => mutate(),
     };
 }

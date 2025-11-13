@@ -1,135 +1,74 @@
-# AI Development Instructions for LMS Frontend
+# AI Development Instructions — concise & actionable
 
-## Project Architecture
+Purpose: give an AI coding agent the exact, discoverable patterns and files needed to be productive in this LMS frontend (Next.js 15, React 19, TypeScript).
 
-This is a Next.js-based Learning Management System (LMS) frontend with the following key characteristics:
-
-### Directory Structure
-
-- `/src/app/` - Next.js app router pages and layouts
-- `/src/components/` - Reusable UI components, primarily using shadcn/ui
-- `/src/api/` - API services and axios configuration
-- `/src/hooks/` - Custom React hooks for data fetching and state management
-- `/src/types/` - TypeScript type definitions
-- `/src/lib/` - Utility functions and helpers
-
-### Key Patterns
-
-1. **Data Fetching**
-
-```typescript
-// Use SWR hooks for data fetching
-const useCourses = (filters: CoursesFilterParams) => {
-    const {data, error, isLoading} = useSWR<CourseResponse>(
-        `/courses?${queryString}`,
-        fetcher
-    );
-    // ...
-}
-```
-
-2. **Component Organization**
-
-- Pages are in `src/app/` following Next.js app router conventions
-- UI components use shadcn/ui with Tailwind CSS
-- Component hierarchy: Layout -> Page -> Feature Components -> UI Components
-
-3. **State Management**
-
-- SWR for server state
-- React hooks for local state
-- Context for auth and theme state
-
-## Development Workflows
-
-1. **Running the Project**
+## Quick start
 
 ```bash
-npm run dev  # Start development server
+npm run dev        # dev server (Next.js + Turbopack)
+npm run build      # production build
+npm start          # run production
+npm run lint       # ESLint
+npm run backend    # json-server mock (db.json) on :8080
 ```
 
-2. **Adding New UI Components**
+## Read these files first (big picture)
+- `src/app/` — Next.js app router (route groups: `(auth)`, `(dashboard)`, `(landing-page)`).
+- `src/contexts/auth-context.tsx` — central auth state + SWR user fetch.
+- `src/api/core/axiosInstance.ts` — Authorization header injection and token refresh queue.
+- `src/hooks/` — SWR-based hooks (e.g. `useCourses.ts`, `useAuth.ts`).
+- `src/api/services/` — API wrappers that call `axiosInstance`.
 
-```bash
-npx shadcn-ui@latest add [component-name]
+## Patterns to follow (exactly)
+- SWR key must include full path + query string. Example (see `src/hooks/useCourses.ts`):
+
+```ts
+const key = `${Constants.COURSES_ROUTES.LIST}?${queryString}`;
 ```
 
-3. **API Integration**
+- Always call `mutate()` after successful POST/PUT/DELETE to keep UI consistent.
+- Use `swrFetcher` / `apiCall` for consistent ApiResponse handling (`src/api/core/swrFetcher.ts`).
+- Use `Constants` for routes and localStorage keys — don't hardcode URLs (`src/constants/index.ts`).
 
-- Use the `axios` instance from `/api/core/axios.ts`
-- Create service files in `/api/services/`
-- Use SWR hooks in `/hooks/` for data fetching
+## Authentication specifics
+- `AuthContext` exposes: `user`, `isLoading`, `signIn`, `logOut`, `mutateUser`.
+- `axiosInstance` request interceptor adds `Authorization: Bearer <token>` if available.
+- `axiosInstance` response interceptor refreshes tokens on 401 and queues concurrent requests to avoid races (see `src/api/core/axiosInstance.ts`).
+- On refresh failure the app dispatches `window.dispatchEvent(new Event('auth:logout'))`.
+- Tokens live in `localStorage` under keys from `Constants.LOCAL_STORAGE_KEYS`.
+- OAuth flows redirect the browser (see `AuthService.oauthSignIn` in `src/api/services/auth-service.ts`).
 
-## Project Conventions
+## Services & types
+- Add service functions under `src/api/services/` (use `axiosInstance`).
+- Types: requests in `src/types/request.ts`, responses in `src/types/response.ts`, enums in `src/types/enum.ts`.
 
-1. **File Organization**
+## UI & component conventions
+- UI primitives: `src/components/ui/` (shadcn/ui + Tailwind).
+- Feature components grouped by domain under `src/components/{student,teacher,auth,shared}`.
+- Add `"use client"` on interactive components (forms/widgets); prefer smallest scope.
 
-- Feature components go in `/components`
-- Shared UI components go in `/components/ui/`
-- Types are defined in `/types/response.ts` and `/types/request.ts`
+## Copy-paste examples
+- SWR hook skeleton (mutate after writes):
 
-2. **Component Patterns**
-
-- Use shadcn/ui components as base building blocks
-- Follow atomic design principles
-- Implement responsive layouts using Tailwind CSS
-
-3. **Data Fetching**
-
-- Create custom hooks for API calls
-- Use SWR for caching and revalidation
-- Follow the service pattern in `/api/services/`
-
-## Key Files and Examples
-
-1. **Course Detail Page Structure** (`/app/(dashboard)/student/learn/[id]/page.tsx`):
-
-```typescript
-type Props = {
-    params: string
+```ts
+const key = `${Constants.COURSES_ROUTES.LIST}?${queryString}`;
+const { data, mutate } = useSWR<PaginatedResponse<CourseResponse> | null>(key, { revalidateOnFocus: false });
+const create = async (form: FormData) => {
+  const res = await CourseService.createCourseWithBasicInfo(form);
+  if ((res as any)?.success) await mutate();
 };
-
-const Page = ({params}: Props) => {
-    const courseId = params;
-    // Implementation...
-}
 ```
 
-2. **Custom Hook Pattern** (`/hooks/useCourses.ts`):
+- Axios refresh pattern: request interceptor + response interceptor that refreshes token, updates `localStorage`, updates axios default header and retries pending requests. See `src/api/core/axiosInstance.ts`.
 
-```typescript
-export const useCourses = (filters: CoursesFilterParams) => {
-    // Implementation using SWR
-}
-```
+## When adding a feature (order)
+1. Add types in `src/types/`.
+2. Add API calls in `src/api/services/` using `axiosInstance`.
+3. Add a SWR hook under `src/hooks/` and ensure `mutate()` is called after writes.
+4. Add components under `src/components/` and wire into `src/app/` pages.
 
-## Common Tasks
-
-1. **Adding a New Feature**
-
-- Create component in appropriate `/components/` directory
-- Add necessary types to `/types/`
-- Create API service in `/api/services/`
-- Create custom hook in `/hooks/`
-
-2. **Styling Components**
-
-- Use Tailwind CSS classes
-- Extend shadcn/ui components as needed
-- Follow the project's color scheme and design system
-
-## Integration Points
-
-1. **Authentication**
-
-- Handled through `/hooks/useAuth.ts`
-- Protected routes in `/app/(dashboard)/`
-- Auth middleware for API routes
-
-2. **API Services**
-
-- REST API communication via axios
-- Service files define endpoint interactions
-- Response types in `/types/response.ts`
-
-Remember to maintain consistency with existing patterns when adding new features or modifying existing ones.
+## Common pitfalls (avoid)
+- Don’t create new axios instances — use the single `axiosInstance`.
+- Don’t hardcode backend URLs — use `Constants.BACKEND_URL` and `Constants.AUTH_ROUTES`.
+- Don’t skip `mutate()` after writes — UI will show stale data.
+- Don't create new SWR fetchers — use the shared `swrFetcher` for consistent error handling.

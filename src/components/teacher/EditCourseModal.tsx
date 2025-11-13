@@ -1,14 +1,17 @@
 'use client';
 
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
 import BasicInfoForm from './BasicInfoForm';
 import LessonEditor from './LessonEditor';
 import {CourseResponse} from '@/types/response';
 import {CourseCreationRequest} from '@/types/request';
-import {CourseService} from '@/api/services/course-service';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
 import {ChapterWithLessons} from '@/types/types';
+import {useCourses} from "@/hooks/useCourses";
+import {useCourseCurriculum} from "@/hooks/useCourseCurriculum";
+import {Alert, AlertDescription} from "@/components/ui/alert";
+import {Loader2} from "lucide-react";
 
 export interface EditCourseModalProps {
     course: CourseResponse | null;
@@ -17,50 +20,37 @@ export interface EditCourseModalProps {
     onSaved?: () => void;
 }
 
+type TabValue = 'basic' | 'curriculum';
+
 export default function EditCourseModal({course, open, onOpenChange, onSaved}: EditCourseModalProps) {
     const [serverErrors, setServerErrors] = useState<Record<string, string> | null>(null);
-    const [activeTab, setActiveTab] = useState<'basic' | 'curriculum'>('basic');
-    const [chapters, setChapters] = useState<ChapterWithLessons[] | undefined>(undefined);
-    const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState<TabValue>('basic');
+    const [saving, setSaving] = useState(false);
 
+    // Use SWR hooks for data fetching
+    const {updateCourse} = useCourses();
+
+    const {
+        curriculum,
+        isLoading: loadingCurriculum,
+        isError: curriculumError,
+        updateCurriculum
+    } = useCourseCurriculum(open && course ? course.id : null);
+
+    // Reset state when modal closes
     useEffect(() => {
         if (!open) {
             setServerErrors(null);
             setActiveTab('basic');
-            setChapters(undefined);
+            setSaving(false);
         }
     }, [open]);
 
-    // When modal opens and a course is provided, try to fetch fresh course detail (which may include curriculum)
     useEffect(() => {
-        const load = async () => {
-            if (!open || !course) return;
-            setLoading(true);
-            try {
-                const res = await CourseService.getCourseById(course.id);
-                if ((res as any)?.success) {
-                    const data = (res as any).data;
-                    // Try possible property names where backend might return chapters/curriculum
-                    const found = (data && (data.chapters || data.curriculum || data.courseStructure));
-                    if (found && Array.isArray(found)) {
-                        setChapters(found as ChapterWithLessons[]);
-                    } else {
-                        // no chapters available — leave undefined so editor will show empty state
-                        setChapters([]);
-                    }
-                } else {
-                    // api returned error; surface message
-                    setServerErrors(res.errors || (res.message ? {general: res.message} : {general: 'Failed to load course'}));
-                }
-            } catch (err: any) {
-                setServerErrors({general: 'Failed to load course details'});
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        load();
-    }, [open, course]);
+        if (curriculumError && activeTab === 'curriculum') {
+            setServerErrors({general: 'Failed to load curriculum'});
+        }
+    }, [curriculumError, activeTab]);
 
     const mapCourseToInitial = (c?: CourseResponse | null): Partial<CourseCreationRequest> | null => {
         if (!c) return null;
@@ -78,9 +68,32 @@ export default function EditCourseModal({course, open, onOpenChange, onSaved}: E
         };
     };
 
-    const handleSaveBasic = async (data: CourseCreationRequest) => {
+    // Handle API errors consistently
+    const handleApiError = useCallback((error: any, defaultMessage: string) => {
+        const payload = error?.response?.data;
+
+        if (payload?.errors) {
+            const errorsMap: Record<string, string> = {};
+            Object.entries(payload.errors).forEach(([key, value]: [string, any]) => {
+                errorsMap[key] = Array.isArray(value) ? value.join(' ') : String(value);
+            });
+            setServerErrors(errorsMap);
+        } else if (payload?.message) {
+            setServerErrors({general: payload.message});
+        } else if (error?.message) {
+            setServerErrors({general: error.message});
+        } else {
+            setServerErrors({general: defaultMessage});
+        }
+    }, []);
+
+    // Save basic course information
+    const handleSaveBasic = useCallback(async (data: CourseCreationRequest) => {
         if (!course) return;
+
         setServerErrors(null);
+        setSaving(true);
+
         try {
             const formData = new FormData();
             formData.append('title', data.title);
@@ -88,64 +101,54 @@ export default function EditCourseModal({course, open, onOpenChange, onSaved}: E
             formData.append('difficulty', data.difficulty);
             formData.append('price', String(data.price));
             formData.append('status', data.status);
+
             if (data.thumbnail) {
                 formData.append('thumbnail', data.thumbnail);
             }
-            // append categories if present
+
             if (data.categoryId && data.categoryId.length > 0) {
                 data.categoryId.forEach(id => formData.append('categoryId', String(id)));
             }
 
-            const res = await CourseService.updateCourseBasicInfo(course.id, formData);
-            if ((res as any)?.success) {
-                onSaved?.();
-                onOpenChange(false);
-            } else {
-                setServerErrors((res as any).errors || ((res as any).message ? {general: (res as any).message} : {general: 'Failed to update course'}));
-            }
-        } catch (err: any) {
-            const payload = err?.response?.data;
-            if (payload?.errors) {
-                const errorsMap: Record<string, string> = {};
-                Object.entries(payload.errors).forEach(([k, v]: any) => {
-                    errorsMap[k] = Array.isArray(v) ? v.join(' ') : String(v);
-                });
-                setServerErrors(errorsMap);
-            } else if (payload?.message) {
-                setServerErrors({general: payload.message});
-            } else {
-                setServerErrors({general: 'Failed to update course'});
-            }
-        }
-    };
+            const result = await updateCourse(course.id, formData);
 
-    const handleSaveCurriculum = async (items: ChapterWithLessons[]) => {
-        if (!course) return;
-        setServerErrors(null);
-        try {
-            const payload = {chapters: items};
-            const res = await CourseService.updateCourseCurriculum(course.id, payload);
-            if ((res as any)?.success) {
+            if (result?.success) {
                 onSaved?.();
                 onOpenChange(false);
             } else {
-                setServerErrors((res as any).errors || ((res as any).message ? {general: (res as any).message} : {general: 'Failed to save curriculum'}));
+                const errorMsg = result?.message || 'Failed to update course';
+                setServerErrors(result?.errors as Record<string, string> || {general: errorMsg});
             }
-        } catch (err: any) {
-            const payload = err?.response?.data;
-            if (payload?.errors) {
-                const errorsMap: Record<string, string> = {};
-                Object.entries(payload.errors).forEach(([k, v]: any) => {
-                    errorsMap[k] = Array.isArray(v) ? v.join(' ') : String(v);
-                });
-                setServerErrors(errorsMap);
-            } else if (payload?.message) {
-                setServerErrors({general: payload.message});
-            } else {
-                setServerErrors({general: 'Failed to save curriculum'});
-            }
+        } catch (error) {
+            handleApiError(error, 'Failed to update course');
+        } finally {
+            setSaving(false);
         }
-    };
+    }, [course, updateCourse, onSaved, onOpenChange, handleApiError]);
+
+    // Save curriculum using the hook
+    const handleSaveCurriculum = useCallback(async (items: ChapterWithLessons[]) => {
+        if (!course) return;
+
+        setServerErrors(null);
+        setSaving(true);
+
+        try {
+            const result = await updateCurriculum(items);
+
+            if (result?.success) {
+                onSaved?.();
+                onOpenChange(false);
+            } else {
+                const errorMsg = result?.message || 'Failed to save curriculum';
+                setServerErrors(result?.errors as Record<string, string> || {general: errorMsg});
+            }
+        } catch (error) {
+            handleApiError(error, 'Failed to save curriculum');
+        } finally {
+            setSaving(false);
+        }
+    }, [course, updateCurriculum, onSaved, onOpenChange, handleApiError]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -154,30 +157,53 @@ export default function EditCourseModal({course, open, onOpenChange, onSaved}: E
                     <DialogTitle>Edit Course</DialogTitle>
                 </DialogHeader>
 
+                {serverErrors?.general && (
+                    <Alert variant="destructive">
+                        <AlertDescription>{serverErrors.general}</AlertDescription>
+                    </Alert>
+                )}
+
                 <div className="p-2">
-                    <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabValue)}>
                         <TabsList className="grid w-full grid-cols-2 mb-4">
-                            <TabsTrigger value="basic">Basic Information</TabsTrigger>
-                            <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
+                            <TabsTrigger value="basic" disabled={saving}>
+                                Basic Information
+                            </TabsTrigger>
+                            <TabsTrigger value="curriculum" disabled={saving || loadingCurriculum}>
+                                Curriculum
+                            </TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="basic">
-                            <BasicInfoForm initialData={mapCourseToInitial(course)} onSaveAction={handleSaveBasic}
-                                           serverErrors={serverErrors}/>
+                            <BasicInfoForm
+                                initialData={mapCourseToInitial(course)}
+                                onSaveAction={handleSaveBasic}
+                                serverErrors={serverErrors}
+                                disabled={saving}
+                            />
                         </TabsContent>
 
                         <TabsContent value="curriculum">
-                            {/* loading state handled inside LessonEditor; pass initial chapters when available */}
-                            <LessonEditor
-                                initial={chapters}
-                                onSaveAction={(items) => handleSaveCurriculum(items)}
-                            />
+                            {loadingCurriculum ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground"/>
+                                    <span className="ml-2 text-muted-foreground">Loading curriculum...</span>
+                                </div>
+                            ) : (
+                                <LessonEditor
+                                    initial={curriculum}
+                                    onSaveAction={handleSaveCurriculum}
+                                    disabled={saving}
+                                />
+                            )}
                         </TabsContent>
                     </Tabs>
                 </div>
 
                 <DialogFooter>
-                    <DialogClose></DialogClose>
+                    <DialogClose disabled={saving}>
+                        {saving ? 'Saving...' : 'Close'}
+                    </DialogClose>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
