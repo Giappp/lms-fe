@@ -5,8 +5,7 @@ import {Card} from "@/components/ui/card";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import TemplateChooser from "@/components/teacher/TemplateChooser";
 import BasicInfoForm from "@/components/teacher/BasicInfoForm";
-import LessonEditor from "@/components/teacher/LessonEditor";
-import MaterialsEditor from "@/components/teacher/MaterialsEditor";
+import CurriculumBuilder from "@/components/teacher/CurriculumBuilder";
 import ReviewPublish from "@/components/teacher/ReviewPublish";
 import {Button} from "@/components/ui/button";
 import {useAuth} from "@/hooks/useAuth";
@@ -16,7 +15,7 @@ import {CourseCreationRequest} from '@/types/request';
 import {toast} from "sonner";
 import {useCourses} from "@/hooks/useCourses";
 
-type StepId = 'template' | 'basic-info' | 'lessons' | 'materials' | 'review';
+type StepId = 'template' | 'basic-info' | 'lessons' | 'review';
 
 type Step = {
     id: StepId;
@@ -28,7 +27,6 @@ const steps: Step[] = [
     {id: 'template', title: 'Choose Template', touched: false},
     {id: 'basic-info', title: 'Basic Information', touched: false},
     {id: 'lessons', title: 'Lessons', touched: false},
-    {id: 'materials', title: 'Materials', touched: false},
     {id: 'review', title: 'Review & Publish', touched: false},
 ];
 
@@ -47,7 +45,6 @@ const CreateNewCourseForm = () => {
         },
         courseId: undefined,
         chapters: [],
-        materials: [],
     });
 
     useEffect(() => {
@@ -120,7 +117,7 @@ const CreateNewCourseForm = () => {
 
             <Card className="p-6">
                 <Tabs value={currentStep} className="w-full">
-                    <TabsList className="grid w-full grid-cols-5">
+                    <TabsList className="grid w-full grid-cols-4">
                         {steps.map((step) => (
                             <TabsTrigger
                                 key={step.id}
@@ -153,7 +150,7 @@ const CreateNewCourseForm = () => {
                     </TabsContent>
 
                     <TabsContent value="lessons">
-                        <LessonEditor
+                        <CurriculumBuilder
                             onSaveAction={(chapters) => {
                                 setCourseData({...courseData, chapters});
                                 handleNext();
@@ -162,15 +159,15 @@ const CreateNewCourseForm = () => {
                         />
                     </TabsContent>
 
-                    <TabsContent value="materials">
-                        <MaterialsEditor
-                            materials={courseData.materials}
-                            onSaveAction={(materials) => {
-                                setCourseData({...courseData, materials});
-                                handleNext();
-                            }}
-                        />
-                    </TabsContent>
+                    {/*<TabsContent value="materials">*/}
+                    {/*    <MaterialsEditor*/}
+                    {/*        materials={courseData.materials}*/}
+                    {/*        onSaveAction={(materials) => {*/}
+                    {/*            setCourseData({...courseData, materials});*/}
+                    {/*            handleNext();*/}
+                    {/*        }}*/}
+                    {/*    />*/}
+                    {/*</TabsContent>*/}
 
                     <TabsContent value="review">
                         <ReviewPublish courseData={courseData}/>

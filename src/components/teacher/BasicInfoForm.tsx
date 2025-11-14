@@ -120,7 +120,7 @@ export default function BasicInfoForm({
 
     const onSubmit = async (data: Partial<CourseCreationRequest>) => {
         try {
-            await onSaveAction(data as CourseCreationRequest);
+            onSaveAction(data as CourseCreationRequest);
         } catch (error) {
             console.error('Form submission error:', error);
         }

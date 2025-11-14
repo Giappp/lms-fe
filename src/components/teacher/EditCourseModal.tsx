@@ -3,7 +3,7 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog';
 import BasicInfoForm from './BasicInfoForm';
-import LessonEditor from './LessonEditor';
+import CurriculumBuilder from './CurriculumBuilder';
 import {CourseResponse} from '@/types/response';
 import {CourseCreationRequest} from '@/types/request';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
@@ -63,7 +63,6 @@ export default function EditCourseModal({course, open, onOpenChange, onSaved}: E
             teacherName: c.teacherName,
             status: c.status,
             thumbnailUrl: (c as any).thumbnailUrl || (c as any).thumbnail || '',
-            // The Course type doesn't include category IDs; leave empty so form won't try to submit invalid ids
             categoryId: []
         };
     };
@@ -190,7 +189,7 @@ export default function EditCourseModal({course, open, onOpenChange, onSaved}: E
                                     <span className="ml-2 text-muted-foreground">Loading curriculum...</span>
                                 </div>
                             ) : (
-                                <LessonEditor
+                                <CurriculumBuilder
                                     initial={curriculum}
                                     onSaveAction={handleSaveCurriculum}
                                     disabled={saving}

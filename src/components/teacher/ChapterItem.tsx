@@ -3,19 +3,20 @@ import {ChapterWithLessons, Lesson} from "@/types/types";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Button} from "@/components/ui/button";
-import LessonItem from "@/components/teacher/LessonItem";
-import {GripVertical, Plus, Trash} from 'lucide-react';
+import {BookOpen, ChevronDown, ChevronRight, GripVertical, Plus, Save, Trash} from 'lucide-react';
 import React, {forwardRef, HTMLAttributes, useState} from 'react';
 import {LessonType} from "@/types/enum";
-import {Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
+import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,} from "@/components/ui/dialog";
+import {LessonCard} from "@/components/teacher/LessonCard";
+import LessonEditor from "@/components/teacher/LessonEditor";
 
 export interface Props extends Omit<HTMLAttributes<HTMLLIElement>, 'id'> {
     chapter: ChapterWithLessons;
-    index?: number;
+    index: number;
     ghost?: boolean;
     handleProps?: any;
     disableInteraction?: boolean;
-    onChangeAction?: (updated: ChapterWithLessons) => void;
+    onChangeAction: (updated: ChapterWithLessons) => void;
     onRemoveAction?: () => void;
     onAddLessonAction?: () => void;
     onUpdateLessonsAction?: (lessons: Lesson[]) => void;
@@ -36,169 +37,186 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
                                                                   onAddLessonAction,
                                                                   onUpdateLessonsAction,
                                                               }, ref) => {
+    const [isExpanded, setIsExpanded] = useState(true);
     const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
     const [editingIdx, setEditingIdx] = useState<number | null>(null);
-    const [open, setOpen] = useState(false);
-    const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const updated = {...chapter, title: e.target.value};
-        onChangeAction?.(updated);
-    };
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     const handleAddLesson = () => {
         const newLesson: Lesson = {
-            id: chapter.lessons.length + 1,
+            id: Date.now(),
             title: 'Untitled Lesson',
             type: LessonType.VIDEO,
-            orderIndex: chapter.lessons.length + 1,
+            orderIndex: chapter.lessons.length,
             chapterId: chapter.id,
             content: '',
             description: '',
             duration: 0
         };
-        const newLessons = [...chapter.lessons, newLesson];
-        onUpdateLessonsAction?.(newLessons);
+        onUpdateLessonsAction?.([...chapter.lessons, newLesson]);
         onAddLessonAction?.();
     };
 
-    const handleUpdateLesson = (idx: number, updatedLesson: Lesson) => {
-        const newLessons = chapter.lessons.map((l, i) => i === idx ? updatedLesson : l);
-        onUpdateLessonsAction?.(newLessons);
+    const handleRemoveLesson = (idx: number) => {
+        if (window.confirm('Are you sure you want to delete this lesson?')) {
+            const updatedLessons = chapter.lessons.filter((_, i) => i !== idx);
+            onUpdateLessonsAction?.(updatedLessons);
+        }
     };
 
-    const handleRemoveLesson = (idx: number) => {
-        const confirmDelete = window.confirm('Delete this lesson? This action cannot be undone.');
-        if (!confirmDelete) return;
-        const newLessons = chapter.lessons.filter((_, i) => i !== idx);
-        onUpdateLessonsAction?.(newLessons);
-        // If the removed lesson is currently being edited, clear editor
-        if (editingIdx === idx) {
-            setOpen(false);
+    const handleSaveLesson = () => {
+        if (editingIdx !== null && editingLesson) {
+            const updatedLessons = chapter.lessons.map((l, i) =>
+                i === editingIdx ? editingLesson : l
+            );
+            onUpdateLessonsAction?.(updatedLessons);
+            setIsDialogOpen(false);
             setEditingLesson(null);
             setEditingIdx(null);
         }
     };
 
-    const saveEdit = () => {
-        if (editingIdx === null || !editingLesson) return;
-        handleUpdateLesson(editingIdx, editingLesson);
-        setOpen(false);
-        setEditingLesson(null);
-        setEditingIdx(null);
-    };
-
-    const prepareEdit = (idx: number) => {
+    const handleEditLesson = (idx: number) => {
         setEditingIdx(idx);
-        // clone so modal edits are not live until Save
         setEditingLesson({...chapter.lessons[idx]});
-        setOpen(true);
-    }
-
-    const renderTypeIcon = (type: LessonType) => {
-        if (type === LessonType.VIDEO) return <span className="text-xs font-medium">Video</span>;
-        if (type === LessonType.PDF) return <span className="text-xs font-medium">PDF</span>;
-        return <span className="text-xs font-medium">Link</span>;
+        setIsDialogOpen(true);
     };
+
+    const totalDuration = chapter.lessons.reduce((sum, l) => sum + l.duration, 0);
+    const lessonCount = chapter.lessons.length;
 
     return (
         <div
-            className={`w-full h-full ${ghost ? 'opacity-50' : ''} ${disableInteraction ? 'pointer-events-none' : ''}`}
+            className={`mb-4 ${ghost ? 'opacity-50' : ''} ${disableInteraction ? 'pointer-events-none' : ''}`}
             ref={wrapperRef}>
             <div ref={ref}
                  style={style}
-                 className="w-full rounded-lg bg-gray-50/60 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 p-4">
-                <div className="flex justify-center items-center gap-2 flex-1">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        {...handleProps}
-                        className="cursor-grab active:cursor-grabbing"
-                    >
-                        <GripVertical className="w-4 h-4 text-muted-foreground"/>
-                    </Button>
-
-                    <div className="flex-1 justify-center items-center gap-2">
-                        <Label
-                            htmlFor={`chapter-title-${chapter.id}`}>Chapter {typeof index === 'number' ? index + 1 : ''}</Label>
-                        <Input
-                            id={`chapter-title-${chapter.id}`}
-                            value={chapter.title}
-                            onChange={handleTitleChange}
-                            placeholder="Enter chapter title"
-                            className="mt-1"
-                        />
-                        <div className="mt-3 flex items-center gap-2">
-                            <Button variant="default" size="sm" onClick={handleAddLesson} title="Add lesson">
-                                <Plus className="w-4 h-4"/> Add Lesson
+                 className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                {/* Chapter Header */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+                    <div className="p-4">
+                        <div className="flex items-start gap-3">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                {...handleProps}
+                                className="cursor-grab active:cursor-grabbing shrink-0 mt-1"
+                                title="Drag to reorder"
+                            >
+                                <GripVertical className="w-4 h-4 text-muted-foreground"/>
                             </Button>
-                            <Button variant="destructive" size="sm" onClick={onRemoveAction} title="Remove chapter">
-                                <Trash className="w-4 h-4"/> Remove
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <BookOpen className="w-5 h-5 text-blue-600"/>
+                                    <Label
+                                        className="text-base font-semibold text-gray-900">Chapter {index + 1}</Label>
+                                </div>
+                                <Input
+                                    value={chapter.title}
+                                    onChange={(e) => onChangeAction({...chapter, title: e.target.value})}
+                                    placeholder="Enter chapter title"
+                                    className="font-medium text-base bg-white"/>
+                                {/* Chapter Stats */}
+                                <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-gray-600">
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        <span>{lessonCount} {lessonCount === 1 ? 'lesson' : 'lessons'}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                        <span>{totalDuration} min total</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-2 shrink-0">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setIsExpanded(!isExpanded)}
+                                    title={isExpanded ? 'Collapse' : 'Expand'}
+                                >
+                                    {isExpanded ? (
+                                        <ChevronDown className="w-5 h-5"/>
+                                    ) : (
+                                        <ChevronRight className="w-5 h-5"/>
+                                    )}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={onRemoveAction}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    title="Delete chapter"
+                                >
+                                    <Trash className="w-4 h-4"/>
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                            <Button
+                                variant="default"
+                                size="sm"
+                                onClick={handleAddLesson}
+                            >
+                                <Plus className="w-4 h-4"/>
+                                Add Lesson
                             </Button>
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-4">
-                    {chapter.lessons.length === 0 ? (
-                        <div className="text-sm text-muted-foreground">No lessons yet. Add one to get started.</div>
-                    ) : (
-                        <div
-                            className="flex flex-col overflow-auto max-h-[300px] bg-white dark:bg-[#0b1220] rounded-md p-2">
-                            {chapter.lessons.map((lesson, idx) => (
-                                <div
-                                    key={lesson.id}
-                                    className={`${idx !== 0 ? 'pt-4 border-t border-gray-200/50 dark:border-gray-700/40' : ''}`}>
-                                    {/* compact lesson row */}
-                                    <div className="rounded-md bg-white dark:bg-[#071123] p-2 flex items-center gap-3">
-                                        <div className="flex-1 min-w-0">
-                                            <div
-                                                className="text-sm font-medium truncate">{typeof index === 'number' ? (index + 1 + '.' + (idx + 1)) : ''} {lesson.title}</div>
-                                            <div className="text-xs text-muted-foreground flex items-center gap-3 mt-1">
-                                                <span
-                                                    className="inline-flex items-center gap-2">{renderTypeIcon(lesson.type)}</span>
-                                                <span>{lesson.duration ?? 0} min</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="edit" size="sm"
-                                                    onClick={() => prepareEdit(idx)}>Edit</Button>
-                                            <Button variant="destructive" size="sm"
-                                                    onClick={() => handleRemoveLesson(idx)}>Remove</Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-
-                            {/* Edit dialog (shadcn Dialog) */}
-                            <Dialog open={open} onOpenChange={setOpen}>
-                                {editingLesson && (
-                                    <DialogContent className="sm:max-w-[720px]">
-                                        <DialogHeader>
-                                            <DialogTitle>Currently edit lesson: <span
-                                                className="font-bold">{editingLesson.title || 'Untitled'}</span></DialogTitle>
-                                        </DialogHeader>
-
-                                        <div className="pt-2">
-                                            <LessonItem
-                                                lesson={editingLesson}
-                                                onChangeAction={(updated) => setEditingLesson(updated)}
-                                            />
-                                        </div>
-
-                                        <DialogFooter>
-                                            <DialogClose asChild>
-                                                <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                                            </DialogClose>
-                                            <Button onClick={saveEdit}>Save changes</Button>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                )}
-                            </Dialog>
-
-                        </div>
-                    )}
-                </div>
+                {/* Lessons List */}
+                {isExpanded && (
+                    <div className="p-4 max-h-[400px] overflow-y-auto transition-max-height duration-300">
+                        {chapter.lessons.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500">
+                                <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300"/>
+                                <p className="text-sm">No lessons yet. Click &#34;Add Lesson&#34; to get started.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                {chapter.lessons.map((lesson, idx) => (
+                                    <LessonCard
+                                        key={lesson.id}
+                                        lesson={lesson}
+                                        index={idx}
+                                        chapterIndex={index}
+                                        onEdit={() => handleEditLesson(idx)}
+                                        onRemove={() => handleRemoveLesson(idx)}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
+            {/* Edit Lesson Dialog */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="sm:max-w-[720px]">
+                    <DialogHeader>
+                        <DialogTitle>
+                            Edit Lesson: <span className="text-blue-600">{editingLesson?.title || 'Untitled'}</span>
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {editingLesson && (
+                        <LessonEditor
+                            lesson={editingLesson}
+                            onChangeAction={setEditingLesson}
+                        />
+                    )}
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSaveLesson}>
+                            <Save className="w-4 h-4"/>
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 });

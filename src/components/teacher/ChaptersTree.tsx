@@ -4,7 +4,6 @@ import {
     defaultDropAnimation,
     DndContext,
     DragEndEvent,
-    DragOverlay,
     DragStartEvent,
     DropAnimation,
     MeasuringStrategy,
@@ -13,18 +12,23 @@ import {
 } from "@dnd-kit/core";
 import {ChapterWithLessons, Lesson} from "@/types/types";
 import {arrayMove, SortableContext, verticalListSortingStrategy} from "@dnd-kit/sortable";
-import {createPortal} from "react-dom";
 import {Button} from "@/components/ui/button";
-import {Plus, Save} from "lucide-react";
-import {ChapterList} from "@/components/teacher/ChapterList";
+import {BookOpen, Plus, Save} from "lucide-react";
+import {ChapterSortableRef} from "@/components/teacher/ChapterSortableRef";
+import {restrictToFirstScrollableAncestor, restrictToVerticalAxis, restrictToWindowEdges} from "@dnd-kit/modifiers";
 
 type Props = {
     collapsible?: boolean;
-    defaultItems?: ChapterWithLessons[];
+    chapters: ChapterWithLessons[];
+    setChapters: React.Dispatch<React.SetStateAction<ChapterWithLessons[]>>;
     indentationWidth?: number;
     indicator?: boolean;
     removable?: boolean;
-    onSaveAction: (items: ChapterWithLessons[]) => void;
+    onSaveAction: () => void;
+    onAddChapterAction: () => void;
+    onUpdateChapterAction: (index: number, item: ChapterWithLessons,) => void;
+    onRemoveChapterAction: (index: number) => void;
+    onUpdateLessonsAction: (idx: number, lessons: Lesson[]) => void;
 }
 
 const measuring = {
@@ -44,13 +48,18 @@ const adjustTranslate: Modifier = ({transform}) => {
 };
 
 const ChaptersTree = ({
-                          defaultItems,
+                          chapters,
+                          setChapters,
                           indicator = false,
-                          onSaveAction
+                          onSaveAction,
+                          onAddChapterAction,
+                          onUpdateChapterAction,
+                          onRemoveChapterAction,
+                          onUpdateLessonsAction
                       }: Props) => {
-    const [chapters, setChapters] = useState<ChapterWithLessons[]>(defaultItems || [] as ChapterWithLessons[]);
     const [activeType, setActiveType] = useState<"chapter" | "lesson" | null>(null);
     const [activeItem, setActiveItem] = useState<any>(null);
+    const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
     // Find an item (chapter or lesson) by a dnd-kit id like "chapter:1" or "lesson:2"
     const findItemById = (id: UniqueIdentifier) => {
@@ -59,7 +68,8 @@ const ChaptersTree = ({
         const numericId = Number(idPart);
         if (type === 'chapter') {
             const chapter = chapters.find((c) => c.id === numericId);
-            if (chapter) return {type: 'chapter', item: chapter};
+            const index = chapters.findIndex((c) => c.id === numericId);
+            if (chapter) return {type: 'chapter', item: chapter, index: index};
             return null;
         }
         if (type === 'lesson') {
@@ -71,82 +81,81 @@ const ChaptersTree = ({
         }
         return null;
     };
-
-    const handleAddChapter = () => {
-        const newChapter: ChapterWithLessons = {
-            id: chapters.length + 1,
-            title: "Untitled Chapter",
-            lessons: []
-        };
-        setChapters(prev => [...prev, newChapter]);
-    };
-
-    const handleRemoveChapter = (idx: number) => {
-        setChapters(prev => prev.filter((_, i) => i !== idx));
-    };
-
-    const handleUpdateChapter = (idx: number, updated: ChapterWithLessons) => {
-        setChapters(prev => prev.map((c, i) => i === idx ? updated : c));
-    };
-
-    const handleUpdateLessons = (idx: number, lessons: Lesson[]) => {
-        setChapters(prev => prev.map((c, i) => i === idx ? {...c, lessons} : c));
-    };
-
-    const handleSave = () => {
-        onSaveAction?.(chapters as ChapterWithLessons[]);
-    };
     return (
         <DndContext collisionDetection={closestCenter}
                     measuring={measuring}
+                    modifiers={[restrictToVerticalAxis, restrictToWindowEdges, restrictToFirstScrollableAncestor]}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
                     onDragCancel={handleDragCancel}>
-            {chapters.length === 0 && (
-                <div className="p-6 border-2 border-dashed rounded-lg text-center text-muted-foreground">
-                    No chapters yet. Click &quot;Add Chapter&quot; to start creating your curriculum.
-                </div>
-            )}
-            <SortableContext items={chapters.map((c) => `chapter:${c.id}`)}
-                             strategy={verticalListSortingStrategy}>
-                {chapters.map((chapter, index) => (
-                    <ChapterList key={chapter.id} id={`chapter:${chapter.id}`} chapter={chapter} index={index}
-                                 onChangeAction={(updated) => handleUpdateChapter(index, updated)}
-                                 onRemoveAction={() => handleRemoveChapter(index)}
-                                 onUpdateLessonsAction={(lessons) => handleUpdateLessons(index, lessons)}/>
-                ))}
-                {createPortal(
-                    <DragOverlay
-                        dropAnimation={dropAnimationConfig}
-                        modifiers={indicator ? [adjustTranslate] : undefined}
-                    >
-                        {activeItem ? (
-                            activeType === "chapter" ? (
-                                // When rendering the overlay for a chapter, pass the same id format used by SortableContext
-                                <ChapterList chapter={activeItem} id={`chapter:${activeItem.id}`}/>
-                            ) : (
-                                <div className="p-2 rounded-lg bg-gray-100 shadow-md border border-gray-300">
-                                    {activeItem.title}
-                                </div>
-                            )
-                        ) : null}
-                    </DragOverlay>,
-                    document.body,
+            <div className="mb-6">
+                {chapters.length === 0 && (
+                    <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+                        <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300"/>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            No chapters yet
+                        </h3>
+                        <p className="text-gray-600 mb-6">
+                            Start building your curriculum by adding your first chapter
+                        </p>
+                        <Button onClick={onAddChapterAction} size="lg">
+                            <Plus className="w-5 h-5"/>
+                            Add Your First Chapter
+                        </Button>
+                    </div>
                 )}
-            </SortableContext>
-            <div className="flex flex-col md:flex-row items-center gap-4">
-                <Button
-                    variant="default"
-                    onClick={handleAddChapter}
-                    className="flex-1 md:flex-none"
-                >
-                    <Plus className="w-4 h-4"/> Add Chapter
-                </Button>
+                <SortableContext items={chapters.map((c) => `chapter:${c.id}`)}
+                                 strategy={verticalListSortingStrategy}>
+                    {chapters.map((chapter, index) => (
+                        <ChapterSortableRef key={chapter.id} id={`chapter:${chapter.id}`} chapter={chapter}
+                                            index={index}
+                                            onChangeAction={(updated) => onUpdateChapterAction(index, updated)}
+                                            onRemoveAction={() => onRemoveChapterAction(index)}
+                                            onUpdateLessonsAction={(lessons) => onUpdateLessonsAction(index, lessons)}/>
+                    ))}
+                    {/*{createPortal(*/}
+                    {/*    <DragOverlay*/}
+                    {/*        dropAnimation={dropAnimationConfig}*/}
+                    {/*        modifiers={indicator ? [adjustTranslate] : undefined}*/}
+                    {/*    >*/}
+                    {/*        {activeItem && activeIndex ? (*/}
+                    {/*            activeType === "chapter" ? (*/}
+                    {/*                // When rendering the overlay for a chapter, pass the same id format used by SortableContext*/}
+                    {/*                <ChapterHeader/>*/}
+                    {/*            ) : (*/}
+                    {/*                <div className="p-2 rounded-lg bg-gray-100 shadow-md border border-gray-300">*/}
+                    {/*                    {activeItem.title}*/}
+                    {/*                </div>*/}
+                    {/*            )*/}
+                    {/*        ) : null}*/}
+                    {/*    </DragOverlay>,*/}
+                    {/*    document.body,*/}
+                    {/*)}*/}
+                </SortableContext>
+                {/* Action Buttons */}
+                <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <Button
+                            onClick={onAddChapterAction}
+                            variant="outline"
+                            className="flex-1 sm:flex-none"
+                        >
+                            <Plus className="w-4 h-4"/>
+                            Add Chapter
+                        </Button>
 
-                <div className="flex-1 md:flex md:justify-end">
-                    <Button onClick={handleSave} className="w-full md:w-auto">
-                        <Save className="w-4 h-4"/> Save Curriculum
-                    </Button>
+                        <div className="flex-1 sm:flex sm:justify-end">
+                            <Button
+                                onClick={onSaveAction}
+                                size="lg"
+                                className="w-full sm:w-auto"
+                                disabled={chapters.length === 0}
+                            >
+                                <Save className="w-4 h-4"/>
+                                Save Curriculum
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </DndContext>
@@ -159,6 +168,7 @@ const ChaptersTree = ({
         if (found) {
             setActiveType(found.type as "chapter" | "lesson");
             setActiveItem(found.item);
+            setActiveIndex(found.index as number);
         }
     }
 
@@ -228,7 +238,7 @@ const ChaptersTree = ({
     function resetState() {
         setActiveItem(null);
         setActiveType(null);
-
+        setActiveIndex(null);
         document.body.style.setProperty('cursor', '');
     }
 

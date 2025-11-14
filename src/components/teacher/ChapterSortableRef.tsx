@@ -10,7 +10,7 @@ interface Props extends ChapterItemProps {
 const animateLayoutChanges: AnimateLayoutChanges = ({isSorting, wasDragging}) =>
     !(isSorting || wasDragging);
 
-export const ChapterList = ({id, ...props}: Props) => {
+export const ChapterSortableRef = ({id, ...props}: Props) => {
     const {
         attributes,
         isDragging,
