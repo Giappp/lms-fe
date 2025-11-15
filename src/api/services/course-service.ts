@@ -36,9 +36,7 @@ export const CourseService = {
         )
     },
 
-    // Update course curriculum (chapters / lessons)
-    // Assumes backend endpoint: PUT /api/courses/{id}/curriculum accepts JSON body { chapters: [...] }
-    updateCourseCurriculum: async (courseId: number, curriculumPayload: any) => {
+    saveCurriculum: async (courseId: number, curriculumPayload: any) => {
         return await apiCall<ChapterWithLessons[]>(() =>
             axiosInstance.put(`${Constants.COURSES_ROUTES.UPDATE}/${courseId}/curriculum`, curriculumPayload)
         );

@@ -7,7 +7,7 @@ import {Label} from '@/components/ui/label';
 import {Textarea} from '@/components/ui/textarea';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select';
 import {LessonType} from '@/types/enum';
-import {File, FileText, Link as LinkIcon, Upload, Video, X} from 'lucide-react';
+import {File, FileText, Link as LinkIcon, LucideYoutube, Upload, Video, X, Youtube} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 
 type Props = {
@@ -46,8 +46,8 @@ export default function LessonEditor({lesson, index, onChangeAction}: Props) {
         switch (type) {
             case 'VIDEO':
                 return <Video className="w-4 h-4"/>;
-            case 'PDF':
-                return <FileText className="w-4 h-4"/>;
+            case 'YOUTUBE':
+                return <LucideYoutube className="w-4 h-4"/>;
             case 'MARKDOWN':
                 return <LinkIcon className="w-4 h-4"/>;
             default:
@@ -63,7 +63,7 @@ export default function LessonEditor({lesson, index, onChangeAction}: Props) {
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     };
 
-    const needsFileUpload = lesson.type === LessonType.VIDEO || lesson.type === LessonType.PDF;
+    const needsFileUpload = lesson.type === LessonType.VIDEO;
     const acceptedFormats = lesson.type === 'VIDEO' ? 'video/mp4,video/webm,video/ogg' : 'application/pdf';
     const maxFiles = lesson.type === 'VIDEO' ? 1 : 10; // Limit videos to 1, PDFs to 10
 
@@ -120,10 +120,10 @@ export default function LessonEditor({lesson, index, onChangeAction}: Props) {
                                     Video Lesson
                                 </div>
                             </SelectItem>
-                            <SelectItem value="PDF">
+                            <SelectItem value="YOUTUBE">
                                 <div className="flex items-center gap-2">
-                                    <FileText className="w-4 h-4"/>
-                                    PDF Document
+                                    <Youtube className="w-4 h-4"/>
+                                    Youtube Link
                                 </div>
                             </SelectItem>
                             <SelectItem value="LINK">
@@ -192,7 +192,7 @@ export default function LessonEditor({lesson, index, onChangeAction}: Props) {
                             <input
                                 type="file"
                                 accept={acceptedFormats}
-                                multiple={lesson.type === 'PDF'}
+                                multiple={lesson.type === 'MARKDOWN'}
                                 onChange={(e) => {
                                     if (e.target.files && e.target.files.length > 0) {
                                         if (lesson.type === 'VIDEO') {

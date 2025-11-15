@@ -72,4 +72,5 @@ export interface CourseResponse {
     categories?: Category[];
     createdAt: Date;
     updatedAt: Date;
+    enrolledCount: number;
 }

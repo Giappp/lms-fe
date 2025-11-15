@@ -1,5 +1,5 @@
 "use client"
-import React, {useEffect, useState} from 'react'
+import React, {useState} from 'react'
 import {CourseFormData} from "@/types/types";
 import {Card} from "@/components/ui/card";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
@@ -47,12 +47,12 @@ const CreateNewCourseForm = () => {
         chapters: [],
     });
 
-    useEffect(() => {
-        console.log(courseData);
-    })
-
     const handleNext = () => {
         const currentIndex = steps.findIndex(step => step.id === currentStep);
+        if (!courseData.courseId && currentIndex === 1) {
+            setBasicInfoErrors({general: "Please fill all the form to proceed."});
+            return toast.error("Please fill all the form to proceed.");
+        }
         if (currentIndex < steps.length - 1) {
             setCurrentStep(steps[currentIndex + 1].id);
         }
@@ -144,7 +144,7 @@ const CreateNewCourseForm = () => {
                             initialData={courseData.basicInfo}
                             serverErrors={basicInfoErrors}
                             onSaveAction={(response) => {
-                                onSaveBasicInfo(response);
+                                onSaveBasicInfo(response).then(r => handleNext());
                             }}
                         />
                     </TabsContent>
@@ -155,7 +155,7 @@ const CreateNewCourseForm = () => {
                                 setCourseData({...courseData, chapters});
                                 handleNext();
                             }}
-                            initial={courseData.chapters}
+                            courseId={courseData.courseId}
                         />
                     </TabsContent>
 

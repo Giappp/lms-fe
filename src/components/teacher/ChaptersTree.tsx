@@ -13,7 +13,7 @@ import {
 import {ChapterWithLessons, Lesson} from "@/types/types";
 import {arrayMove, SortableContext, verticalListSortingStrategy} from "@dnd-kit/sortable";
 import {Button} from "@/components/ui/button";
-import {BookOpen, Plus, Save} from "lucide-react";
+import {BookOpen, Plus} from "lucide-react";
 import {ChapterSortableRef} from "@/components/teacher/ChapterSortableRef";
 import {restrictToFirstScrollableAncestor, restrictToVerticalAxis, restrictToWindowEdges} from "@dnd-kit/modifiers";
 
@@ -24,7 +24,6 @@ type Props = {
     indentationWidth?: number;
     indicator?: boolean;
     removable?: boolean;
-    onSaveAction: () => void;
     onAddChapterAction: () => void;
     onUpdateChapterAction: (index: number, item: ChapterWithLessons,) => void;
     onRemoveChapterAction: (index: number) => void;
@@ -51,9 +50,8 @@ const ChaptersTree = ({
                           chapters,
                           setChapters,
                           indicator = false,
-                          onSaveAction,
-                          onAddChapterAction,
                           onUpdateChapterAction,
+                          onAddChapterAction,
                           onRemoveChapterAction,
                           onUpdateLessonsAction
                       }: Props) => {
@@ -132,31 +130,6 @@ const ChaptersTree = ({
                     {/*    document.body,*/}
                     {/*)}*/}
                 </SortableContext>
-                {/* Action Buttons */}
-                <div className="bg-white rounded-lg shadow-md p-6">
-                    <div className="flex flex-col sm:flex-row gap-3">
-                        <Button
-                            onClick={onAddChapterAction}
-                            variant="outline"
-                            className="flex-1 sm:flex-none"
-                        >
-                            <Plus className="w-4 h-4"/>
-                            Add Chapter
-                        </Button>
-
-                        <div className="flex-1 sm:flex sm:justify-end">
-                            <Button
-                                onClick={onSaveAction}
-                                size="lg"
-                                className="w-full sm:w-auto"
-                                disabled={chapters.length === 0}
-                            >
-                                <Save className="w-4 h-4"/>
-                                Save Curriculum
-                            </Button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </DndContext>
     );

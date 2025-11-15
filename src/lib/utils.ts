@@ -20,4 +20,3 @@ export function setProperty<T extends keyof ChapterWithLessons>(
     return [...items];
 }
 
-

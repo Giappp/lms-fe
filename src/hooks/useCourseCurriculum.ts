@@ -21,18 +21,19 @@ export function useCourseCurriculum(courseId: number | null) {
         }
     );
 
-    const updateCurriculum = useCallback(async (chapters: ChapterWithLessons[]) => {
+    const saveCurriculum = useCallback(async (chapters: ChapterWithLessons[]) => {
         if (!courseId) {
             throw new Error('Cannot update curriculum: courseId is null');
         }
 
         try {
             const payload = {chapters};
-            const result = await CourseService.updateCourseCurriculum(courseId, payload);
+            const result = await CourseService.saveCurriculum(courseId, payload);
 
             if (result?.success) {
                 // Optimistically update the cache with new data
                 await mutate(chapters, {revalidate: false});
+                console.log('Curriculum updated successfully:', chapters);
             }
 
             return result;
@@ -94,7 +95,7 @@ export function useCourseCurriculum(courseId: number | null) {
         isValidating,
         isError: !!error,
         error,
-        updateCurriculum,
+        saveCurriculum,
         mutate,
         refresh: () => mutate(),
     };

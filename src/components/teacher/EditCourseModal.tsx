@@ -7,11 +7,8 @@ import CurriculumBuilder from './CurriculumBuilder';
 import {CourseResponse} from '@/types/response';
 import {CourseCreationRequest} from '@/types/request';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
-import {ChapterWithLessons} from '@/types/types';
 import {useCourses} from "@/hooks/useCourses";
-import {useCourseCurriculum} from "@/hooks/useCourseCurriculum";
 import {Alert, AlertDescription} from "@/components/ui/alert";
-import {Loader2} from "lucide-react";
 
 export interface EditCourseModalProps {
     course: CourseResponse | null;
@@ -30,13 +27,6 @@ export default function EditCourseModal({course, open, onOpenChange, onSaved}: E
     // Use SWR hooks for data fetching
     const {updateCourse} = useCourses();
 
-    const {
-        curriculum,
-        isLoading: loadingCurriculum,
-        isError: curriculumError,
-        updateCurriculum
-    } = useCourseCurriculum(open && course ? course.id : null);
-
     // Reset state when modal closes
     useEffect(() => {
         if (!open) {
@@ -45,12 +35,6 @@ export default function EditCourseModal({course, open, onOpenChange, onSaved}: E
             setSaving(false);
         }
     }, [open]);
-
-    useEffect(() => {
-        if (curriculumError && activeTab === 'curriculum') {
-            setServerErrors({general: 'Failed to load curriculum'});
-        }
-    }, [curriculumError, activeTab]);
 
     const mapCourseToInitial = (c?: CourseResponse | null): Partial<CourseCreationRequest> | null => {
         if (!c) return null;
@@ -67,7 +51,6 @@ export default function EditCourseModal({course, open, onOpenChange, onSaved}: E
         };
     };
 
-    // Handle API errors consistently
     const handleApiError = useCallback((error: any, defaultMessage: string) => {
         const payload = error?.response?.data;
 
@@ -125,30 +108,6 @@ export default function EditCourseModal({course, open, onOpenChange, onSaved}: E
         }
     }, [course, updateCourse, onSaved, onOpenChange, handleApiError]);
 
-    // Save curriculum using the hook
-    const handleSaveCurriculum = useCallback(async (items: ChapterWithLessons[]) => {
-        if (!course) return;
-
-        setServerErrors(null);
-        setSaving(true);
-
-        try {
-            const result = await updateCurriculum(items);
-
-            if (result?.success) {
-                onSaved?.();
-                onOpenChange(false);
-            } else {
-                const errorMsg = result?.message || 'Failed to save curriculum';
-                setServerErrors(result?.errors as Record<string, string> || {general: errorMsg});
-            }
-        } catch (error) {
-            handleApiError(error, 'Failed to save curriculum');
-        } finally {
-            setSaving(false);
-        }
-    }, [course, updateCurriculum, onSaved, onOpenChange, handleApiError]);
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[60vw] max-h-[80vh] overflow-y-auto">
@@ -168,7 +127,7 @@ export default function EditCourseModal({course, open, onOpenChange, onSaved}: E
                             <TabsTrigger value="basic" disabled={saving}>
                                 Basic Information
                             </TabsTrigger>
-                            <TabsTrigger value="curriculum" disabled={saving || loadingCurriculum}>
+                            <TabsTrigger value="curriculum" disabled={saving}>
                                 Curriculum
                             </TabsTrigger>
                         </TabsList>
@@ -183,18 +142,10 @@ export default function EditCourseModal({course, open, onOpenChange, onSaved}: E
                         </TabsContent>
 
                         <TabsContent value="curriculum">
-                            {loadingCurriculum ? (
-                                <div className="flex items-center justify-center py-8">
-                                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground"/>
-                                    <span className="ml-2 text-muted-foreground">Loading curriculum...</span>
-                                </div>
-                            ) : (
-                                <CurriculumBuilder
-                                    initial={curriculum}
-                                    onSaveAction={handleSaveCurriculum}
-                                    disabled={saving}
-                                />
-                            )}
+                            <CurriculumBuilder
+                                disabled={saving}
+                                courseId={course?.id}
+                            />
                         </TabsContent>
                     </Tabs>
                 </div>

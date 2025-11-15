@@ -74,7 +74,7 @@ export default function CourseDetailsDrawer({course, open, onOpenChange, onEdit}
                             <Button variant="outline" onClick={() => onEdit?.(course)}>Edit</Button>
                         )}
                         <SheetClose>
-                            <Button>Close</Button>
+                            Close
                         </SheetClose>
                     </div>
                 </SheetFooter>

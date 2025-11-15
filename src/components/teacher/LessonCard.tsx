@@ -1,6 +1,6 @@
 import {LessonType} from "@/types/enum";
 import {Lesson} from "@/types/types";
-import {Edit, Files, FileText, Link2, Trash, Video} from "lucide-react";
+import {Edit, Files, Link2, Trash, Video, YoutubeIcon} from "lucide-react";
 import {Button} from "@/components/ui/button";
 
 export const LessonCard = ({
@@ -20,8 +20,8 @@ export const LessonCard = ({
         switch (type) {
             case 'VIDEO':
                 return <Video className="w-4 h-4 text-blue-600"/>;
-            case 'PDF':
-                return <FileText className="w-4 h-4 text-red-600"/>;
+            case 'YOUTUBE':
+                return <YoutubeIcon className="w-4 h-4 text-red-600"/>;
             case 'MARKDOWN':
                 return <Link2 className="w-4 h-4 text-green-600"/>;
         }
@@ -31,7 +31,7 @@ export const LessonCard = ({
         switch (type) {
             case 'VIDEO':
                 return 'Video';
-            case 'PDF':
+            case 'YOUTUBE':
                 return 'PDF';
             case 'MARKDOWN':
                 return 'Link';
