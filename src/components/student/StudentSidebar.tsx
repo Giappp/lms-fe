@@ -28,6 +28,7 @@ import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {usePathname} from "next/navigation";
 import {cn} from "@/lib/utils";
 import React from "react";
+import {useAuth} from "@/hooks/useAuth";
 
 const menuList = [
     {
@@ -56,6 +57,7 @@ const menuList = [
 
 export function StudentSidebar({className, ...props}: React.ComponentProps<typeof Sidebar>) {
     const pathname = usePathname();
+    const {logOut} = useAuth();
 
     const isActive = (url: string) => {
         return pathname === url;
@@ -125,7 +127,7 @@ export function StudentSidebar({className, ...props}: React.ComponentProps<typeo
                     </Link>
                 </SidebarMenuButton>
                 <SidebarMenuButton asChild className="text-destructive hover:text-destructive">
-                    <button className="w-full flex items-center gap-2">
+                    <button onClick={logOut} className="w-full flex items-center gap-2">
                         <FontAwesomeIcon icon={faSignOutAlt} className="w-4 h-4"/>
                         <span>Sign Out</span>
                     </button>
