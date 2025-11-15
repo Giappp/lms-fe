@@ -32,9 +32,9 @@ export const LessonCard = ({
             case 'VIDEO':
                 return 'Video';
             case 'YOUTUBE':
-                return 'PDF';
+                return 'YOUTUBE';
             case 'MARKDOWN':
-                return 'Link';
+                return 'MARKDOWN';
         }
     };
 

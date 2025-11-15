@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useState} from "react";
 import {ChapterWithLessons, Lesson} from "@/types/types";
 import ChaptersTree from "@/components/teacher/ChaptersTree";
 import {CourseStats} from "@/components/teacher/CourseStats";
@@ -22,13 +22,9 @@ export default function CurriculumBuilder({onSaveAction, courseId, disabled}: Cu
     const [serverErrors, setServerErrors] = useState<Record<string, string> | null>(null);
     const [saving, setSaving] = useState(false);
 
-    useEffect(() => {
-        console.log("Server Errors:", serverErrors);
-    })
-
     const handleAddChapter = () => {
         const newChapter: ChapterWithLessons = {
-            id: Date.now(),
+            _id: crypto.randomUUID(),
             title: 'Untitled Chapter',
             lessons: []
         };

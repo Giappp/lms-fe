@@ -10,14 +10,17 @@ export type Material = {
 }
 
 export type ChapterWithLessons = {
-    id: number;
+    _id: string;
+    id?: number;
     title: string;
+    orderIndex?: number;
     lessons: Lesson[];
     collapsed?: boolean;
 }
 
 export type Lesson = {
-    id: number;
+    _id: string;
+    id?: number;
     title: string;
     content: string;
     description: string;

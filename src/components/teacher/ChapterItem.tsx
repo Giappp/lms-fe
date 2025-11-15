@@ -42,9 +42,17 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
     const [editingIdx, setEditingIdx] = useState<number | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+    const setIdForlesson = () => {
+        chapter.lessons.forEach((lesson, idx) => {
+            lesson._id = crypto.randomUUID();
+            lesson.orderIndex = idx;
+        });
+    }
+    setIdForlesson();
+
     const handleAddLesson = () => {
         const newLesson: Lesson = {
-            id: Date.now(),
+            _id: crypto.randomUUID(),
             title: 'Untitled Lesson',
             type: LessonType.VIDEO,
             orderIndex: chapter.lessons.length,
@@ -177,7 +185,7 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
                             <div className="space-y-2">
                                 {chapter.lessons.map((lesson, idx) => (
                                     <LessonCard
-                                        key={lesson.id}
+                                        key={lesson._id}
                                         lesson={lesson}
                                         index={idx}
                                         chapterIndex={index}

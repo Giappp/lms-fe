@@ -58,22 +58,27 @@ const ChaptersTree = ({
     const [activeType, setActiveType] = useState<"chapter" | "lesson" | null>(null);
     const [activeItem, setActiveItem] = useState<any>(null);
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
+    if (chapters?.length != 0) {
+        chapters.forEach((chapter, chapterIndex) => {
+            chapter._id = crypto.randomUUID(); // Temporary ID for dnd-kit
+            chapter.orderIndex = chapterIndex;
+        });
+    }
 
     // Find an item (chapter or lesson) by a dnd-kit id like "chapter:1" or "lesson:2"
     const findItemById = (id: UniqueIdentifier) => {
         const idStr = id?.toString() || '';
         const [type, idPart] = idStr.split(":");
-        const numericId = Number(idPart);
         if (type === 'chapter') {
-            const chapter = chapters.find((c) => c.id === numericId);
-            const index = chapters.findIndex((c) => c.id === numericId);
+            const chapter = chapters.find((c) => c._id === idPart);
+            const index = chapters.findIndex((c) => c._id === idPart);
             if (chapter) return {type: 'chapter', item: chapter, index: index};
             return null;
         }
         if (type === 'lesson') {
             for (const chapter of chapters) {
-                const lesson = chapter.lessons.find((l) => l.id === numericId);
-                if (lesson) return {type: 'lesson', item: lesson, parentChapterId: chapter.id};
+                const lesson = chapter.lessons.find((l) => l._id === idPart);
+                if (lesson) return {type: 'lesson', item: lesson, parentChapterId: chapter._id};
             }
             return null;
         }
@@ -102,10 +107,10 @@ const ChaptersTree = ({
                         </Button>
                     </div>
                 )}
-                <SortableContext items={chapters.map((c) => `chapter:${c.id}`)}
+                <SortableContext items={chapters.map((c) => `chapter:${c._id}`)}
                                  strategy={verticalListSortingStrategy}>
                     {chapters.map((chapter, index) => (
-                        <ChapterSortableRef key={chapter.id} id={`chapter:${chapter.id}`} chapter={chapter}
+                        <ChapterSortableRef key={chapter._id} id={`chapter:${chapter._id}`} chapter={chapter}
                                             index={index}
                                             onChangeAction={(updated) => onUpdateChapterAction(index, updated)}
                                             onRemoveAction={() => onRemoveChapterAction(index)}
@@ -151,33 +156,38 @@ const ChaptersTree = ({
 
         const [overTypeStr, overIdPart] = over.id.toString().split(':');
         const [activeTypeStr, activeIdPart] = active.id.toString().split(':');
-        const overIdNum = Number(overIdPart);
-        const activeIdNum = Number(activeIdPart);
 
         if (activeTypeStr === "chapter" && overTypeStr === "chapter") {
-            const oldIndex = chapters.findIndex((c) => c.id === activeIdNum);
-            const newIndex = chapters.findIndex((c) => c.id === overIdNum);
+            const oldIndex = chapters.findIndex((c) => c._id === activeIdPart);
+            const newIndex = chapters.findIndex((c) => c._id === overIdPart);
             if (oldIndex === -1 || newIndex === -1) return;
-            setChapters((prev) => arrayMove(prev, oldIndex, newIndex));
+            setChapters((prev) => {
+                const reordered = arrayMove(prev, oldIndex, newIndex);
+
+                return reordered.map((c, index) => ({
+                    ...c,
+                    orderIndex: index,
+                }));
+            });
             return;
         }
 
         if (activeTypeStr === "lesson" && overTypeStr === "lesson") {
             const chapter = chapters.find((c) =>
-                c.lessons.some((l) => l.id === activeIdNum)
+                c.lessons.some((l) => l._id === activeIdPart)
             );
             const overChapter = chapters.find((c) =>
-                c.lessons.some((l) => l.id === overIdNum)
+                c.lessons.some((l) => l._id === overIdPart)
             );
             if (!chapter || !overChapter) return;
 
-            const oldIndex = chapter.lessons.findIndex((l) => l.id === activeIdNum);
-            const newIndex = overChapter.lessons.findIndex((l) => l.id === overIdNum);
+            const oldIndex = chapter.lessons.findIndex((l) => l._id === activeIdPart);
+            const newIndex = overChapter.lessons.findIndex((l) => l._id === overIdPart);
 
-            if (chapter.id === overChapter.id) {
+            if (chapter._id === overChapter._id) {
                 // Reorder lessons within same chapter
                 const updated = chapters.map((c) =>
-                    c.id === chapter.id
+                    c._id === chapter._id
                         ? {
                             ...c,
                             lessons: arrayMove(c.lessons, oldIndex, newIndex),
@@ -190,13 +200,13 @@ const ChaptersTree = ({
                 const movedLesson = chapter.lessons[oldIndex];
                 if (!movedLesson) return;
                 const updated = chapters.map((c) => {
-                    if (c.id === chapter.id) {
+                    if (c._id === chapter._id) {
                         return {
                             ...c,
-                            lessons: c.lessons.filter((l) => l.id !== activeIdNum),
+                            lessons: c.lessons.filter((l) => l._id !== activeIdPart),
                         };
                     }
-                    if (c.id === overChapter.id) {
+                    if (c._id === overChapter._id) {
                         const newLessons = [...c.lessons];
                         newLessons.splice(newIndex, 0, movedLesson);
                         return {...c, lessons: newLessons};
