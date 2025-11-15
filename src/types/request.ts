@@ -2,6 +2,16 @@
 * All the api request model goes here
 */
 
+export type SendMessageRequest = {
+    conversationId: string;
+    message: string;
+}
+
+export type CreateConversationRequest = {
+    type: "DIRECT" | "GROUP";
+    participantIds: number[];
+}
+
 import {CourseStatus, Difficulty} from "@/types/enum";
 
 export type CoursesFilterParams = {
