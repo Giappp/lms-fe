@@ -1,7 +1,7 @@
 /*
 * All the api response model goes here
 */
-import {CourseStatus, Difficulty} from "@/types/enum";
+import {CourseStatus, Difficulty, QuestionType, QuizType, ScoringMethod, AttemptStatus} from "@/types/enum";
 
 export type UserResponse = {
     id: number;
@@ -73,4 +73,221 @@ export interface CourseResponse {
     createdAt: Date;
     updatedAt: Date;
     enrolledCount: number;
+}
+
+// ==================== Quiz Response Types ====================
+
+export interface AnswerResponse {
+    id: number;
+    answerText: string;
+    isCorrect?: boolean; // Only for ADMIN/TEACHER
+    orderIndex: number;
+}
+
+export interface QuestionResponse {
+    id: number;
+    type: QuestionType;
+    questionText: string;
+    orderIndex: number;
+    points: number;
+    explanation?: string; // Only for ADMIN/TEACHER or after submission
+    answers: AnswerResponse[];
+}
+
+export interface QuizResponse {
+    id: number;
+    title: string;
+    description: string;
+    quizType: QuizType;
+    courseId: number;
+    courseName?: string;
+    lessonId?: number;
+    lessonTitle?: string;
+    
+    startTime?: Date;
+    endTime?: Date;
+    maxAttempts: number;
+    scoringMethod: ScoringMethod;
+    passingPercentage: number;
+    timeLimitMinutes: number;
+    
+    isActive: boolean;
+    shuffleQuestions: boolean;
+    shuffleAnswers: boolean;
+    showResults: boolean;
+    showCorrectAnswers: boolean;
+    
+    questionCount: number;
+    totalPoints: number;
+    
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface QuizDetailResponse extends QuizResponse {
+    questions: QuestionResponse[];
+}
+
+export interface QuizAttemptResponse {
+    id: number;
+    quizId: number;
+    quizTitle: string;
+    studentId: number;
+    studentName: string;
+    attemptNumber: number;
+    
+    startedAt: Date;
+    submittedAt?: Date;
+    completedAt?: Date;
+    
+    status: AttemptStatus;
+    
+    score: number;
+    percentage: number;
+    isPassed: boolean;
+    
+    totalQuestions: number;
+    correctAnswers: number;
+    incorrectAnswers: number;
+    unansweredQuestions: number;
+    
+    timeSpentSeconds: number;
+    
+    // Review information
+    isReviewed: boolean;
+    teacherFeedback?: string;
+    reviewedBy?: number;
+    reviewerName?: string;
+}
+
+export interface QuizAttemptDetailResponse {
+    id: number;
+    quizId: number;
+    quizTitle: string;
+    studentId: number;
+    studentName: string;
+    attemptNumber: number;
+    
+    startedAt: Date;
+    submittedAt?: Date;
+    completedAt?: Date;
+    
+    status: AttemptStatus;
+    
+    score: number;
+    percentage: number;
+    isPassed: boolean;
+    
+    totalQuestions: number;
+    correctAnswers: number;
+    incorrectAnswers: number;
+    unansweredQuestions: number;
+    
+    timeSpentSeconds: number;
+    
+    isReviewed: boolean;
+    teacherFeedback?: string;
+    reviewedBy?: number;
+    reviewerName?: string;
+    
+    answers: QuizAttemptAnswerDetailResponse[];
+}
+
+export interface QuizAttemptAnswerDetailResponse {
+    id: number;
+    questionId: number;
+    questionText: string;
+    questionType: QuestionType;
+    questionPoints: number;
+    
+    selectedAnswerIds: number[];
+    correctAnswerIds: number[];
+    
+    isCorrect: boolean;
+    pointsEarned: number;
+    
+    answers: AnswerResponse[];
+    explanation?: string;
+}
+
+export interface StartQuizResponse {
+    attemptId: number;
+    quizId: number;
+    quizTitle: string;
+    timeLimitMinutes: number;
+    startedAt: Date;
+    mustSubmitBefore?: Date;
+}
+
+export interface QuizSubmitResultResponse {
+    attemptId: number;
+    score: number;
+    percentage: number;
+    isPassed: boolean;
+    totalQuestions: number;
+    correctAnswers: number;
+    incorrectAnswers: number;
+    unansweredQuestions: number;
+    timeSpentSeconds: number;
+    submittedAt: Date;
+}
+
+export interface StudentQuizResultResponse {
+    quizId: number;
+    quizTitle: string;
+    attempts: QuizAttemptResponse[];
+    bestScore?: number;
+    latestScore?: number;
+    averageScore?: number;
+    finalScore: number; // Based on scoring method
+    isPassed: boolean;
+}
+
+export interface StudentQuizHistoryResponse {
+    studentId: number;
+    studentName: string;
+    quizzes: StudentQuizResultResponse[];
+}
+
+export interface QuizAnalyticsResponse {
+    quizId: number;
+    quizTitle: string;
+    
+    totalAttempts: number;
+    totalStudents: number;
+    completedAttempts: number;
+    inProgressAttempts: number;
+    
+    averageScore: number;
+    highestScore: number;
+    lowestScore: number;
+    passRate: number;
+    
+    averageTimeSpentMinutes: number;
+    
+    questionAnalytics: QuestionAnalyticsItem[];
+}
+
+export interface QuestionAnalyticsItem {
+    questionId: number;
+    questionText: string;
+    totalAttempts: number;
+    correctAttempts: number;
+    correctPercentage: number;
+    averageTimeSeconds: number;
+}
+
+export interface CourseQuizStatisticsResponse {
+    courseId: number;
+    courseTitle: string;
+    totalQuizzes: number;
+    totalAttempts: number;
+    averagePassRate: number;
+    quizStatistics: QuizAnalyticsResponse[];
+}
+
+export interface ImportQuizResponse {
+    quizId: number;
+    questionsImported: number;
+    errors: string[];
 }
