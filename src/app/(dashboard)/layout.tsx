@@ -1,27 +1,15 @@
 import React from 'react'
-import {ThemeProvider} from "@/app/components/ThemeProvider";
-import {Toaster} from "@/components/ui/sonner";
-import "../globals.css";
+import RedirectIfNotAuthenticated from "@/components/shared/RedirectIfNotAuthenticated";
 
-export default function DashboardLayout({
-                                            children,
-                                        }: Readonly<{
+const Layout = ({
+                    children,
+                }: Readonly<{
     children: React.ReactNode;
-}>) {
+}>) => {
     return (
-        <html lang="en" suppressHydrationWarning>
-        <body>
-        <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-        >
+        <RedirectIfNotAuthenticated>
             {children}
-            <Toaster/>
-        </ThemeProvider>
-        </body>
-        </html>
-    );
+        </RedirectIfNotAuthenticated>
+    )
 }
-
+export default Layout

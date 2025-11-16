@@ -1,13 +1,6 @@
 import React from 'react'
-import "../globals.css";
-
-import {config} from '@fortawesome/fontawesome-svg-core'
-import '@fortawesome/fontawesome-svg-core/styles.css'
-import {ThemeProvider} from "@/app/components/ThemeProvider";
-import {Toaster} from "@/components/ui/sonner";
-import AuthNavbar from "@/app/(auth)/components/AuthNavbar";
-
-config.autoAddCss = false
+import AuthNavbar from "@/components/auth/AuthNavbar";
+import {RedirectIfAuthenticated} from "@/components/shared/RedirectIfAuthenticated";
 
 const AuthLayout = ({
                         children,
@@ -15,21 +8,10 @@ const AuthLayout = ({
     children: React.ReactNode;
 }>) => {
     return (
-        <html lang="en" suppressHydrationWarning>
-        <body>
-        <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-        >
+        <RedirectIfAuthenticated>
             <AuthNavbar/>
             {children}
-            <Toaster/>
-        </ThemeProvider>
-        </body>
-        </html>
-
+        </RedirectIfAuthenticated>
     )
 }
 export default AuthLayout

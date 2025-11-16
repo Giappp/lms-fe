@@ -1,19 +1,23 @@
+"use client"
 import React from 'react'
 import {Button} from "@/components/ui/button";
 import {Card, CardContent} from "@/components/ui/card";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faBook, faCheckCircle, faClock, faFire} from "@fortawesome/free-solid-svg-icons";
-import CurrentCourses from "@/app/(dashboard)/student/components/CurrentCourses";
-import StudyAnalystic from "@/app/(dashboard)/student/components/StudyAnalystic";
-import OverAllProgress from "@/app/(dashboard)/student/components/OverAllProgress";
+import CurrentCourses from "@/components/student/courses/CurrentCourses";
+import StudyAnalytics from "@/components/student/dashboard/StudyAnalytics";
+import OverAllProgress from "@/components/student/dashboard/OverAllProgress";
+import {useAuth} from "@/hooks/useAuth";
 
 const Page = () => {
+    const {user} = useAuth();
+
     return (
         <div className="p-6">
             <div className="mb-4">
                 <div className="flex justify-between items-center flex-wrap">
                     <div>
-                        <h1>Welcome back, Student!</h1>
+                        <h1>Welcome back, {user?.fullName || "Student"}!</h1>
                         <p>Track your learning progress and continue your educational journey</p>
                     </div>
                     <div className="flex gap-3">
@@ -51,7 +55,7 @@ const Page = () => {
                         {/*Left Content*/}
                         <div className="col-span-2">
                             <CurrentCourses/>
-                            <StudyAnalystic/>
+                            <StudyAnalytics/>
                         </div>
                         {/*Right Content*/}
                         <div>
@@ -63,4 +67,4 @@ const Page = () => {
         </div>
     )
 }
-export default Page
+export default Page;
