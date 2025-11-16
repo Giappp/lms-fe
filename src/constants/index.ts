@@ -1,5 +1,6 @@
 export class Constants {
     static readonly BACKEND_URL = 'http://localhost:8081';
+    static readonly SOCKET_URL = "http://localhost:9092";
 
     static readonly ROLES = {
         STUDENT: "STUDENT",
@@ -29,6 +30,24 @@ export class Constants {
         CREATE: "/api/courses",
         UPDATE: "/api/courses",
         DELETE: "/api/courses"
+    };
+
+    static readonly CONVERSATIONS_ROUTES = {
+        MY_CONVERSATIONS: "/api/conversations/my-conversations",
+        CREATE: "/api/conversations",
+        SEARCH: "/api/conversations/search"
+    };
+
+    static readonly MESSAGES_ROUTES = {
+        GET_MESSAGES: "/api/messages",
+        SEND_MESSAGE: "/api/messages",
+        LAST_MESSAGE: "/api/messages/last",
+        SEARCH_MESSAGES: "/api/messages/search",
+        MARK_AS_READ: "/api/messages/read"
+    };
+
+    static readonly WEBSOCKET_ROUTES = {
+        ONLINE_STATUS: "/api/websocket/users"
     };
 
     static readonly APP_ROUTES = {

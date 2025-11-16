@@ -9,6 +9,7 @@ import {ThemeProvider} from "@/components/shared/ThemeProvider";
 import {Toaster} from "@/components/ui/sonner";
 import {SkeletonTheme} from "react-loading-skeleton";
 import {AuthProvider} from "@/contexts/auth-context";
+import {SocketProvider} from "@/contexts/socket-context";
 import {defaultSWRConfig} from "@/lib/swrConfig";
 import {SWRConfig} from "swr";
 
@@ -41,7 +42,9 @@ export default function LandingPageLayout({
         >
             <SkeletonTheme baseColor="#202020" highlightColor="#444">
                 <AuthProvider>
-                    <SWRConfig value={defaultSWRConfig}>{children}</SWRConfig>
+                    <SocketProvider>
+                        <SWRConfig value={defaultSWRConfig}>{children}</SWRConfig>
+                    </SocketProvider>
                 </AuthProvider>
             </SkeletonTheme>
             <Toaster/>
