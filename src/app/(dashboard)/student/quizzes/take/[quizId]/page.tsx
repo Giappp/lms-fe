@@ -28,6 +28,7 @@ const mockQuiz: QuizDetailResponse = {
     description: "Test your knowledge of React Hooks",
     quizType: QuizType.LESSON_QUIZ,
     courseId: 1,
+    courseName: "React for Beginners",
     lessonId: 5,
     maxAttempts: 3,
     scoringMethod: "HIGHEST" as any,

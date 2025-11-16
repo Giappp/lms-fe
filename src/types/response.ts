@@ -100,9 +100,7 @@ export interface QuizResponse {
     description: string;
     quizType: QuizType;
     courseId: number;
-    courseName?: string;
     lessonId?: number;
-    lessonTitle?: string;
     
     startTime?: Date;
     endTime?: Date;
@@ -125,6 +123,8 @@ export interface QuizResponse {
 }
 
 export interface QuizDetailResponse extends QuizResponse {
+    courseName: string;
+    lessonTitle?: string;
     questions: QuestionResponse[];
 }
 

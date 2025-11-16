@@ -55,6 +55,7 @@ const mockQuizData: QuizDetailResponse = {
     description: "Test your knowledge of React Hooks including useState, useEffect, useContext, and custom hooks.",
     quizType: QuizType.LESSON_QUIZ,
     courseId: 1,
+    courseName: "React for Beginners",
     lessonId: 5,
     maxAttempts: 3,
     scoringMethod: "HIGHEST" as any,
