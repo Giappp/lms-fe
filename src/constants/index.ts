@@ -22,6 +22,14 @@ export class Constants {
         }
     };
 
+    static readonly ENROLLMENT_ROUTES = {
+        REQUEST: "/api/enrollments",
+        MY_ENROLLMENTS: "/api/enrollments/student",
+        COURSE_ENROLLMENTS: "/api/enrollments/course",
+        UPDATE_STATUS: "/api/enrollments",
+        CANCEL: "/api/enrollments"
+    };
+
     static readonly COURSES_ROUTES = {
         LIST: "/api/courses/search",
         TOP_RATED: "/api/courses/top-rated",

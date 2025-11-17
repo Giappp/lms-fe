@@ -13,6 +13,23 @@ export type UserResponse = {
     isVerified?: boolean;
 }
 
+export type EnrollmentPreviewResponse = {
+    id: number;
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    createdAt: string;
+    updatedAt: string;
+    course: CourseResponse;
+}
+
+export type EnrollmentResponse = {
+    id: number;
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    createdAt: string;
+    updatedAt: string;
+    course: CourseResponse;
+    student: UserResponse;
+}
+
 export type AuthResponse = {
     user: UserResponse;
     accessToken: string;
