@@ -12,6 +12,16 @@ export type CreateConversationRequest = {
     participantIds: number[];
 }
 
+export type EnrollmentRequest = {
+    courseId: number;
+    studentId: number;
+}
+
+export type UpdateEnrollmentStatusRequest = {
+    status: "APPROVED" | "REJECTED";
+    reason?: string;
+}
+
 import {CourseStatus, Difficulty} from "@/types/enum";
 
 export type CoursesFilterParams = {

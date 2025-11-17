@@ -40,6 +40,12 @@ const menuList = [
         ],
     },
     {
+        title: "Enrollment",
+        subMenus: [
+            {title: "My Enrollments", url: "/student/enrollments", icon: faTrophy},
+        ]
+    },
+    {
         title: "Assessment",
         subMenus: [
             {title: "Available Quizzes", url: "/student/quizzes", icon: faFileAlt},
