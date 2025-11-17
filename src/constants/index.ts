@@ -40,6 +40,38 @@ export class Constants {
         DELETE: "/api/courses"
     };
 
+    static readonly QUIZ_ROUTES = {
+        LIST: "/api/quizzes",
+        DETAIL: "/api/quizzes",
+        CREATE: "/api/quizzes",
+        UPDATE: "/api/quizzes",
+        DELETE: "/api/quizzes",
+        BY_COURSE: "/api/quizzes/course",
+        BY_LESSON: "/api/quizzes/lesson",
+        
+        // Question management
+        ADD_QUESTION: "/api/quizzes/questions",
+        UPDATE_QUESTION: "/api/quizzes/questions",
+        DELETE_QUESTION: "/api/quizzes/questions",
+        REORDER_QUESTIONS: "/api/quizzes/questions/reorder",
+        
+        // Student actions
+        START: "/api/quiz-attempts/start",
+        SAVE_PROGRESS: "/api/quiz-attempts/save-progress",
+        SUBMIT: "/api/quiz-attempts/submit",
+        MY_ATTEMPTS: "/api/quiz-attempts/my-attempts",
+        ATTEMPT_DETAIL: "/api/quiz-attempts",
+        
+        // Statistics & Analytics
+        ANALYTICS: "/api/quizzes/analytics",
+        COURSE_STATISTICS: "/api/quizzes/statistics/course",
+        STUDENT_HISTORY: "/api/quiz-attempts/student/history",
+        
+        // Import/Export
+        IMPORT: "/api/quizzes/import",
+        EXPORT: "/api/quizzes/export"
+    };
+  
     static readonly CONVERSATIONS_ROUTES = {
         MY_CONVERSATIONS: "/api/conversations/my-conversations",
         CREATE: "/api/conversations",
