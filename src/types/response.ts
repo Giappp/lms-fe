@@ -13,6 +13,23 @@ export type UserResponse = {
     isVerified?: boolean;
 }
 
+export type EnrollmentPreviewResponse = {
+    id: number;
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    createdAt: string;
+    updatedAt: string;
+    course: CourseResponse;
+}
+
+export type EnrollmentResponse = {
+    id: number;
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    createdAt: string;
+    updatedAt: string;
+    course: CourseResponse;
+    student: UserResponse;
+}
+
 export type AuthResponse = {
     user: UserResponse;
     accessToken: string;
@@ -290,4 +307,62 @@ export interface ImportQuizResponse {
     quizId: number;
     questionsImported: number;
     errors: string[];
+}
+export type PaginatedResponse<T> = {
+    content: T[];
+    pageable: {
+        pageNumber: number;
+        pageSize: number;
+        sort: {
+            sorted: boolean;
+            unsorted: boolean;
+            empty: boolean;
+        };
+        offset: number;
+        paged: boolean;
+        unpaged: boolean;
+    };
+    totalPages: number;
+    totalElements: number;
+    last: boolean;
+    first: boolean;
+    size: number;
+    number: number;
+    sort: {
+        sorted: boolean;
+        unsorted: boolean;
+        empty: boolean;
+    };
+    numberOfElements: number;
+    empty: boolean;
+}
+
+export type ParticipantInfo = {
+    userId: number;
+    username: string;
+    fullName: string;
+    avatarUrl?: string;
+}
+
+export type MessageResponse = {
+    id: string;
+    conversationId: string;
+    me: boolean;
+    message: string;
+    sender: ParticipantInfo;
+    status: "SENT" | "DELIVERED" | "READ";
+    createdDate: string;
+}
+
+export type ConversationType = "DIRECT" | "GROUP";
+
+export type ConversationResponse = {
+    id: string;
+    type: ConversationType;
+    participantsHash: string;
+    conversationAvatar?: string;
+    conversationName: string;
+    participants: ParticipantInfo[];
+    createdDate: string;
+    modifiedDate: string;
 }

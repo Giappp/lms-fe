@@ -3,6 +3,26 @@
 */
 
 import {CourseStatus, Difficulty, QuestionType, QuizType, ScoringMethod} from "@/types/enum";
+import {CourseStatus, Difficulty} from "@/types/enum";
+export type SendMessageRequest = {
+    conversationId: string;
+    message: string;
+}
+
+export type CreateConversationRequest = {
+    type: "DIRECT" | "GROUP";
+    participantIds: number[];
+}
+
+export type EnrollmentRequest = {
+    courseId: number;
+    studentId: number;
+}
+
+export type UpdateEnrollmentStatusRequest = {
+    status: "APPROVED" | "REJECTED";
+    reason?: string;
+}
 
 export type CoursesFilterParams = {
     keyword?: string;

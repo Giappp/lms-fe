@@ -1,5 +1,6 @@
 export class Constants {
     static readonly BACKEND_URL = 'http://localhost:8081';
+    static readonly SOCKET_URL = "http://localhost:9092";
 
     static readonly ROLES = {
         STUDENT: "STUDENT",
@@ -19,6 +20,14 @@ export class Constants {
             GOOGLE: "/api/auth/google",
             GITHUB: "/api/auth/github"
         }
+    };
+
+    static readonly ENROLLMENT_ROUTES = {
+        REQUEST: "/api/enrollments",
+        MY_ENROLLMENTS: "/api/enrollments/student",
+        COURSE_ENROLLMENTS: "/api/enrollments/course",
+        UPDATE_STATUS: "/api/enrollments",
+        CANCEL: "/api/enrollments"
     };
 
     static readonly COURSES_ROUTES = {
@@ -61,6 +70,24 @@ export class Constants {
         // Import/Export
         IMPORT: "/api/quizzes/import",
         EXPORT: "/api/quizzes/export"
+    };
+  
+    static readonly CONVERSATIONS_ROUTES = {
+        MY_CONVERSATIONS: "/api/conversations/my-conversations",
+        CREATE: "/api/conversations",
+        SEARCH: "/api/conversations/search"
+    };
+
+    static readonly MESSAGES_ROUTES = {
+        GET_MESSAGES: "/api/messages",
+        SEND_MESSAGE: "/api/messages",
+        LAST_MESSAGE: "/api/messages/last",
+        SEARCH_MESSAGES: "/api/messages/search",
+        MARK_AS_READ: "/api/messages/read"
+    };
+
+    static readonly WEBSOCKET_ROUTES = {
+        ONLINE_STATUS: "/api/websocket/users"
     };
 
     static readonly APP_ROUTES = {

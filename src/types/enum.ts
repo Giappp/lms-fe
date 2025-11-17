@@ -25,3 +25,9 @@ export enum AttemptStatus {
     COMPLETED = "COMPLETED",
     EXPIRED = "EXPIRED"
 }
+
+export enum EnrollmentStatus {
+    PENDING = "PENDING",
+    APPROVED = "APPROVED",
+    REJECTED = "REJECTED"
+}
