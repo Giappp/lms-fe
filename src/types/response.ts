@@ -9,8 +9,20 @@ export type UserResponse = {
     enable: boolean;
     fullName: string;
     role: "STUDENT" | "TEACHER";
-    avatar?: string;
+    avatarUrl?: string;
     isVerified?: boolean;
+    bio?: string;
+    learningGoals?: string;
+}
+
+export type FileResponse = {
+    id: string;
+    name: string;
+    contentType: string;
+    size: number;
+    checksum: string;
+    path: string;
+    url: string;
 }
 
 export type EnrollmentPreviewResponse = {
