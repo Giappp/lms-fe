@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useEffect, useState} from 'react'
 import {
     closestCenter,
     defaultDropAnimation,
@@ -28,6 +28,7 @@ type Props = {
     onUpdateChapterAction: (index: number, item: ChapterWithLessons,) => void;
     onRemoveChapterAction: (index: number) => void;
     onUpdateLessonsAction: (idx: number, lessons: Lesson[]) => void;
+    errors?: Record<string, string> | null;
 }
 
 const measuring = {
@@ -49,6 +50,7 @@ const adjustTranslate: Modifier = ({transform}) => {
 const ChaptersTree = ({
                           chapters,
                           setChapters,
+                          errors,
                           indicator = false,
                           onUpdateChapterAction,
                           onAddChapterAction,
@@ -58,12 +60,18 @@ const ChaptersTree = ({
     const [activeType, setActiveType] = useState<"chapter" | "lesson" | null>(null);
     const [activeItem, setActiveItem] = useState<any>(null);
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
-    if (chapters?.length != 0) {
-        chapters.forEach((chapter, chapterIndex) => {
-            chapter._id = crypto.randomUUID(); // Temporary ID for dnd-kit
-            chapter.orderIndex = chapterIndex;
-        });
-    }
+    useEffect(() => {
+        const needsIds = chapters.some(chapter => !chapter._id);
+
+        if (needsIds) {
+            setChapters(prev => prev.map((chapter, index) => ({
+                ...chapter,
+                _id: chapter._id || crypto.randomUUID(),
+                orderIndex: index,
+                lessons: chapter.lessons || []
+            })));
+        }
+    }, [chapters, setChapters]);
 
     // Find an item (chapter or lesson) by a dnd-kit id like "chapter:1" or "lesson:2"
     const findItemById = (id: UniqueIdentifier) => {
@@ -90,7 +98,8 @@ const ChaptersTree = ({
                     modifiers={[restrictToVerticalAxis, restrictToWindowEdges, restrictToFirstScrollableAncestor]}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
-                    onDragCancel={handleDragCancel}>
+                    onDragCancel={handleDragCancel}
+        >
             <div className="mb-6">
                 {chapters.length === 0 && (
                     <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
@@ -109,13 +118,16 @@ const ChaptersTree = ({
                 )}
                 <SortableContext items={chapters.map((c) => `chapter:${c._id}`)}
                                  strategy={verticalListSortingStrategy}>
-                    {chapters.map((chapter, index) => (
-                        <ChapterSortableRef key={chapter._id} id={`chapter:${chapter._id}`} chapter={chapter}
-                                            index={index}
-                                            onChangeAction={(updated) => onUpdateChapterAction(index, updated)}
-                                            onRemoveAction={() => onRemoveChapterAction(index)}
-                                            onUpdateLessonsAction={(lessons) => onUpdateLessonsAction(index, lessons)}/>
-                    ))}
+                    {chapters.map((chapter, index) => {
+                        const errorKey = `chapters[${index}].title`;
+                        const chapterError = errors?.[errorKey];
+                        return <ChapterSortableRef key={chapter._id} id={`chapter:${chapter._id}`} chapter={chapter}
+                                                   index={index}
+                                                   error={chapterError}
+                                                   onChangeAction={(updated) => onUpdateChapterAction(index, updated)}
+                                                   onRemoveAction={() => onRemoveChapterAction(index)}
+                                                   onUpdateLessonsAction={(lessons) => onUpdateLessonsAction(index, lessons)}/>
+                    })}
                     {/*{createPortal(*/}
                     {/*    <DragOverlay*/}
                     {/*        dropAnimation={dropAnimationConfig}*/}

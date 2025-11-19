@@ -20,6 +20,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLLIElement>, 'id'> {
     onRemoveAction?: () => void;
     onAddLessonAction?: () => void;
     onUpdateLessonsAction?: (lessons: Lesson[]) => void;
+    error?: string;
 
     wrapperRef?(node: HTMLDivElement): void;
 }
@@ -27,6 +28,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLLIElement>, 'id'> {
 export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
                                                                   chapter,
                                                                   index,
+                                                                  error,
                                                                   ghost,
                                                                   wrapperRef,
                                                                   disableInteraction,
@@ -42,14 +44,6 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
     const [editingIdx, setEditingIdx] = useState<number | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    const setIdForlesson = () => {
-        chapter.lessons.forEach((lesson, idx) => {
-            lesson._id = crypto.randomUUID();
-            lesson.orderIndex = idx;
-        });
-    }
-    setIdForlesson();
-
     const handleAddLesson = () => {
         const newLesson: Lesson = {
             _id: crypto.randomUUID(),
@@ -61,13 +55,26 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
             description: '',
             duration: 0
         };
-        onUpdateLessonsAction?.([...chapter.lessons, newLesson]);
+
+        // Ensure all existing lessons have IDs and proper order
+        const updatedLessons = chapter.lessons.map((lesson, idx) => ({
+            ...lesson,
+            _id: lesson._id || crypto.randomUUID(),
+            orderIndex: idx
+        }));
+
+        onUpdateLessonsAction?.([...updatedLessons, newLesson]);
         onAddLessonAction?.();
     };
 
     const handleRemoveLesson = (idx: number) => {
         if (window.confirm('Are you sure you want to delete this lesson?')) {
-            const updatedLessons = chapter.lessons.filter((_, i) => i !== idx);
+            const updatedLessons = chapter.lessons
+                .filter((_, i) => i !== idx)
+                .map((lesson, i) => ({
+                    ...lesson,
+                    orderIndex: i
+                }));
             onUpdateLessonsAction?.(updatedLessons);
         }
     };
@@ -99,7 +106,7 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
             ref={wrapperRef}>
             <div ref={ref}
                  style={style}
-                 className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                 className={`bg-white rounded-lg border shadow-sm overflow-hidden hover:shadow-md transition-shadow ${error ? "border-red-500 ring-1 ring-red-500" : "border-gray-200"}`}>
                 {/* Chapter Header */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
                     <div className="p-4">
@@ -135,6 +142,12 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
                                         <span>{totalDuration} min total</span>
                                     </div>
                                 </div>
+                                {/* Render the Error Message Text */}
+                                {error && (
+                                    <p className="text-xs text-red-500 mt-1 ml-8 font-medium">
+                                        {error}
+                                    </p>
+                                )}
                             </div>
                             <div className="flex items-start gap-2 shrink-0">
                                 <Button
@@ -185,7 +198,7 @@ export const ChapterItem = forwardRef<HTMLDivElement, Props>(({
                             <div className="space-y-2">
                                 {chapter.lessons.map((lesson, idx) => (
                                     <LessonCard
-                                        key={lesson._id}
+                                        key={lesson._id || `lesson-${idx}`}
                                         lesson={lesson}
                                         index={idx}
                                         chapterIndex={index}

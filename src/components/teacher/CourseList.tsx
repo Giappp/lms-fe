@@ -38,6 +38,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import Link from "next/link";
 
 type ViewMode = 'grid' | 'list';
 type SortOption = 'name-asc' | 'name-desc' | 'date-desc' | 'date-asc' | 'students-desc';
@@ -344,7 +345,7 @@ export default function CourseList() {
                                 {!keyword && (
                                     <Button className="mt-2">
                                         <Plus className="w-4 h-4 mr-2"/>
-                                        Create Course
+                                        <Link href="/teacher/create-curriculum">Create Course</Link>
                                     </Button>
                                 )}
                             </div>

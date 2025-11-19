@@ -6,7 +6,8 @@ import ChaptersTree from "@/components/teacher/ChaptersTree";
 import {CourseStats} from "@/components/teacher/CourseStats";
 import {useCourseCurriculum} from "@/hooks/useCourseCurriculum";
 import {Button} from "@/components/ui/button";
-import {Plus, Save} from "lucide-react";
+import {AlertCircle, Plus, Save} from "lucide-react";
+import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 
 type CurriculumBuilderProps = {
     onSaveAction?: (data: ChapterWithLessons[]) => void;
@@ -26,6 +27,7 @@ export default function CurriculumBuilder({onSaveAction, courseId, disabled}: Cu
         const newChapter: ChapterWithLessons = {
             _id: crypto.randomUUID(),
             title: 'Untitled Chapter',
+            orderIndex: chapters.length,
             lessons: []
         };
         setChapters([...chapters, newChapter]);
@@ -104,7 +106,23 @@ export default function CurriculumBuilder({onSaveAction, courseId, disabled}: Cu
                         <CourseStats chapters={chapters}/>
                     </div>
                 </div>
+
+                {/* --- NEW: Global Error Display --- */}
+                {serverErrors && (
+                    <div className="mb-6">
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4"/>
+                            <AlertTitle>Error Saving Curriculum</AlertTitle>
+                            <AlertDescription>
+                                {serverErrors.general
+                                    ? serverErrors.general
+                                    : "Please fix the errors highlighted below before saving."}
+                            </AlertDescription>
+                        </Alert>
+                    </div>
+                )}
                 <ChaptersTree chapters={chapters}
+                              errors={serverErrors}
                               setChapters={setChapters}
                               onRemoveChapterAction={handleRemoveChapter} onAddChapterAction={handleAddChapter}
                               onUpdateChapterAction={handleUpdateChapter} onUpdateLessonsAction={handleUpdateLessons}/>
