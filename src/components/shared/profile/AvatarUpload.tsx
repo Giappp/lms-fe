@@ -35,16 +35,27 @@ export function AvatarUpload({
     };
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const allowedTypes = [
+            "image/jpeg",
+            "image/jpg",
+            "image/png"
+        ];
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!file.type.startsWith("image/")) {
-            setError("Please select an image file");
+        if (!allowedTypes.includes(file.type)) {
+            setError("Please select a valid file type (JPG, PNG)");
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
             return;
         }
 
         if (file.size > 5 * 1024 * 1024) {
             setError("File size must be less than 5MB");
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
             return;
         }
 
@@ -126,6 +137,7 @@ export function AvatarUpload({
                             size="sm"
                             onClick={handleClick}
                             disabled={isUploading}
+                            aria-label="Change profile picture"
                         >
                             <Upload className="mr-2 h-4 w-4" />
                             {isUploading ? "Uploading..." : "Upload"}

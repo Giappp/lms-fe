@@ -9,11 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AvatarUpload } from "@/components/shared/profile/AvatarUpload";
 import { ProfileForm } from "@/components/shared/profile/ProfileForm";
 import {
-    User,
-    Mail,
     Shield,
-    CheckCircle,
-    AlertCircle,
     BookOpen,
 } from "lucide-react";
 import Skeleton from "react-loading-skeleton";

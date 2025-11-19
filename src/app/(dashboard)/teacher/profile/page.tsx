@@ -15,7 +15,6 @@ import {
     Shield,
     CheckCircle,
     AlertCircle,
-    Loader2,
     GraduationCap,
 } from "lucide-react";
 import Skeleton from "react-loading-skeleton";
@@ -24,7 +23,8 @@ import "react-loading-skeleton/dist/skeleton.css";
 export default function TeacherProfilePage() {
     const { toast } = useToast();
     const { profile, isLoading, updateProfile, uploadAvatar, deleteAvatar } = useProfile();
-    const [isUploading, setIsUploading] = useState(false);
+    const [isAvatarUploading, setIsAvatarUploading] = useState(false);
+    const [isQualificationUploading, setIsQualificationUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     // Mock qualifications data (replace with real API when available)
@@ -46,7 +46,7 @@ export default function TeacherProfilePage() {
     ]);
 
     const handleAvatarUpload = async (file: File) => {
-        setIsUploading(true);
+        setIsAvatarUploading(true);
         try {
             const result = await uploadAvatar(file);
             if (result) {
@@ -64,14 +64,14 @@ export default function TeacherProfilePage() {
                 return null;
             }
         } finally {
-            setIsUploading(false);
+            setIsAvatarUploading(false);
         }
     };
 
     const handleAvatarDelete = async () => {
         if (!profile?.avatarUrl) return false;
 
-        setIsUploading(true);
+        setIsAvatarUploading(true);
         try {
             const success = await deleteAvatar(profile.avatarUrl);
             if (success) {
@@ -89,7 +89,7 @@ export default function TeacherProfilePage() {
                 return false;
             }
         } finally {
-            setIsUploading(false);
+            setIsAvatarUploading(false);
         }
     };
 
@@ -128,7 +128,7 @@ export default function TeacherProfilePage() {
     };
 
     const handleQualificationUpload = async (file: File) => {
-        setIsUploading(true);
+        setIsQualificationUploading(true);
         try {
             // TODO: Replace with actual API call
             await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -136,7 +136,7 @@ export default function TeacherProfilePage() {
             const newQualification = {
                 id: Date.now().toString(),
                 name: file.name,
-                url: URL.createObjectURL(file),
+                url: `https://example.com/qualifications/${Date.now()}-${file.name}`,
                 size: file.size,
                 uploadedAt: new Date().toISOString(),
             };
@@ -157,7 +157,7 @@ export default function TeacherProfilePage() {
             });
             return null;
         } finally {
-            setIsUploading(false);
+            setIsQualificationUploading(false);
         }
     };
 
@@ -283,7 +283,7 @@ export default function TeacherProfilePage() {
                         userName={profile.fullName}
                         onUpload={handleAvatarUpload}
                         onDelete={handleAvatarDelete}
-                        isUploading={isUploading}
+                        isUploading={isAvatarUploading}
                     />
                 </CardContent>
             </Card>
@@ -300,7 +300,7 @@ export default function TeacherProfilePage() {
                 qualifications={qualifications}
                 onUpload={handleQualificationUpload}
                 onDelete={handleQualificationDelete}
-                isUploading={isUploading}
+                isUploading={isQualificationUploading}
             />
 
             {/* Info Alert */}

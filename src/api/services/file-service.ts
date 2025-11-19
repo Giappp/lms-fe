@@ -25,13 +25,4 @@ export class FileService {
             })
         );
     }
-
-    static async downloadAvatar(fileUrl: string) {
-        return await apiCall<Blob>(() =>
-            axiosInstance.get(Constants.FILE_ROUTES.DOWNLOAD_AVATAR, {
-                params: { fileUrl },
-                responseType: "blob",
-            })
-        );
-    }
 }

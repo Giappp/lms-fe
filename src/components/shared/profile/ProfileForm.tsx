@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { UserResponse } from "@/types/response";
 import { Loader2, Save } from "lucide-react";
+import { toast } from "sonner";
 
 interface ProfileFormProps {
     profile: UserResponse;
@@ -29,6 +30,11 @@ export function ProfileForm({ profile, onSave, isSaving = false }: ProfileFormPr
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!firstName.trim() || !lastName.trim()) {
+            toast.error("First name and last name are required.");
+            return;
+        }
         await onSave({
             firstName,
             lastName,
@@ -99,10 +105,11 @@ export function ProfileForm({ profile, onSave, isSaving = false }: ProfileFormPr
                             onChange={(e) => setBio(e.target.value)}
                             placeholder="Tell us about yourself..."
                             rows={4}
+                            maxLength={255}
                             className="resize-none"
                         />
                         <p className="text-xs text-muted-foreground">
-                            Brief description for your profile. Max 500 characters.
+                            Brief description for your profile. Max 255 characters.
                         </p>
                     </div>
 
@@ -115,6 +122,7 @@ export function ProfileForm({ profile, onSave, isSaving = false }: ProfileFormPr
                             onChange={(e) => setLearningGoals(e.target.value)}
                             placeholder="What do you want to achieve?"
                             rows={4}
+                            maxLength={255}
                             className="resize-none"
                         />
                         <p className="text-xs text-muted-foreground">

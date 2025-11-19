@@ -86,24 +86,27 @@ export function QualificationUpload({
     };
 
     const handleFile = async (file: File) => {
-        // Validate file type (PDFs, images, docs)
+        // Note: Client-side validation only. Backend MUST validate file type, size, and content
         const allowedTypes = [
             "application/pdf",
             "image/jpeg",
             "image/png",
-            "image/jpg",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "image/jpg"
         ];
 
         if (!allowedTypes.includes(file.type)) {
             setError("Please upload PDF, DOC, DOCX, or image files only");
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
             return;
         }
 
-        // Validate file size (max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            setError("File size must be less than 10MB");
+        if (file.size > 5 * 1024 * 1024) {
+            setError("File size must be less than 5MB");
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
             return;
         }
 
@@ -129,11 +132,25 @@ export function QualificationUpload({
         }
     };
 
-    const handleDownload = (url: string, name: string) => {
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = name;
-        link.click();
+    const handleDownload = async (url: string, name: string) => {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+            const blob = await response.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error("Download failed:", error);
+            setError("Failed to download qualification document");
+        }
     };
 
     return (
@@ -167,6 +184,15 @@ export function QualificationUpload({
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Upload qualification documents"
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleClick();
+                        }
+                    }}
                 >
                     <div className="flex flex-col items-center gap-4">
                         <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -180,6 +206,7 @@ export function QualificationUpload({
                                     onClick={handleClick}
                                     disabled={isUploading}
                                     className="text-primary hover:underline disabled:opacity-50"
+                                    aria-label="Browse files"
                                 >
                                     browse
                                 </button>
@@ -234,6 +261,7 @@ export function QualificationUpload({
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => handleDownload(file.url, file.name)}
+                                            aria-label={`Download ${file.name}`}
                                         >
                                             <Download className="h-4 w-4" />
                                         </Button>
@@ -242,6 +270,7 @@ export function QualificationUpload({
                                             size="sm"
                                             onClick={() => handleDelete(file.url)}
                                             disabled={isUploading}
+                                            aria-label={`Delete ${file.name}`}
                                         >
                                             <X className="h-4 w-4" />
                                         </Button>
