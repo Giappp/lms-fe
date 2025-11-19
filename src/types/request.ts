@@ -3,7 +3,7 @@
 */
 
 import {CourseStatus, Difficulty, QuestionType, QuizType, ScoringMethod} from "@/types/enum";
-import {CourseStatus, Difficulty} from "@/types/enum";
+
 export type SendMessageRequest = {
     conversationId: string;
     message: string;
@@ -42,6 +42,14 @@ export type SignInData = {
     email: string;
     password: string;
     role: string;
+}
+
+export type UpdateProfileRequest = {
+    id: number;
+    firstName: string;
+    lastName: string;
+    bio?: string;
+    learningGoals?: string;
 }
 
 export type SignUpData = {

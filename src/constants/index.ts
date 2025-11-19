@@ -30,6 +30,18 @@ export class Constants {
         CANCEL: "/api/enrollments"
     };
 
+    static readonly USER_ROUTES = {
+        PROFILE: "/api/users/profile",
+        UPDATE_PROFILE: "/api/users/profile"
+    };
+
+    static readonly FILE_ROUTES = {
+        UPLOAD_AVATAR: "/api/file/avatar",
+        DELETE_AVATAR: "/api/file/avatar",
+        DOWNLOAD_AVATAR: "/api/file/avatar/download",
+        PRESIGNED_URL: "/api/file/presigned-url"
+    };
+
     static readonly COURSES_ROUTES = {
         LIST: "/api/courses/search",
         TOP_RATED: "/api/courses/top-rated",
