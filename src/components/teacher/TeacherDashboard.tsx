@@ -1,4 +1,5 @@
 "use client"
+
 import React, {useState} from 'react';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
@@ -340,10 +341,6 @@ const TeacherDashboard = () => {
                     </TabsContent>
                 </Tabs>
             </div>
-
-            <style jsx global>{`
-                ${document.querySelector('style[data-theme]')?.textContent || ''}
-            `}</style>
         </div>
     );
 };

@@ -41,12 +41,17 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
     const pathname = usePathname();
     const router = useRouter();
 
-    // Routes that don't need user fetching
-    const disableAuthCheckRoutes = ["/verify", "/signin", "/signup", "/"];
+    const shouldFetchUser = useMemo(() => {
+        const disableAuthCheckPrefixes = ["/verify", "/signin", "/signup"];
+        // Don't fetch on the exact landing page (if that is your intent)
+        if (pathname === "/") return false;
 
-    const shouldFetchUser = !disableAuthCheckRoutes.some((route) =>
-        pathname.startsWith(route)
-    );
+        // Don't fetch if path starts with ignored prefixes
+        if (disableAuthCheckPrefixes.some((route) => pathname.startsWith(route))) return false;
+
+        // Otherwise, fetch!
+        return true;
+    }, [pathname]);
 
     const {data, isLoading, isValidating, mutate} = useSWR<UserResponse | null>(
         shouldFetchUser ? "/api/auth/me" : null,
@@ -64,7 +69,6 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
     const signIn = useCallback(async (data: SignInData) => {
         try {
             const res = await axiosInstance.post(Constants.AUTH_ROUTES.SIGN_IN, data);
-            // Assuming response structure: { data: { accessToken, refreshToken, ... } }
             const {accessToken, refreshToken} = res.data.data;
 
             localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN, accessToken);
@@ -104,9 +108,6 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
         const token = localStorage.getItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN);
 
         try {
-            // 1. Call Backend Logout (Fixing the Payload issue)
-            // Spring Boot expects @RequestBody LogoutRequest.
-            // Ensure "token" matches the field name in your LogoutRequest Java Class.
             if (token) {
                 await axiosInstance.post(Constants.AUTH_ROUTES.LOGOUT, {
                     refreshToken: token
