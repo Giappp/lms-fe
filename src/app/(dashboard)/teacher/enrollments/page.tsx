@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useCourseEnrollments } from "@/hooks/useEnrollments";
+import { useMyCourses } from "@/hooks/useCourses";
 import { TeacherEnrollmentCard } from "@/components/teacher/enrollments/TeacherEnrollmentCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,24 +32,23 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const PAGE_SIZE = 10;
 
-// Mock courses for demo - replace with actual course list
-const mockCourses = [
-    { id: 1, name: "React Fundamentals" },
-    { id: 2, name: "Advanced TypeScript" },
-    { id: 3, name: "Node.js Backend Development" },
-    { id: 4, name: "Database Design" },
-    { id: 5, name: "Web Security" }
-];
-
 export default function TeacherEnrollmentsPage() {
     const { toast } = useToast();
-    const [selectedCourseId, setSelectedCourseId] = useState<number>(mockCourses[0].id);
+    const { courses, isLoading: isLoadingCourses } = useMyCourses();
+    const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
     const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | undefined>(undefined);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
+    // Set first course as default when courses load
+    React.useEffect(() => {
+        if (courses.length > 0 && !selectedCourseId) {
+            setSelectedCourseId(courses[0].id);
+        }
+    }, [courses, selectedCourseId]);
+
     const { enrollments, isLoading, isUpdating, mutate, updateEnrollmentStatus } = useCourseEnrollments(
-        selectedCourseId,
+        selectedCourseId || 0,
         statusFilter,
         searchTerm,
         currentPage,
@@ -146,7 +146,7 @@ export default function TeacherEnrollmentsPage() {
                 <Button 
                     variant="outline" 
                     onClick={() => mutate()}
-                    disabled={isLoading}
+                    disabled={isLoading || !selectedCourseId}
                     className="gap-2"
                 >
                     <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
@@ -154,8 +154,40 @@ export default function TeacherEnrollmentsPage() {
                 </Button>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Loading State for Courses */}
+            {isLoadingCourses && (
+                <Card>
+                    <CardContent className="py-12">
+                        <div className="flex flex-col items-center justify-center space-y-4">
+                            <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                            <p className="text-muted-foreground">Loading your courses...</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* No Courses State */}
+            {!isLoadingCourses && courses.length === 0 && (
+                <Card>
+                    <CardContent className="py-12">
+                        <div className="flex flex-col items-center justify-center space-y-4">
+                            <Users className="h-16 w-16 text-muted-foreground" />
+                            <div className="text-center">
+                                <h3 className="text-lg font-semibold">No Courses Yet</h3>
+                                <p className="text-muted-foreground mt-2">
+                                    You haven't created any courses yet. Create a course to start managing enrollments.
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Main Content - Only show when courses exist and one is selected */}
+            {!isLoadingCourses && courses.length > 0 && selectedCourseId && (
+                <>
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                     <CardContent className="pt-6">
                         <div className="flex items-center gap-3">
@@ -206,18 +238,18 @@ export default function TeacherEnrollmentsPage() {
                 </Card>
             </div>
 
-            {/* Pending Alert */}
-            {pendingCount > 0 && (
-                <Alert className="border-yellow-200 bg-yellow-50">
-                    <Clock className="h-4 w-4 text-yellow-600" />
-                    <AlertDescription className="text-yellow-800">
-                        You have <strong>{pendingCount}</strong> pending enrollment {pendingCount === 1 ? "request" : "requests"} awaiting your review.
-                    </AlertDescription>
-                </Alert>
-            )}
+                    {/* Pending Alert */}
+                    {pendingCount > 0 && (
+                        <Alert className="border-yellow-200 bg-yellow-50">
+                            <Clock className="h-4 w-4 text-yellow-600" />
+                            <AlertDescription className="text-yellow-800">
+                                You have <strong>{pendingCount}</strong> pending enrollment {pendingCount === 1 ? "request" : "requests"} awaiting your review.
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
-            {/* Filter Section */}
-            <Card>
+                    {/* Filter Section */}
+                    <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Filter className="h-5 w-5"/>
@@ -233,16 +265,17 @@ export default function TeacherEnrollmentsPage() {
                         <div className="space-y-2">
                             <Label htmlFor="course">Course</Label>
                             <Select 
-                                value={selectedCourseId.toString()} 
+                                value={selectedCourseId?.toString() || ""} 
                                 onValueChange={handleCourseChange}
+                                disabled={isLoadingCourses || courses.length === 0}
                             >
                                 <SelectTrigger id="course">
-                                    <SelectValue placeholder="Select Course" />
+                                    <SelectValue placeholder={isLoadingCourses ? "Loading courses..." : "Select Course"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {mockCourses.map(course => (
+                                    {courses.map(course => (
                                         <SelectItem key={course.id} value={course.id.toString()}>
-                                            {course.name}
+                                            {course.title}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -300,21 +333,21 @@ export default function TeacherEnrollmentsPage() {
                 </CardContent>
             </Card>
 
-            {/* Results Section */}
-            <div>
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-semibold">
-                            {totalElements} {totalElements === 1 ? 'Student' : 'Students'}
-                        </h2>
-                        {hasActiveFilters && (
-                            <Badge variant="secondary">Filtered</Badge>
-                        )}
-                    </div>
-                </div>
+                    {/* Results Section */}
+                    <div>
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-lg font-semibold">
+                                    {totalElements} {totalElements === 1 ? 'Student' : 'Students'}
+                                </h2>
+                                {hasActiveFilters && (
+                                    <Badge variant="secondary">Filtered</Badge>
+                                )}
+                            </div>
+                        </div>
 
-                {/* Loading State */}
-                {isLoading && (
+                        {/* Loading State */}
+                        {isLoading && (
                     <div className="space-y-4">
                         {Array.from({ length: 5 }).map((_, i) => (
                             <Card key={i}>
@@ -353,8 +386,8 @@ export default function TeacherEnrollmentsPage() {
                     </Card>
                 )}
 
-                {/* Enrollments List */}
-                {!isLoading && sortedEnrollments.length > 0 && (
+                    {/* Enrollments List */}
+                    {!isLoading && sortedEnrollments.length > 0 && (
                     <>
                         <div className="space-y-4">
                             {sortedEnrollments.map((enrollment) => (
@@ -410,9 +443,11 @@ export default function TeacherEnrollmentsPage() {
                                 </Pagination>
                             </div>
                         )}
-                    </>
-                )}
-            </div>
+                        </>
+                    )}
+                    </div>
+                </>
+            )}
         </div>
     );
 }

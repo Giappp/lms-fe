@@ -51,5 +51,10 @@ export const CourseService = {
     },
     deleteCourse: async (courseId: number) => {
         return await apiCall(() => axiosInstance.delete(`${Constants.COURSES_ROUTES.DELETE}/${courseId}`));
+    },
+    getMyCourses: async () => {
+        return await apiCall<CourseResponse[]>(() =>
+            axiosInstance.get(Constants.COURSES_ROUTES.MY_COURSES)
+        );
     }
 };

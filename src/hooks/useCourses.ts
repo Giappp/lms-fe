@@ -124,3 +124,26 @@ export function useCourses(filters?: CourseFilter) {
         refresh: () => mutate(),
     };
 }
+
+/**
+ * Hook for fetching teacher's own courses
+ */
+export function useMyCourses() {
+    const { data, error, isLoading, mutate } = useSWR<CourseResponse[]>(
+        Constants.COURSES_ROUTES.MY_COURSES,
+        swrFetcher,
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: true,
+        }
+    );
+
+    return {
+        courses: data ?? [],
+        isLoading,
+        isError: !!error,
+        error,
+        mutate,
+        refresh: () => mutate(),
+    };
+}

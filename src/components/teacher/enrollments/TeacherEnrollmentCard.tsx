@@ -77,7 +77,7 @@ export function TeacherEnrollmentCard({
                     <div className="flex items-start gap-4">
                         {/* Avatar */}
                         <Avatar className="h-12 w-12 flex-shrink-0">
-                            <AvatarImage src={student.avatar} alt={student.fullName} />
+                            <AvatarImage src={student.avatarUrl} alt={student.fullName} />
                             <AvatarFallback className="bg-primary/10 text-primary">
                                 {getInitials(student.fullName)}
                             </AvatarFallback>

@@ -9,6 +9,7 @@ import {
     PaginatedResponse 
 } from "@/types/response";
 import { UpdateEnrollmentStatusRequest } from "@/types/request";
+import { swrFetcher } from "@/lib/swrFetcher";
 
 /**
  * Hook for student enrollments
@@ -25,28 +26,22 @@ export function useMyEnrollments(
 
     const key = `${Constants.ENROLLMENT_ROUTES.MY_ENROLLMENTS}?${params.toString()}`;
 
-    const fetcher = async () => {
-        const response = await EnrollmentService.getMyEnrollments(status, pageNumber, pageSize);
-        return response.data;
-    };
-
     const { data, error, isLoading, mutate } = useSWR<PaginatedResponse<EnrollmentPreviewResponse> | null>(
         key,
-        fetcher,
+        swrFetcher,
         { revalidateOnFocus: false }
     );
 
     const cancelEnrollment = async (enrollmentId: number) => {
-        try {
-            await EnrollmentService.cancelEnrollment(enrollmentId);
+        const response = await EnrollmentService.cancelEnrollment(enrollmentId);
+        if (response.success) {
             await mutate();
             return { success: true };
-        } catch (error: any) {
-            return { 
-                success: false, 
-                error: error.response?.data?.message || "Failed to cancel enrollment" 
-            };
         }
+        return { 
+            success: false, 
+            error: response.message || "Failed to cancel enrollment" 
+        };
     };
 
     return {
@@ -78,15 +73,9 @@ export function useCourseEnrollments(
         ? `${Constants.ENROLLMENT_ROUTES.COURSE_ENROLLMENTS}/${courseId}?${params.toString()}`
         : null;
 
-    const fetcher = async () => {
-        if (!courseId) return null;
-        const response = await EnrollmentService.getCourseEnrollments(courseId, status, search, page, size);
-        return response.data;
-    };
-
     const { data, error, isLoading, mutate } = useSWR<PaginatedResponse<EnrollmentResponse> | null>(
         key,
-        fetcher,
+        swrFetcher,
         { revalidateOnFocus: false }
     );
 
@@ -97,18 +86,17 @@ export function useCourseEnrollments(
         request: UpdateEnrollmentStatusRequest
     ) => {
         setIsUpdating(true);
-        try {
-            await EnrollmentService.updateEnrollmentStatus(enrollmentId, request);
+        const response = await EnrollmentService.updateEnrollmentStatus(enrollmentId, request);
+        setIsUpdating(false);
+        
+        if (response.success) {
             await mutate();
             return { success: true };
-        } catch (error: any) {
-            return { 
-                success: false, 
-                error: error.response?.data?.message || "Failed to update enrollment status" 
-            };
-        } finally {
-            setIsUpdating(false);
         }
+        return { 
+            success: false, 
+            error: response.message || "Failed to update enrollment status" 
+        };
     };
 
     return {
