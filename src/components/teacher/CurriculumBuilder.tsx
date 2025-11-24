@@ -1,12 +1,12 @@
 "use client";
 
-import React, {useCallback, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import {ChapterWithLessons, Lesson} from "@/types/types";
 import ChaptersTree from "@/components/teacher/ChaptersTree";
 import {CourseStats} from "@/components/teacher/CourseStats";
 import {useCourseCurriculum} from "@/hooks/useCourseCurriculum";
 import {Button} from "@/components/ui/button";
-import {AlertCircle, Plus, Save} from "lucide-react";
+import {AlertCircle, Loader2, Plus, Save} from "lucide-react";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 
 type CurriculumBuilderProps = {
@@ -16,77 +16,97 @@ type CurriculumBuilderProps = {
 };
 
 export default function CurriculumBuilder({onSaveAction, courseId, disabled}: CurriculumBuilderProps) {
-    if (courseId === undefined) throw new Error("Course ID is required for CurriculumBuilder.")
-    const {curriculum, saveCurriculum} = useCourseCurriculum(courseId)
-    const [chapters, setChapters] = useState<ChapterWithLessons[]>(curriculum);
+    const {curriculum, saveCurriculum, isLoading, isError} = useCourseCurriculum(courseId);
 
+    const [chapters, setChapters] = useState<ChapterWithLessons[]>([]);
     const [serverErrors, setServerErrors] = useState<Record<string, string> | null>(null);
-    const [saving, setSaving] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
-    const handleAddChapter = () => {
+    useEffect(() => {
+        if (curriculum && curriculum.length > 0) {
+            const needIds = curriculum.some(chapter => !chapter._id);
+            if (needIds) {
+                const curriculumWithIds = curriculum.map((chapter) => ({
+                    ...chapter,
+                    _id: chapter._id || (globalThis.crypto?.randomUUID() || Date.now().toString() + Math.random().toString(36).substring(2, 9)),
+                }));
+                setChapters(curriculumWithIds);
+                return;
+            }
+            setChapters(curriculum);
+        }
+    }, [curriculum]);
+
+    const handleAddChapter = useCallback(() => {
         const newChapter: ChapterWithLessons = {
-            _id: crypto.randomUUID(),
+            _id: globalThis.crypto?.randomUUID() || Date.now().toString() + Math.random().toString(36).substring(2, 9), // Fallback for safety
             title: 'Untitled Chapter',
             orderIndex: chapters.length,
             lessons: []
         };
-        setChapters([...chapters, newChapter]);
-    };
+        setChapters(prev => [...prev, newChapter]);
+    }, [chapters.length]);
 
-    const handleUpdateChapter = (idx: number, updated: ChapterWithLessons) => {
-        setChapters(chapters.map((c, i) => i === idx ? updated : c));
-    };
+    const handleUpdateChapter = useCallback((idx: number, updated: ChapterWithLessons) => {
+        setChapters(prev => prev.map((c, i) => i === idx ? updated : c));
+    }, []);
 
-    const handleRemoveChapter = (idx: number) => {
-        if (window.confirm('Are you sure you want to delete this chapter?')) {
-            setChapters(chapters.filter((_, i) => i !== idx));
-        }
-    };
-
-    const handleUpdateLessons = (idx: number, lessons: Lesson[]) => {
-        setChapters(chapters.map((c, i) => i === idx ? {...c, lessons} : c));
-    };
-
-    const handleApiError = useCallback((error: any, defaultMessage: string) => {
-        const payload = error?.response?.data;
-
-        if (payload?.errors) {
-            const errorsMap: Record<string, string> = {};
-            Object.entries(payload.errors).forEach(([key, value]: [string, any]) => {
-                errorsMap[key] = Array.isArray(value) ? value.join(' ') : String(value);
-            });
-            setServerErrors(errorsMap);
-        } else if (payload?.message) {
-            setServerErrors({general: payload.message});
-        } else if (error?.message) {
-            setServerErrors({general: error.message});
-        } else {
-            setServerErrors({general: defaultMessage});
+    const handleRemoveChapter = useCallback((idx: number) => {
+        if (window.confirm('Are you sure you want to delete this chapter? This cannot be undone.')) {
+            setChapters(prev => prev.filter((_, i) => i !== idx));
         }
     }, []);
 
-    // Save curriculum using the hook
-    const handleSaveCurriculum = useCallback(async (items: ChapterWithLessons[]) => {
+    const handleUpdateLessons = useCallback((idx: number, lessons: Lesson[]) => {
+        console.log("Lessons: ", lessons);
+        setChapters(prev => prev.map((c, i) => i === idx ? {...c, lessons} : c));
+    }, []);
+
+    const handleSaveCurriculum = async () => {
         if (!courseId) return;
-        console.log('Saving curriculum:', items);
         setServerErrors(null);
-        setSaving(true);
+        setIsSaving(true);
 
         try {
-            const result = await saveCurriculum(items);
+            const result = await saveCurriculum(chapters);
 
             if (result?.success) {
-                onSaveAction?.(items);
+                onSaveAction?.(chapters);
+                // Optional: Add a Toast notification here "Saved Successfully"
             } else {
-                const errorMsg = result?.message || 'Failed to save curriculum';
-                setServerErrors(result?.errors as Record<string, string> || {general: errorMsg});
+                // Handle structured validation errors from backend
+                const errorMap = result?.errors as Record<string, string> || {
+                    general: result?.message || 'Failed to save curriculum'
+                };
+                setServerErrors(errorMap);
             }
-        } catch (error) {
-            handleApiError(error, 'Failed to save curriculum');
+        } catch (error: any) {
+            setServerErrors({
+                general: error?.message || 'An unexpected network error occurred.'
+            });
         } finally {
-            setSaving(false);
+            setIsSaving(false);
         }
-    }, [courseId, saveCurriculum, onSaveAction, handleApiError]);
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64 text-gray-500">
+                <Loader2 className="w-8 h-8 animate-spin mr-2"/>
+                <span>Loading curriculum...</span>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <Alert variant="destructive" className="m-4">
+                <AlertCircle className="h-4 w-4"/>
+                <AlertTitle>Error Loading</AlertTitle>
+                <AlertDescription>Could not load the course curriculum.</AlertDescription>
+            </Alert>
+        );
+    }
 
     return (
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6 lg:p-8">
@@ -107,7 +127,7 @@ export default function CurriculumBuilder({onSaveAction, courseId, disabled}: Cu
                     </div>
                 </div>
 
-                {/* --- NEW: Global Error Display --- */}
+                {/* Global Error Display */}
                 {serverErrors && (
                     <div className="mb-6">
                         <Alert variant="destructive">
@@ -128,26 +148,37 @@ export default function CurriculumBuilder({onSaveAction, courseId, disabled}: Cu
                               onUpdateChapterAction={handleUpdateChapter} onUpdateLessonsAction={handleUpdateLessons}/>
             </div>
             {/* Action Buttons */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex flex-col sm:flex-row gap-3">
+            <div
+                className="sticky bottom-4 mt-6 bg-white rounded-lg shadow-lg border border-gray-200 p-4 mx-auto max-w-5xl z-10">
+                <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
                     <Button
                         onClick={handleAddChapter}
                         variant="outline"
-                        className="flex-1 sm:flex-none"
+                        disabled={disabled || isSaving}
+                        className="w-full sm:w-auto"
                     >
-                        <Plus className="w-4 h-4"/>
+                        <Plus className="w-4 h-4 mr-2"/>
                         Add Chapter
                     </Button>
 
-                    <div className="flex-1 sm:flex sm:justify-end">
+                    <div className="w-full sm:w-auto">
                         <Button
-                            onClick={() => handleSaveCurriculum(chapters)}
+                            onClick={handleSaveCurriculum}
                             size="lg"
-                            className="w-full sm:w-auto"
-                            disabled={chapters.length === 0}
+                            className="w-full sm:w-auto min-w-[150px]"
+                            disabled={disabled || isSaving || chapters.length === 0}
                         >
-                            <Save className="w-4 h-4"/>
-                            Save Curriculum
+                            {isSaving ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="w-4 h-4 mr-2"/>
+                                    Save Changes
+                                </>
+                            )}
                         </Button>
                     </div>
                 </div>

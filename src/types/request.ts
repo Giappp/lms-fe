@@ -126,19 +126,19 @@ export interface QuizCreationRequest {
     type: QuizType;
     courseId: number;
     lessonId?: number;
-    
+
     startTime?: Date;
     endTime?: Date;
     timeLimitMinutes: number;
     maxAttempts: number; // -1 for unlimited
     passingPercentage: number;
     scoringMethod: ScoringMethod;
-    
+
     shuffleQuestions: boolean;
     shuffleAnswers: boolean;
     showResults: boolean;
     showCorrectAnswers: boolean;
-    
+
     questions: QuestionRequest[];
 }
 
