@@ -25,7 +25,6 @@ const ADD_BUTTONS = [
         colorClass: 'hover:bg-primary/5 hover:border-primary'
     },
     {type: QuestionType.TRUE_FALSE, label: 'True/False', colorClass: 'hover:bg-blue-500/5 hover:border-blue-500'},
-    {type: QuestionType.SHORT_ANSWER, label: 'Short Answer', colorClass: 'hover:bg-green-500/5 hover:border-green-500'},
     {
         type: QuestionType.SINGLE_CHOICE,
         label: 'Single Choice',

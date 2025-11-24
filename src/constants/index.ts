@@ -61,28 +61,31 @@ export class Constants {
         DELETE: "/api/quizzes",
         BY_COURSE: "/api/quizzes/course",
         BY_LESSON: "/api/quizzes/lesson",
-
+        SEARCH: "/api/quizzes/search",
+        
         // Question management
         ADD_QUESTION: "/api/quizzes/questions",
         UPDATE_QUESTION: "/api/quizzes/questions",
         DELETE_QUESTION: "/api/quizzes/questions",
         REORDER_QUESTIONS: "/api/quizzes/questions/reorder",
-
-        // Student actions
-        START: "/api/quiz-attempts/start",
-        SAVE_PROGRESS: "/api/quiz-attempts/save-progress",
-        SUBMIT: "/api/quiz-attempts/submit",
+        
+        // Quiz attempts
+        START_QUIZ: "/api/quiz-attempts/quiz",
+        SAVE_PROGRESS: "/api/quiz-attempts",
+        SUBMIT: "/api/quiz-attempts",
         MY_ATTEMPTS: "/api/quiz-attempts/my-attempts",
         ATTEMPT_DETAIL: "/api/quiz-attempts",
-
+        REVIEW_ATTEMPT: "/api/quiz-attempts",
+        
         // Statistics & Analytics
-        ANALYTICS: "/api/quizzes/analytics",
-        COURSE_STATISTICS: "/api/quizzes/statistics/course",
-        STUDENT_HISTORY: "/api/quiz-attempts/student/history",
-
+        ANALYTICS: "/api/quizzes",
+        COURSE_STATISTICS: "/api/quiz-statistics/course",
+        STUDENT_RESULTS: "/api/quiz-statistics/course",
+        STUDENT_HISTORY: "/api/quiz-statistics/student",
+        
         // Import/Export
-        IMPORT: "/api/quizzes/import",
-        EXPORT: "/api/quizzes/export"
+        IMPORT_EXCEL: "/api/quizzes/import/excel",
+        EXPORT_EXCEL: "/api/quizzes"
     };
 
     static readonly CONVERSATIONS_ROUTES = {

@@ -171,7 +171,7 @@ const mockQuizzes: QuizResponse[] = [
         updatedAt: new Date("2025-02-01")
     },
     {
-        id: 6,
+        id: 7,
         title: "Web Security Best Practices",
         description: "Assessment covering XSS, CSRF, authentication, and authorization",
         quizType: QuizType.COURSE_QUIZ,
@@ -193,7 +193,7 @@ const mockQuizzes: QuizResponse[] = [
         updatedAt: new Date("2025-02-01")
     },
     {
-        id: 6,
+        id: 8,
         title: "Web Security Best Practices",
         description: "Assessment covering XSS, CSRF, authentication, and authorization",
         quizType: QuizType.COURSE_QUIZ,
@@ -215,7 +215,7 @@ const mockQuizzes: QuizResponse[] = [
         updatedAt: new Date("2025-02-01")
     },
     {
-        id: 6,
+        id: 9,
         title: "Web Security Best Practices",
         description: "Assessment covering XSS, CSRF, authentication, and authorization",
         quizType: QuizType.COURSE_QUIZ,
@@ -237,7 +237,7 @@ const mockQuizzes: QuizResponse[] = [
         updatedAt: new Date("2025-02-01")
     },
     {
-        id: 6,
+        id: 10,
         title: "Web Security Best Practices",
         description: "Assessment covering XSS, CSRF, authentication, and authorization",
         quizType: QuizType.COURSE_QUIZ,

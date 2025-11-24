@@ -2,6 +2,7 @@ import {useCallback, useState} from 'react';
 import {QuestionRequest, QuizCreationRequest} from "@/types";
 import {QuestionType, QuizType} from "@/types/enum";
 import {toast} from "sonner";
+import {QuizService} from "@/api/services/quiz-service";
 
 const QUESTION_TEMPLATES: Record<QuestionType, Partial<QuestionRequest>> = {
     [QuestionType.MULTIPLE_CHOICE]: {
@@ -18,14 +19,13 @@ const QUESTION_TEMPLATES: Record<QuestionType, Partial<QuestionRequest>> = {
             {answerText: 'False', isCorrect: false, orderIndex: 1}
         ]
     },
-    [QuestionType.SHORT_ANSWER]: {answers: []},
     [QuestionType.SINGLE_CHOICE]: {
         answers: Array.from({length: 4}, (_, i) => ({
             answerText: '',
             isCorrect: false,
             orderIndex: i
         }))
-    },
+    }
 };
 
 export const useQuizBuilder = () => {
@@ -46,12 +46,12 @@ export const useQuizBuilder = () => {
 
     const [questions, setQuestions] = useState<QuestionRequest[]>([
         {
-            type: QuestionType.MULTIPLE_CHOICE,
+            type: QuestionType.SINGLE_CHOICE,
             questionText: '',
             orderIndex: 0,
             points: 1,
             explanation: '',
-            ...QUESTION_TEMPLATES[QuestionType.MULTIPLE_CHOICE]
+            answers: QUESTION_TEMPLATES[QuestionType.SINGLE_CHOICE]?.answers || []
         }
     ]);
 
@@ -124,24 +124,24 @@ export const useQuizBuilder = () => {
     };
 
     const saveQuiz = async () => {
-        if (!validateQuiz()) return;
+        if (!validateQuiz()) return {success: false, error: 'Validation failed'};
 
         setIsSaving(true);
-        try {
-            const quizData: QuizCreationRequest = {
-                ...(quiz as QuizCreationRequest), // Type assertion after validation
-                questions
-            };
+        const quizData: QuizCreationRequest = {
+            ...(quiz as QuizCreationRequest),
+            questions
+        };
 
-            console.log('Payload:', quizData);
-            // await api.createQuiz(quizData);
+        const result = await QuizService.createQuiz(quizData);
+        setIsSaving(false);
 
+        if (result.success) {
             toast.success("Success", {description: "Quiz saved successfully!"});
-        } catch (error) {
-            toast.error("Error", {description: "Failed to save quiz."});
-        } finally {
-            setIsSaving(false);
+        } else {
+            toast.error("Error", {description: result.errors?.[0] || "Failed to save quiz."});
         }
+
+        return result;
     };
 
     const stats = {

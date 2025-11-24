@@ -54,14 +54,22 @@ const QuestionCard = ({
     };
 
     const setCorrectAnswer = (answerIndex: number) => {
-        const newAnswers = question.answers.map((ans, i) => ({
-            ...ans,
-            isCorrect: i === answerIndex
-        }));
-        updateQuestion('answers', newAnswers);
+        if (question.type === QuestionType.SINGLE_CHOICE || question.type === QuestionType.TRUE_FALSE) {
+            // Single selection - uncheck all others
+            const newAnswers = question.answers.map((ans, i) => ({
+                ...ans,
+                isCorrect: i === answerIndex
+            }));
+            updateQuestion('answers', newAnswers);
+        } else {
+            // Multiple selection
+            const newAnswers = [...question.answers];
+            newAnswers[answerIndex] = {...newAnswers[answerIndex], isCorrect: !newAnswers[answerIndex].isCorrect};
+            updateQuestion('answers', newAnswers);
+        }
     };
 
-    const needsAnswers = question.type === 'MULTIPLE_CHOICE' || question.type === 'TRUE_FALSE';
+    const needsAnswers = [QuestionType.MULTIPLE_CHOICE, QuestionType.TRUE_FALSE, QuestionType.SINGLE_CHOICE].includes(question.type as QuestionType);
 
     return (
         <Card className="relative group hover:shadow-md transition-shadow">
@@ -144,10 +152,12 @@ const QuestionCard = ({
                                             {answerText: 'True', isCorrect: false, orderIndex: 0},
                                             {answerText: 'False', isCorrect: false, orderIndex: 1}
                                         ]
-                                        : value === 'MULTIPLE_CHOICE'
+                                        : value === 'SINGLE_CHOICE'
                                             ? [
                                                 {answerText: '', isCorrect: false, orderIndex: 0},
-                                                {answerText: '', isCorrect: false, orderIndex: 1}
+                                                {answerText: '', isCorrect: false, orderIndex: 1},
+                                                {answerText: '', isCorrect: false, orderIndex: 2},
+                                                {answerText: '', isCorrect: false, orderIndex: 3}
                                             ]
                                             : [];
                                     onUpdate(index, {...question, type: value, answers});
@@ -159,8 +169,7 @@ const QuestionCard = ({
                                 <SelectContent>
                                     <SelectItem value="MULTIPLE_CHOICE">Multiple Choice</SelectItem>
                                     <SelectItem value="TRUE_FALSE">True/False</SelectItem>
-                                    <SelectItem value="SHORT_ANSWER">Short Answer</SelectItem>
-                                    <SelectItem value="ESSAY">Essay</SelectItem>
+                                    <SelectItem value="SINGLE_CHOICE">Single Choice</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

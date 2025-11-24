@@ -5,10 +5,9 @@ export enum Difficulty {BEGINNER = "BEGINNER", INTERMEDIATE = "INTERMEDIATE", AD
 export enum LessonType { VIDEO = "VIDEO", YOUTUBE = "YOUTUBE", MARKDOWN = "MARKDOWN"}
 
 export enum QuestionType {
+    SINGLE_CHOICE = 'SINGLE_CHOICE',
     MULTIPLE_CHOICE = 'MULTIPLE_CHOICE',
-    TRUE_FALSE = 'TRUE_FALSE',
-    SHORT_ANSWER = 'SHORT_ANSWER',
-    SINGLE_CHOICE = 'SINGLE_CHOICE'
+    TRUE_FALSE = 'TRUE_FALSE'
 }
 
 export enum QuizType {
@@ -16,7 +15,7 @@ export enum QuizType {
     COURSE_QUIZ = "COURSE_QUIZ"
 }
 
-export type ScoringMethod = 'HIGHEST' | 'AVERAGE' | 'LATEST' | 'FIRST';
+export type ScoringMethod = 'HIGHEST' | 'AVERAGE' | 'LATEST';
 
 export enum AttemptStatus {
     IN_PROGRESS = "IN_PROGRESS",

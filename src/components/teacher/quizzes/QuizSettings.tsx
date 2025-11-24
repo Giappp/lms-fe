@@ -1,6 +1,6 @@
-import React from 'react'
+import React, {useState, useEffect} from 'react'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Clock, Percent, Repeat, Settings, Target} from "lucide-react";
+import {ChevronDown, ChevronRight, Clock, Percent, Repeat, Settings, Target} from "lucide-react";
 import {Label} from "@/components/ui/label";
 import {Input} from "@/components/ui/input";
 import {Calendar} from "@/components/ui/calendar";
@@ -8,6 +8,10 @@ import {Switch} from "@/components/ui/switch";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {QuizType, ScoringMethod} from "@/types/enum";
 import {QuizCreationRequest} from "@/types";
+import {Separator} from '@/components/ui/separator';
+import {RadioGroup, RadioGroupItem} from '@/components/ui/radio-group';
+import {Badge} from '@/components/ui/badge';
+import {useCourseCurriculum} from '@/hooks/useCourseCurriculum';
 
 
 const QuizSettings = ({
@@ -17,6 +21,26 @@ const QuizSettings = ({
     quiz: Partial<QuizCreationRequest>;
     onUpdate: (updated: Partial<QuizCreationRequest>) => void;
 }) => {
+    const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(new Set());
+    const {curriculum, isLoading: isCurriculumLoading} = useCourseCurriculum(quiz.courseId);
+
+    const toggleChapter = (chapterId: string) => {
+        setCollapsedChapters(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(chapterId)) {
+                newSet.delete(chapterId);
+            } else {
+                newSet.add(chapterId);
+            }
+            return newSet;
+        });
+    };
+
+    useEffect(() => {
+        if (quiz.type === QuizType.COURSE_QUIZ && quiz.lessonId) {
+            onUpdate({...quiz, lessonId: undefined});
+        }
+    }, [quiz.type]);
     return (
         <div className="space-y-6">
             <Card>
@@ -41,28 +65,99 @@ const QuizSettings = ({
                                 <SelectValue placeholder="Select quiz type"/>
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="PRACTICE">
+                                <SelectItem value="LESSON_QUIZ">
                                     <div className="flex flex-col items-start">
-                                        <span className="font-medium">Practice</span>
-                                        <span className="text-xs text-muted-foreground">For student practice, no grade impact</span>
+                                        <span className="font-medium">Lesson Quiz</span>
                                     </div>
                                 </SelectItem>
-                                <SelectItem value="GRADED">
+                                <SelectItem value="COURSE_QUIZ">
                                     <div className="flex flex-col items-start">
-                                        <span className="font-medium">Graded</span>
-                                        <span className="text-xs text-muted-foreground">Counts toward final grade</span>
-                                    </div>
-                                </SelectItem>
-                                <SelectItem value="SURVEY">
-                                    <div className="flex flex-col items-start">
-                                        <span className="font-medium">Survey</span>
-                                        <span
-                                            className="text-xs text-muted-foreground">Anonymous feedback collection</span>
+                                        <span className="font-medium">Course Quiz</span>
                                     </div>
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
+
+                    {/* Conditional Lesson Selection */}
+                    {quiz.type === QuizType.LESSON_QUIZ && (
+                        <>
+                            <Separator />
+                            <div className="space-y-3">
+                                <Label>Select Lesson *</Label>
+                                <p className="text-xs text-muted-foreground">Choose which lesson this quiz belongs to</p>
+                                
+                                {!quiz.courseId ? (
+                                    <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                                        <p className="text-sm">Please select a course first</p>
+                                    </div>
+                                ) : isCurriculumLoading ? (
+                                    <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                                        <p className="text-sm">Loading curriculum...</p>
+                                    </div>
+                                ) : !curriculum || curriculum.length === 0 ? (
+                                    <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                                        <p className="text-sm">No curriculum available for this course</p>
+                                    </div>
+                                ) : (
+                                    <RadioGroup
+                                        value={quiz.lessonId?.toString()}
+                                        onValueChange={(value) => onUpdate({ ...quiz, lessonId: parseInt(value) })}
+                                    >
+                                        <div className="space-y-2 max-h-[400px] overflow-y-auto border rounded-lg p-3">
+                                            {curriculum.map((chapter) => (
+                                                <div key={chapter._id} className="space-y-2">
+                                                    {/* Chapter Header */}
+                                                    <div
+                                                        className="flex items-center gap-2 p-2 bg-muted rounded cursor-pointer hover:bg-muted/80"
+                                                        onClick={() => toggleChapter(chapter._id)}
+                                                    >
+                                                        {collapsedChapters.has(chapter._id) ? (
+                                                            <ChevronRight className="h-4 w-4" />
+                                                        ) : (
+                                                            <ChevronDown className="h-4 w-4" />
+                                                        )}
+                                                        <span className="font-semibold text-sm">
+                                                            {chapter.title}
+                                                        </span>
+                                                        <Badge variant="secondary" className="ml-auto">
+                                                            {chapter.lessons.length} lessons
+                                                        </Badge>
+                                                    </div>
+
+                                                    {/* Lessons */}
+                                                    {!collapsedChapters.has(chapter._id) && (
+                                                        <div className="ml-6 space-y-1">
+                                                            {chapter.lessons.map((lesson) => (
+                                                                <div
+                                                                    key={lesson._id}
+                                                                    className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50"
+                                                                >
+                                                                    <RadioGroupItem
+                                                                        value={lesson.id?.toString() || ""}
+                                                                        id={`lesson-${lesson.id}`}
+                                                                    />
+                                                                    <Label
+                                                                        htmlFor={`lesson-${lesson.id}`}
+                                                                        className="flex-1 cursor-pointer text-sm font-normal"
+                                                                    >
+                                                                        {lesson.title}
+                                                                        <span className="text-xs text-muted-foreground ml-2">
+                                                                            ({lesson.duration} min)
+                                                                        </span>
+                                                                    </Label>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </RadioGroup>
+                                )}
+                            </div>
+                        </>
+                    )}
 
                     {/* Scoring Method */}
                     <div className="space-y-2">
@@ -80,7 +175,6 @@ const QuizSettings = ({
                                 <SelectItem value="HIGHEST">Highest Score</SelectItem>
                                 <SelectItem value="AVERAGE">Average Score</SelectItem>
                                 <SelectItem value="LATEST">Latest Attempt</SelectItem>
-                                <SelectItem value="FIRST">First Attempt</SelectItem>
                             </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground">
@@ -155,7 +249,6 @@ const QuizSettings = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="start-time" className="flex items-center gap-2">
-                                <Calendar className="w-4 h-4 text-muted-foreground"/>
                                 Start Time (Optional)
                             </Label>
                             <Input
@@ -171,7 +264,6 @@ const QuizSettings = ({
 
                         <div className="space-y-2">
                             <Label htmlFor="end-time" className="flex items-center gap-2">
-                                <Calendar className="w-4 h-4 text-muted-foreground"/>
                                 End Time (Optional)
                             </Label>
                             <Input

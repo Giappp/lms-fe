@@ -1,5 +1,6 @@
 "use client"
 
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +27,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { QuestionType } from "@/types/enum";
-import { useState } from "react";
 
 // Mock quiz detail
 const mockQuizDetail: QuizDetailResponse = {
@@ -99,7 +99,8 @@ const mockQuizDetail: QuizDetailResponse = {
     ]
 };
 
-export default function TeacherQuizDetailPage({ params }: { params: { quizId: string } }) {
+export default function TeacherQuizDetailPage({ params }: { params: Promise<{ quizId: string }> }) {
+    const { quizId } = use(params);
     const router = useRouter();
     const quiz = mockQuizDetail;
     const [expandedQuestionId, setExpandedQuestionId] = useState<number | null>(null);
@@ -148,20 +149,20 @@ export default function TeacherQuizDetailPage({ params }: { params: { quizId: st
 
             {/* Action Buttons */}
             <div className="flex gap-3 mb-6">
-                <Button onClick={() => router.push(`/teacher/quizzes/${params.quizId}/edit`)}>
+                <Button onClick={() => router.push(`/teacher/quizzes/${quizId}/edit`)}>
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Quiz
                 </Button>
                 <Button 
                     variant="outline"
-                    onClick={() => router.push(`/teacher/quizzes/analytics/${params.quizId}`)}
+                    onClick={() => router.push(`/teacher/quizzes/analytics/${quizId}`)}
                 >
                     <BarChart3 className="h-4 w-4 mr-2" />
                     View Analytics
                 </Button>
                 <Button 
                     variant="outline"
-                    onClick={() => router.push(`/student/quizzes/take/${params.quizId}`)}
+                    onClick={() => router.push(`/student/quizzes/take/${quizId}`)}
                 >
                     <PlayCircle className="h-4 w-4 mr-2" />
                     Preview Quiz
@@ -321,7 +322,7 @@ export default function TeacherQuizDetailPage({ params }: { params: { quizId: st
                                 </div>
                                 <Button 
                                     size="sm"
-                                    onClick={() => router.push(`/teacher/quizzes/${params.quizId}/edit`)}
+                                    onClick={() => router.push(`/teacher/quizzes/${quizId}/edit`)}
                                 >
                                     <Edit className="h-4 w-4 mr-2" />
                                     Edit Questions
@@ -335,7 +336,7 @@ export default function TeacherQuizDetailPage({ params }: { params: { quizId: st
                                     <p className="mb-4">No questions added yet</p>
                                     <Button 
                                         variant="outline"
-                                        onClick={() => router.push(`/teacher/quizzes/${params.quizId}/edit`)}
+                                        onClick={() => router.push(`/teacher/quizzes/${quizId}/edit`)}
                                     >
                                         Add Questions
                                     </Button>
@@ -540,7 +541,7 @@ export default function TeacherQuizDetailPage({ params }: { params: { quizId: st
                             <Button 
                                 variant="outline" 
                                 className="w-full"
-                                onClick={() => router.push(`/teacher/quizzes/analytics/${params.quizId}`)}
+                                onClick={() => router.push(`/teacher/quizzes/analytics/${quizId}`)}
                             >
                                 <BarChart3 className="h-4 w-4 mr-2" />
                                 View Full Analytics

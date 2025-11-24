@@ -116,22 +116,6 @@ const QuizPreview = ({
                                 </div>
                             )}
 
-                            {question.type === 'SHORT_ANSWER' && (
-                                <Input
-                                    placeholder="Student answer will appear here..."
-                                    disabled
-                                    className="bg-muted"
-                                />
-                            )}
-
-                            {question.type === 'ESSAY' && (
-                                <Textarea
-                                    placeholder="Student essay response will appear here..."
-                                    disabled
-                                    className="min-h-[120px] bg-muted resize-none"
-                                />
-                            )}
-
                             {question.explanation && (
                                 <Alert className="bg-accent/50">
                                     <AlertCircle className="h-4 w-4"/>

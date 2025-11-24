@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -116,9 +116,10 @@ const mockQuizData: QuizDetailResponse = {
     ]
 };
 
-export default function EditQuizPage({ params }: { params: { quizId: string } }) {
+export default function EditQuizPage({ params }: { params: Promise<{ quizId: string }> }) {
+    const { quizId } = use(params);
     const router = useRouter();
-    const [quiz, setQuiz] = useState<QuizDetailResponse>(mockQuizData);
+    const [quiz] = useState<QuizDetailResponse>(mockQuizData);
     const [questions, setQuestions] = useState<QuestionResponse[]>(mockQuizData.questions);
     const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
     const [isAddingQuestion, setIsAddingQuestion] = useState(false);
@@ -298,10 +299,10 @@ export default function EditQuizPage({ params }: { params: { quizId: string } })
         <div className="container mx-auto p-6 max-w-6xl">
             <Button 
                 variant="ghost" 
-                onClick={() => router.push(`/teacher/quizzes/${params.quizId}`)}
+                onClick={() => router.push(`/teacher/quizzes/${quizId}`)}
                 className="mb-4"
             >
-                ← Back to Quiz
+            ← Back to Quiz
             </Button>
 
             <div className="flex items-center justify-between mb-6">
@@ -836,33 +837,6 @@ export default function EditQuizPage({ params }: { params: { quizId: string } })
                                 <p>• Question order can be changed</p>
                                 <p>• Click Save to apply all changes</p>
                             </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Request DTOs</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2 text-xs">
-                            <div className="p-2 bg-muted rounded">
-                                <strong>QuizUpdateRequest</strong>
-                                <p className="text-muted-foreground">Main quiz settings</p>
-                            </div>
-                            <div className="p-2 bg-muted rounded">
-                                <strong>QuestionRequest</strong>
-                                <p className="text-muted-foreground">Add new question</p>
-                            </div>
-                            <div className="p-2 bg-muted rounded">
-                                <strong>QuestionUpdateRequest</strong>
-                                <p className="text-muted-foreground">Edit existing question</p>
-                            </div>
-                            <div className="p-2 bg-muted rounded">
-                                <strong>UpdateQuestionOrderRequest</strong>
-                                <p className="text-muted-foreground">Reorder questions</p>
-                            </div>
-                            <p className="text-muted-foreground pt-2">
-                                Check browser console to see the DTOs when performing actions
-                            </p>
                         </CardContent>
                     </Card>
                 </div>
