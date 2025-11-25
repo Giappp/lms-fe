@@ -1,10 +1,8 @@
 import useSWR from "swr";
-import {Constants} from "@/constants";
 import {PaginatedResponse} from "@/types/types";
 import {CourseResponse} from "@/types";
 import {CourseService} from "@/api/services/course-service";
-import {CourseStatus} from "@/types/enum";
-import {buildParamsFromOptions} from '@/api/core/utils';
+import {CourseStatus, Difficulty} from "@/types/enum";
 import {useCallback} from "react";
 import {swrFetcher} from "@/lib/swrFetcher";
 
@@ -12,35 +10,34 @@ export interface CourseFilter {
     page?: number;
     size?: number;
     teacherId?: number;
-    status?: CourseStatus;
-    q?: string;
-}
-
-function toQueryString(paramsObj: Record<string, any> = {}) {
-    const qs = new URLSearchParams();
-    for (const [k, v] of Object.entries(paramsObj)) {
-        if (v === undefined || v === null) continue;
-        if (Array.isArray(v)) {
-            v.forEach((item) => qs.append(k, String(item)));
-        } else {
-            qs.append(k, String(v));
-        }
-    }
-    return qs.toString();
+    difficulty?: Difficulty | "ALL";
+    status?: CourseStatus | "ALL";
+    categoryId?: number;
+    keyword?: string;
 }
 
 export function useCourses(filters?: CourseFilter) {
     const opts = {
-        page: filters?.page ?? 1,
-        size: filters?.size ?? 20,
+        pageNumber: filters?.page ?? 1, // Backend: pageNumber
+        pageSize: filters?.size ?? 12,  // Backend: pageSize
         teacherId: filters?.teacherId,
-        status: filters?.status,
-        q: filters?.q,
-    } as any;
+        categoryId: filters?.categoryId,
+        status: filters?.status === "ALL" ? undefined : filters?.status,
+        difficulty: filters?.difficulty === "ALL" ? undefined : filters?.difficulty,
+        keyword: filters?.keyword, // Backend: keyword
+    };
 
-    const params = buildParamsFromOptions(opts);
-    const queryString = toQueryString(params);
-    const key = queryString ? `${Constants.COURSES_ROUTES.LIST}?${queryString}` : Constants.COURSES_ROUTES.LIST;
+    // Convert object to query string (filtering out null/undefined)
+    const qs = new URLSearchParams();
+    Object.entries(opts).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+            qs.append(key, String(value));
+        }
+    });
+
+    const queryString = qs.toString();
+    // Adjust your route constant here
+    const key = `/api/courses/search?${queryString}`;
 
     const {data, error, isLoading, isValidating, mutate} = useSWR<PaginatedResponse<CourseResponse> | null>(
         key,
@@ -59,7 +56,6 @@ export function useCourses(filters?: CourseFilter) {
             const result = await CourseService.createCourseWithBasicInfo(courseData);
 
             if (result?.success) {
-                // Optimistically update the cache
                 await mutate();
             }
 
@@ -98,7 +94,7 @@ export function useCourses(filters?: CourseFilter) {
                         return {
                             ...currentData,
                             items: currentData.items.filter(course => course.id !== courseId),
-                            total: currentData.total - 1,
+                            total: currentData.totalPage - 1,
                         };
                     },
                     {revalidate: true}
@@ -113,10 +109,10 @@ export function useCourses(filters?: CourseFilter) {
     }, [mutate]);
 
     return {
-        courses: data?.items ?? [],
-        total: data?.total ?? 0,
-        page: data?.page ?? opts.page,
-        size: data?.size ?? opts.size,
+        courses: data?.items ?? [], // Adjust based on your actual API wrap (ApiResponse vs PageResponse)
+        totalElements: data?.totalElements ?? 0,
+        totalPages: data?.totalPage ?? 0,
+        currentPage: data?.pageNumber ?? opts.pageNumber,
         isLoading,
         isValidating,
         isError: !!error,
