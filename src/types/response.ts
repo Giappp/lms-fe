@@ -1,7 +1,7 @@
 /*
 * All the api response model goes here
 */
-import {CourseStatus, Difficulty, QuestionType, QuizType, ScoringMethod, AttemptStatus} from "@/types/enum";
+import {AttemptStatus, CourseStatus, Difficulty, LessonType, QuestionType, QuizType, ScoringMethod} from "@/types/enum";
 
 export type UserResponse = {
     id: number;
@@ -94,14 +94,67 @@ export interface CourseResponse {
     description: string;
     thumbnailUrl: string;
     teacherName: string;
+    teacherAvatar?: string;
     teacherId: number;
     difficulty: Difficulty;
     price: number;
     status: CourseStatus;
     categories?: Category[];
+    categoryName?: string;
     createdAt: Date;
     updatedAt: Date;
     enrolledCount: number;
+    lessons?: number;
+    rating?: number;
+}
+
+export interface CourseDetailResponse {
+    features: string[];
+    originalPrice?: any;
+    discount?: number;
+    id: number;
+    title: string;
+    subtitle?: string;
+    description: string;
+    thumbnailUrl: string;
+    difficulty: Difficulty;
+    price: number;
+    rating: number;
+    students: number;
+    chapters: ChapterResponse[];
+    instructor: InstructorResponse;
+    language?: string;
+}
+
+export interface ChapterResponse {
+    title: string;
+    lectures: number;
+    durationInMinutes: number;
+    lessons: LessonResponse[];
+}
+
+export interface LessonResponse {
+    title: string;
+    durationInMinutes: number;
+    type: LessonType;
+    isFree: boolean;
+}
+
+export interface InstructorResponse {
+    students?: number;
+    rating?: number;
+    role?: string;
+    name: string;
+    avatarUrl: string;
+    bio: string;
+    courses: number;
+}
+
+export interface PublishResponse {
+    id: number;
+    courseStatus: CourseStatus;
+    message: string;
+    status: boolean;
 }
 
 // ==================== Quiz Response Types ====================
@@ -130,23 +183,23 @@ export interface QuizResponse {
     quizType: QuizType;
     courseId: number;
     lessonId?: number;
-    
+
     startTime?: Date;
     endTime?: Date;
     maxAttempts: number;
     scoringMethod: ScoringMethod;
     passingPercentage: number;
     timeLimitMinutes: number;
-    
+
     isActive: boolean;
     shuffleQuestions: boolean;
     shuffleAnswers: boolean;
     showResults: boolean;
     showCorrectAnswers: boolean;
-    
+
     questionCount: number;
     totalPoints: number;
-    
+
     createdAt: Date;
     updatedAt: Date;
 }
@@ -164,24 +217,24 @@ export interface QuizAttemptResponse {
     studentId: number;
     studentName: string;
     attemptNumber: number;
-    
+
     startedAt: Date;
     submittedAt?: Date;
     completedAt?: Date;
-    
+
     status: AttemptStatus;
-    
+
     score: number;
     percentage: number;
     isPassed: boolean;
-    
+
     totalQuestions: number;
     correctAnswers: number;
     incorrectAnswers: number;
     unansweredQuestions: number;
-    
+
     timeSpentSeconds: number;
-    
+
     // Review information
     isReviewed: boolean;
     teacherFeedback?: string;
@@ -196,29 +249,29 @@ export interface QuizAttemptDetailResponse {
     studentId: number;
     studentName: string;
     attemptNumber: number;
-    
+
     startedAt: Date;
     submittedAt?: Date;
     completedAt?: Date;
-    
+
     status: AttemptStatus;
-    
+
     score: number;
     percentage: number;
     isPassed: boolean;
-    
+
     totalQuestions: number;
     correctAnswers: number;
     incorrectAnswers: number;
     unansweredQuestions: number;
-    
+
     timeSpentSeconds: number;
-    
+
     isReviewed: boolean;
     teacherFeedback?: string;
     reviewedBy?: number;
     reviewerName?: string;
-    
+
     answers: QuizAttemptAnswerDetailResponse[];
 }
 
@@ -228,13 +281,13 @@ export interface QuizAttemptAnswerDetailResponse {
     questionText: string;
     questionType: QuestionType;
     questionPoints: number;
-    
+
     selectedAnswerIds: number[];
     correctAnswerIds: number[];
-    
+
     isCorrect: boolean;
     pointsEarned: number;
-    
+
     answers: AnswerResponse[];
     explanation?: string;
 }
@@ -281,19 +334,19 @@ export interface StudentQuizHistoryResponse {
 export interface QuizAnalyticsResponse {
     quizId: number;
     quizTitle: string;
-    
+
     totalAttempts: number;
     totalStudents: number;
     completedAttempts: number;
     inProgressAttempts: number;
-    
+
     averageScore: number;
     highestScore: number;
     lowestScore: number;
     passRate: number;
-    
+
     averageTimeSpentMinutes: number;
-    
+
     questionAnalytics: QuestionAnalyticsItem[];
 }
 
@@ -320,6 +373,7 @@ export interface ImportQuizResponse {
     questionsImported: number;
     errors: string[];
 }
+
 export type PaginatedResponse<T> = {
     content: T[];
     pageable: {

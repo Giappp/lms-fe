@@ -1,4 +1,4 @@
-import {CourseResponse, CoursesFilterParams} from "@/types";
+import {CourseResponse, CoursesFilterParams, PublishResponse} from "@/types";
 import {axiosInstance} from "@/api/core/axiosInstance";
 import {buildParamsFromOptions} from "@/api/core/utils";
 import {apiCall} from "@/api/core/apiCall";
@@ -40,6 +40,10 @@ export const CourseService = {
         return await apiCall<ChapterWithLessons[]>(() =>
             axiosInstance.put(`${Constants.COURSES_ROUTES.UPDATE}/${courseId}/curriculum`, curriculumPayload)
         );
+    },
+
+    publishCourse: async (courseId: number) => {
+        return await apiCall<PublishResponse>(() => axiosInstance.put(`${Constants.COURSES_ROUTES.PUBLISHED}/${courseId}`));
     },
 
     getChaptersWithLessons: async (courseId: number) => {

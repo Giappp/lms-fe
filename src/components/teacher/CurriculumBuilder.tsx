@@ -113,12 +113,12 @@ export default function CurriculumBuilder({onSaveAction, courseId, disabled}: Cu
             <div className="mx-auto">
                 {/* Header */}
                 <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="flex flex-col md:justify-between gap-4">
                         <div>
-                            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                            <h1 className="text-xl md:text-3xl font-bold text-gray-900">
                                 Curriculum Builder
                             </h1>
-                            <p className="text-gray-600 mt-1">
+                            <p className="text-base text-gray-600 mt-1">
                                 Create and organize your course content with video and PDF uploads
                             </p>
                         </div>
