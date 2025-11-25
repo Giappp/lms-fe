@@ -56,7 +56,8 @@ export type CourseFormData = {
 
 export interface PaginatedResponse<T> {
     items: T[];
-    total: number;
-    page: number;
-    size: number;
+    totalElements: number;
+    totalPage: number;
+    pageNumber: number;
+    pageSize: number;
 }
