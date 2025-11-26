@@ -2,7 +2,7 @@
 * All the api request model goes here
 */
 
-import {CourseStatus, Difficulty, QuestionType, QuizType, ScoringMethod} from "@/types/enum";
+import {CourseStatus, Difficulty, LessonType, QuestionType, QuizType, ScoringMethod} from "@/types/enum";
 
 export type SendMessageRequest = {
     conversationId: string;
@@ -26,8 +26,8 @@ export type UpdateEnrollmentStatusRequest = {
 
 export type CoursesFilterParams = {
     keyword?: string;
-    courseStatus?: string;
-    difficulty?: string;
+    status?: CourseStatus;
+    difficulty?: Difficulty;
     teacherId?: number;
     categoryId?: number;
     pageNumber?: number;
@@ -75,32 +75,86 @@ export type UserSignIn = {
     password: string;
 }
 
-export type CourseCreationRequest = {
+// ==================== Course Request Types ====================
+
+export interface CourseCreationRequest {
     title: string;
     description: string;
-    difficulty: Difficulty
+    difficulty: Difficulty;
     price: number;
     teacherId: number;
     teacherName: string;
-    categoryId: number[];
-    status: CourseStatus
-    thumbnail?: File;
-    thumbnailUrl?: string;
+    status: CourseStatus;
+    categoryIds?: number[];
 }
 
-export type CourseUpdateRequest = {
+export interface CourseUpdateRequest {
     title: string;
     description: string;
-    difficulty: Difficulty
+    difficulty: Difficulty;
     price: number;
-    status: CourseStatus
-    categoryId: number[];
-    thumbnail?: File;
+    status: CourseStatus;
+    categoryIds?: number[];
 }
 
-export type Chapter = {
+export interface CategoryRequest {
+    name: string;
+    description?: string;
+    icon?: string;
+    color?: string;
+    isActive?: boolean;
+}
+
+export interface ChapterRequest {
     title: string;
     courseId: number;
+}
+
+export interface LessonRequest {
+    id?: number;
+    title: string;
+    type: LessonType;
+    content?: string;
+    description: string;
+    duration: number;
+    videoUrl?: string;
+    orderIndex?: number;
+}
+
+export interface DeleteChapterRequest {
+    chapterId: number;
+    courseId: number;
+}
+
+export interface DeleteLessonRequest {
+    lessonId: number;
+    chapterId: number;
+}
+
+export interface ReorderTableOfContentsRequest {
+    chapters: ChapterOrder[];
+}
+
+export interface ChapterOrder {
+    chapterId: number;
+    orderIndex: number;
+    lessons?: LessonOrder[];
+}
+
+export interface LessonOrder {
+    lessonId: number;
+    orderIndex: number;
+}
+
+export interface ChapterWithLessonsRequest {
+    title: string;
+    orderIndex?: number;
+    lessons?: LessonRequest[];
+}
+
+export interface CourseWithContentRequest {
+    course: CourseCreationRequest;
+    chapters?: ChapterWithLessonsRequest[];
 }
 
 // ==================== Quiz Request Types ====================

@@ -1,13 +1,12 @@
-import CourseDetailPage from "@/components/student/courses/CourseDetailPage";
+import { LearningPage } from "@/components/student/courses/LearningPage";
 
 type Props = {
     params: Promise<{ id: string }>;
 };
 
-const Page = async ({params}: Props) => {
-    const {id} = await params;
-    const courseId = Number(id);
-    console.log("Received id: ", courseId);
+const Page = (props: Props) => {
+    return <LearningPage params={props.params} />;
+};
     return (
         <CourseDetailPage courseId={courseId}/>
     );

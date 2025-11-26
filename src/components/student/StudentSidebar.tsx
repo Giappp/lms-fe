@@ -35,7 +35,6 @@ const menuList = [
         title: "Learning",
         subMenus: [
             {title: "Browse Courses", url: "/student/courses", icon: faBook},
-            {title: "My Courses", url: "/student/my-courses", icon: faBookOpen},
             {title: "My Progress", url: "/student/my-progress", icon: faChartBar},
         ],
     },

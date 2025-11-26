@@ -1,60 +1,114 @@
-import {CourseResponse, CoursesFilterParams, PublishResponse} from "@/types";
+import {
+    CourseResponse,
+    PublishResponse,
+    TableOfContentsResponse,
+    PaginatedResponse,
+    LessonResponse
+} from "@/types/response";
+import {
+    CourseCreationRequest,
+    CourseUpdateRequest,
+    CourseWithContentRequest,
+    ReorderTableOfContentsRequest,
+    CoursesFilterParams
+} from "@/types/request";
 import {axiosInstance} from "@/api/core/axiosInstance";
 import {buildParamsFromOptions} from "@/api/core/utils";
 import {apiCall} from "@/api/core/apiCall";
 import {Constants} from "@/constants";
-import {ChapterWithLessons} from "@/types/types";
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const CourseService = {
-    getCourses: async (options: CoursesFilterParams) => {
+    // Search courses with filters and pagination
+    searchCourses: async (options: CoursesFilterParams) => {
         const params = buildParamsFromOptions(options);
-        await sleep(3000);
-        const response = await axiosInstance.get(`/courses`, {params: params});
-        return response.data;
-    },
-    // fetch single course detail
-    getCourseById: async (courseId: number) => {
-        return await apiCall<CourseResponse>(() =>
-            axiosInstance.get(`${Constants.COURSES_ROUTES.DETAIL}/${courseId}/details`)
+        return await apiCall<PaginatedResponse<CourseResponse>>(() =>
+            axiosInstance.get(`${Constants.COURSES_ROUTES.SEARCH}`, {params})
         );
     },
-    // Create course API wrapper
-    createCourseWithBasicInfo: async (courseData: FormData) => {
+
+    // Get my courses (teacher's courses or student's enrolled courses)
+    getMyCourses: async (pageNumber: number = 1, pageSize: number = 20) => {
+        return await apiCall<PaginatedResponse<CourseResponse>>(() =>
+            axiosInstance.get(`${Constants.COURSES_ROUTES.MY_COURSES}`, {
+                params: {pageNumber, pageSize}
+            })
+        );
+    },
+
+    // Create course with basic info
+    createCourse: async (request: CourseCreationRequest, thumbnail?: File) => {
+        const formData = new FormData();
+        formData.append('request', new Blob([JSON.stringify(request)], {type: 'application/json'}));
+        if (thumbnail) {
+            formData.append('thumbnail', thumbnail);
+        }
         return await apiCall<CourseResponse>(() =>
-            axiosInstance.post(Constants.COURSES_ROUTES.CREATE, courseData, {
+            axiosInstance.post(`${Constants.COURSES_ROUTES.CREATE}`, formData, {
                 headers: {"Content-Type": "multipart/form-data"},
             })
         );
     },
-    updateCourseBasicInfo: async (courseId: number, courseData: FormData) => {
-        return await apiCall<CourseResponse>(() =>
-            axiosInstance.put(`${Constants.COURSES_ROUTES.UPDATE}/${courseId}`, courseData, {
+
+    // Create course with complete content (chapters and lessons)
+    createCourseWithContent: async (request: CourseWithContentRequest, thumbnail?: File) => {
+        const formData = new FormData();
+        formData.append('course', new Blob([JSON.stringify(request)], {type: 'application/json'}));
+        if (thumbnail) {
+            formData.append('thumbnail', thumbnail);
+        }
+        return await apiCall<TableOfContentsResponse>(() =>
+            axiosInstance.post(`${Constants.COURSES_ROUTES.CREATE_WITH_CONTENT}`, formData, {
                 headers: {"Content-Type": "multipart/form-data"},
             })
-        )
-    },
-
-    saveCurriculum: async (courseId: number, curriculumPayload: any) => {
-        return await apiCall<ChapterWithLessons[]>(() =>
-            axiosInstance.put(`${Constants.COURSES_ROUTES.UPDATE}/${courseId}/curriculum`, curriculumPayload)
         );
     },
 
-    publishCourse: async (courseId: number) => {
-        return await apiCall<PublishResponse>(() => axiosInstance.put(`${Constants.COURSES_ROUTES.PUBLISHED}/${courseId}`));
+    // Update course basic info
+    updateCourse: async (courseId: number, request: CourseUpdateRequest, thumbnail?: File) => {
+        const formData = new FormData();
+        formData.append('request', new Blob([JSON.stringify(request)], {type: 'application/json'}));
+        if (thumbnail) {
+            formData.append('thumbnail', thumbnail);
+        }
+        return await apiCall<CourseResponse>(() =>
+            axiosInstance.put(`${Constants.COURSES_ROUTES.UPDATE}/${courseId}`, formData, {
+                headers: {"Content-Type": "multipart/form-data"},
+            })
+        );
     },
 
-    getChaptersWithLessons: async (courseId: number) => {
-        return await apiCall<ChapterWithLessons[]>(() => axiosInstance.get(`${Constants.COURSES_ROUTES.DETAIL}/${courseId}/details`));
-    },
+    // Delete course
     deleteCourse: async (courseId: number) => {
-        return await apiCall(() => axiosInstance.delete(`${Constants.COURSES_ROUTES.DELETE}/${courseId}`));
+        return await apiCall<void>(() =>
+            axiosInstance.delete(`${Constants.COURSES_ROUTES.DELETE}/${courseId}`)
+        );
     },
-    getMyCourses: async () => {
-        return await apiCall<CourseResponse[]>(() =>
-            axiosInstance.get(Constants.COURSES_ROUTES.MY_COURSES)
+
+    // Reorder table of contents (chapters and lessons)
+    reorderTableOfContents: async (courseId: number, request: ReorderTableOfContentsRequest) => {
+        return await apiCall<void>(() =>
+            axiosInstance.put(`/api/courses/${courseId}/reorder-toc`, request)
+        );
+    },
+
+    // Get course table of contents
+    getTableOfContents: async (courseId: number) => {
+        return await apiCall<TableOfContentsResponse>(() =>
+            axiosInstance.get(`/api/courses/${courseId}/navigation/table-of-contents`)
+        );
+    },
+
+    // Get next lesson in course
+    getNextLesson: async (courseId: number, lessonId: number) => {
+        return await apiCall<LessonResponse | null>(() =>
+            axiosInstance.get(`/api/courses/${courseId}/navigation/lessons/${lessonId}/next`)
+        );
+    },
+
+    // Get previous lesson in course
+    getPreviousLesson: async (courseId: number, lessonId: number) => {
+        return await apiCall<LessonResponse | null>(() =>
+            axiosInstance.get(`/api/courses/${courseId}/navigation/lessons/${lessonId}/previous`)
         );
     }
 };

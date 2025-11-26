@@ -43,14 +43,45 @@ export class Constants {
     };
 
     static readonly COURSES_ROUTES = {
-        LIST: "/api/courses/search",
-        TOP_RATED: "/api/courses/top-rated",
+        // Course management
+        SEARCH: "/api/courses/search",
         MY_COURSES: "/api/courses/my-courses",
-        PUBLISHED: "/api/courses/published",
-        DETAIL: "/api/courses",
         CREATE: "/api/courses",
+        CREATE_WITH_CONTENT: "/api/courses/with-content",
         UPDATE: "/api/courses",
-        DELETE: "/api/courses"
+        DELETE: "/api/courses",
+        DETAIL: "/api/course",
+        REORDER_TOC: "/api/courses", // /{courseId}/reorder-toc
+        
+        // Navigation
+        NAVIGATION: "/api/courses", // /{courseId}/navigation
+        TABLE_OF_CONTENTS: "/api/courses", // /{courseId}/navigation/table-of-contents
+        NEXT_LESSON: "/api/courses", // /{courseId}/navigation/lessons/{lessonId}/next
+        PREVIOUS_LESSON: "/api/courses", // /{courseId}/navigation/lessons/{lessonId}/previous
+    };
+
+    static readonly CHAPTERS_ROUTES = {
+        CREATE: "/api/chapters",
+        UPDATE: "/api/chapters",
+        DELETE: "/api/chapters/delete"
+    };
+
+    static readonly LESSONS_ROUTES = {
+        CREATE: "/api/lessons", // /{chapterId}
+        UPDATE: "/api/lessons",
+        DELETE: "/api/lessons/delete",
+        UPLOAD_MATERIAL: "/api/lessons", // /{lessonId}/materials
+        GET_MATERIALS: "/api/lessons", // /{lessonId}/materials
+        DELETE_MATERIAL: "/api/lessons", // /{lessonId}/materials/{fileId}
+        DOWNLOAD_MATERIAL: "/api/lessons", // /{lessonId}/materials/{fileId}/download
+        DELETE_VIDEO: "/api/lessons", // /{lessonId}/video
+    };
+
+    static readonly CATEGORIES_ROUTES = {
+        LIST: "/api/categories",
+        CREATE: "/api/categories",
+        UPDATE: "/api/categories",
+        DELETE: "/api/categories"
     };
 
     static readonly QUIZ_ROUTES = {

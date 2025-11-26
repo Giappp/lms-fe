@@ -1,10 +1,11 @@
 import useSWR from "swr";
-import {PaginatedResponse} from "@/types/types";
-import {CourseResponse} from "@/types";
+import {PaginatedResponse, CourseResponse} from "@/types/response";
+import {CourseCreationRequest, CourseUpdateRequest, CoursesFilterParams} from "@/types/request";
 import {CourseService} from "@/api/services/course-service";
 import {CourseStatus, Difficulty} from "@/types/enum";
 import {useCallback} from "react";
 import {swrFetcher} from "@/lib/swrFetcher";
+import {Constants} from "@/constants";
 
 export interface CourseFilter {
     page?: number;
@@ -17,14 +18,14 @@ export interface CourseFilter {
 }
 
 export function useCourses(filters?: CourseFilter) {
-    const opts = {
-        pageNumber: filters?.page ?? 1, // Backend: pageNumber
-        pageSize: filters?.size ?? 12,  // Backend: pageSize
+    const opts: CoursesFilterParams = {
+        pageNumber: (filters?.page ?? 0) + 1, // Convert zero-based to one-based
+        pageSize: filters?.size ?? 12,
         teacherId: filters?.teacherId,
         categoryId: filters?.categoryId,
         status: filters?.status === "ALL" ? undefined : filters?.status,
         difficulty: filters?.difficulty === "ALL" ? undefined : filters?.difficulty,
-        keyword: filters?.keyword, // Backend: keyword
+        keyword: filters?.keyword,
     };
 
     // Convert object to query string (filtering out null/undefined)
@@ -36,8 +37,7 @@ export function useCourses(filters?: CourseFilter) {
     });
 
     const queryString = qs.toString();
-    // Adjust your route constant here
-    const key = `/api/courses/search?${queryString}`;
+    const key = `${Constants.COURSES_ROUTES.SEARCH}?${queryString}`;
 
     const {data, error, isLoading, isValidating, mutate} = useSWR<PaginatedResponse<CourseResponse> | null>(
         key,
@@ -51,68 +51,35 @@ export function useCourses(filters?: CourseFilter) {
         }
     );
 
-    const createCourse = useCallback(async (courseData: FormData) => {
-        try {
-            const result = await CourseService.createCourseWithBasicInfo(courseData);
-
-            if (result?.success) {
-                await mutate();
-            }
-
-            return result;
-        } catch (error) {
-            console.error('Failed to create course:', error);
-            throw error;
+    const createCourse = useCallback(async (request: CourseCreationRequest, thumbnail?: File) => {
+        const result = await CourseService.createCourse(request, thumbnail);
+        if (result?.success) {
+            await mutate();
         }
+        return result;
     }, [mutate]);
 
-    const updateCourse = useCallback(async (courseId: number, courseData: FormData) => {
-        try {
-            const result = await CourseService.updateCourseBasicInfo(courseId, courseData);
-
-            if (result?.success) {
-                // Optimistically update the cache
-                await mutate();
-            }
-
-            return result;
-        } catch (error) {
-            console.error('Failed to update course:', error);
-            throw error;
+    const updateCourse = useCallback(async (courseId: number, request: CourseUpdateRequest, thumbnail?: File) => {
+        const result = await CourseService.updateCourse(courseId, request, thumbnail);
+        if (result?.success) {
+            await mutate();
         }
+        return result;
     }, [mutate]);
 
     const deleteCourse = useCallback(async (courseId: number) => {
-        try {
-            const result = await CourseService.deleteCourse(courseId);
-
-            if (result?.success) {
-                // Optimistic update: remove from local cache
-                await mutate(
-                    (currentData) => {
-                        if (!currentData) return currentData;
-                        return {
-                            ...currentData,
-                            items: currentData.items.filter(course => course.id !== courseId),
-                            total: currentData.totalPage - 1,
-                        };
-                    },
-                    {revalidate: true}
-                );
-            }
-
-            return result;
-        } catch (error) {
-            console.error('Failed to delete course:', error);
-            throw error;
+        const result = await CourseService.deleteCourse(courseId);
+        if (result?.success) {
+            await mutate();
         }
+        return result;
     }, [mutate]);
 
     return {
-        courses: data?.items ?? [], // Adjust based on your actual API wrap (ApiResponse vs PageResponse)
+        courses: (data as any)?.items ?? data?.content ?? [],
         totalElements: data?.totalElements ?? 0,
-        totalPages: data?.totalPage ?? 0,
-        currentPage: data?.pageNumber ?? opts.pageNumber,
+        totalPages: (data as any)?.totalPage ?? data?.totalPages ?? 0,
+        currentPage: data?.number ?? (filters?.page ?? 0),
         isLoading,
         isValidating,
         isError: !!error,
@@ -126,11 +93,13 @@ export function useCourses(filters?: CourseFilter) {
 }
 
 /**
- * Hook for fetching teacher's own courses
+ * Hook for fetching teacher's own courses or student's enrolled courses
  */
-export function useMyCourses() {
-    const { data, error, isLoading, mutate } = useSWR<CourseResponse[]>(
-        Constants.COURSES_ROUTES.MY_COURSES,
+export function useMyCourses(pageNumber: number = 1, pageSize: number = 20) {
+    const key = `${Constants.COURSES_ROUTES.MY_COURSES}?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+    
+    const {data, error, isLoading, mutate} = useSWR<PaginatedResponse<CourseResponse>>(
+        key,
         swrFetcher,
         {
             revalidateOnFocus: false,
@@ -139,7 +108,10 @@ export function useMyCourses() {
     );
 
     return {
-        courses: data ?? [],
+        courses: data?.content ?? [],
+        totalElements: data?.totalElements ?? 0,
+        totalPages: data?.totalPages ?? 0,
+        currentPage: data?.number ?? (pageNumber - 1),
         isLoading,
         isError: !!error,
         error,

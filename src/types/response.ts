@@ -48,44 +48,24 @@ export type AuthResponse = {
     refreshToken: string;
 }
 
-export type Category = {
+// ==================== Course Response Types ====================
+
+export interface CategoryResponsePreview {
+    id: number;
     name: string;
-    description: string;
     icon: string;
     color: string;
 }
 
-export type CourseTableContent = {
-    course: CourseResponse;
-    enrolledCount: number;
-}
-
-export type Quiz = {
-    id: number
-    name: string
-    description: string
-    instructor: string
-    courseName: string
-    lessonName: string
-    questions: Array<Question>
-    status: string
-    dueTo: Date
-    totalQuestions: number
-    difficulty: 'Easy' | 'Medium' | 'Hard'
-    timeLimit: number // in minutes
-    maxAttempts: number
-    attempts: number
-    lastScore?: number
-    averageScore?: number
-    bestScore?: number
-}
-
-export type Question = {
-    id: number
-    type: string
-    description: string
-    options: string[]
-    answer: string[]
+export interface CategoryResponse {
+    id: number;
+    name: string;
+    description: string;
+    icon: string;
+    color: string;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export interface CourseResponse {
@@ -94,60 +74,50 @@ export interface CourseResponse {
     description: string;
     thumbnailUrl: string;
     teacherName: string;
-    teacherAvatar?: string;
     teacherId: number;
     difficulty: Difficulty;
     price: number;
+    rating: number;
     status: CourseStatus;
-    categories?: Category[];
-    categoryName?: string;
+    categories: CategoryResponsePreview[];
     createdAt: Date;
     updatedAt: Date;
-    enrolledCount: number;
-    lessons?: number;
-    rating?: number;
-}
-
-export interface CourseDetailResponse {
-    features: string[];
-    originalPrice?: any;
-    discount?: number;
-    id: number;
-    title: string;
-    subtitle?: string;
-    description: string;
-    thumbnailUrl: string;
-    difficulty: Difficulty;
-    price: number;
-    rating: number;
-    students: number;
-    chapters: ChapterResponse[];
-    instructor: InstructorResponse;
-    language?: string;
+    isEnrolled?: boolean;
 }
 
 export interface ChapterResponse {
+    id: number;
     title: string;
-    lectures: number;
-    durationInMinutes: number;
-    lessons: LessonResponse[];
+    orderIndex: number;
 }
 
 export interface LessonResponse {
+    id: number;
     title: string;
-    durationInMinutes: number;
     type: LessonType;
-    isFree: boolean;
+    content: string;
+    videoUrl: string;
+    description: string;
+    duration: number;
+    orderIndex: number;
+    createdAt: Date;
+    updatedAt: Date;
+    materials?: FileResponse[];
 }
 
-export interface InstructorResponse {
-    students?: number;
-    rating?: number;
-    role?: string;
-    name: string;
-    avatarUrl: string;
-    bio: string;
-    courses: number;
+export interface ChapterTableOfContents {
+    id: number;
+    title: string;
+    orderIndex: number;
+    lessonCount: number;
+    totalDuration: number;
+    lessons: LessonResponse[];
+}
+
+export interface TableOfContentsResponse {
+    courseResponse: CourseResponse;
+    enrolledCount: number;
+    chapters: ChapterTableOfContents[];
 }
 
 export interface PublishResponse {

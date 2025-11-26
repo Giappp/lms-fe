@@ -67,7 +67,7 @@ export default function CourseCard({course}: { course: CourseResponse }) {
                 {/* Meta Row */}
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span className="font-medium text-primary/80 uppercase tracking-wider flex items-center gap-1">
-                        {course.categoryName || "General"}
+                        {course.categories && course.categories.length > 0 ? course.categories[0].name : "General"}
                     </span>
 
                     {/* Rating (Optional Enhancement) */}
@@ -85,15 +85,11 @@ export default function CourseCard({course}: { course: CourseResponse }) {
                     </h3>
                 </Link>
 
-                {/* Info Grid (Lessons, Duration mockup) */}
+                {/* Created Date */}
                 <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                     <div className="flex items-center gap-1.5">
-                        <BarChart className="w-3.5 h-3.5"/>
-                        <span>{course.lessons || 12} Lessons</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
                         <Clock className="w-3.5 h-3.5"/>
-                        <span>6h 30m</span>
+                        <span>Updated {new Date(course.updatedAt).toLocaleDateString()}</span>
                     </div>
                 </div>
 
@@ -102,12 +98,7 @@ export default function CourseCard({course}: { course: CourseResponse }) {
                     <div className="flex items-center gap-2">
                         <div
                             className="h-8 w-8 rounded-full ring-1 ring-border bg-muted overflow-hidden flex items-center justify-center shrink-0">
-                            {course.teacherAvatar ? (
-                                <img src={course.teacherAvatar} alt={course.teacherName}
-                                     className="h-full w-full object-cover"/>
-                            ) : (
-                                <User className="h-4 w-4 text-muted-foreground"/>
-                            )}
+                            <User className="h-4 w-4 text-muted-foreground"/>
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] text-muted-foreground leading-none mb-0.5">Instructor</span>

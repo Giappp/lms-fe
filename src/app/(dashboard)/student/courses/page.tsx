@@ -1,12 +1,6 @@
-import React, {Suspense} from 'react'
-import CoursesBrowserSkeleton from "@/components/student/courses/CoursesBrowserSkeleton";
-import CourseSearchPage from "@/components/student/courses/CourseSearchPage";
+import { StudentCourseBrowsePage } from "@/components/student/courses/StudentCourseBrowsePage";
 
 const Page = () => {
-    return (
-        <Suspense fallback={<CoursesBrowserSkeleton/>}>
-            <CourseSearchPage/>
-        </Suspense>
-    )
+    return <StudentCourseBrowsePage />;
 }
 export default Page
