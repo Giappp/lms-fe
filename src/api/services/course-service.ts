@@ -17,7 +17,7 @@ export const CourseService = {
     // fetch single course detail
     getCourseById: async (courseId: number) => {
         return await apiCall<CourseResponse>(() =>
-            axiosInstance.get(Constants.COURSES_ROUTES.DETAIL.replace(':id', String(courseId)))
+            axiosInstance.get(`${Constants.COURSES_ROUTES.DETAIL}/${courseId}/details`)
         );
     },
     // Create course API wrapper
@@ -47,7 +47,7 @@ export const CourseService = {
     },
 
     getChaptersWithLessons: async (courseId: number) => {
-        return await apiCall<ChapterWithLessons[]>(() => axiosInstance.get(`${Constants.COURSES_ROUTES.DETAIL}/${courseId}`));
+        return await apiCall<ChapterWithLessons[]>(() => axiosInstance.get(`${Constants.COURSES_ROUTES.DETAIL}/${courseId}/details`));
     },
     deleteCourse: async (courseId: number) => {
         return await apiCall(() => axiosInstance.delete(`${Constants.COURSES_ROUTES.DELETE}/${courseId}`));

@@ -47,7 +47,7 @@ export class Constants {
         TOP_RATED: "/api/courses/top-rated",
         MY_COURSES: "/api/courses/my-courses",
         PUBLISHED: "/api/courses/published",
-        DETAIL: "/api/courses/:id/details",
+        DETAIL: "/api/courses",
         CREATE: "/api/courses",
         UPDATE: "/api/courses",
         DELETE: "/api/courses"

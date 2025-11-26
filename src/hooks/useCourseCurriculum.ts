@@ -6,7 +6,7 @@ import {useCallback} from "react";
 import {CourseService} from "@/api/services/course-service";
 
 export function useCourseCurriculum(courseId: number | undefined) {
-    const key = courseId ? `${Constants.COURSES_ROUTES.DETAIL}/${courseId}` : null;
+    const key = courseId ? `${Constants.COURSES_ROUTES.DETAIL}/${courseId}/details` : null;
 
     const {data, error, isLoading, isValidating, mutate} = useSWR<ChapterWithLessons[]>(
         key,
