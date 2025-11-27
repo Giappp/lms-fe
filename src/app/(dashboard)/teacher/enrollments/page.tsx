@@ -70,14 +70,19 @@ export default function TeacherEnrollmentsPage() {
                 description: `${enrollment.studentName} has requested to enroll in "${enrollment.courseName}"`,
                 duration: 5000,
             });
-
-            // Refresh enrollment list if it's for the currently selected course
-            if (selectedCourseId === enrollment.courseId) {
+            
+            // Refresh enrollment list immediately to show the new TeacherEnrollmentCard
+            // Only refresh if viewing the same course OR if courseId is not provided in the event
+            const shouldRefresh = !enrollment.courseId || selectedCourseId === enrollment.courseId;
+            if (shouldRefresh) {
                 mutate();
             }
         };
 
-        onEnrollmentRequest(handleEnrollmentRequest);
+        // Remove any existing listeners first to prevent duplicates
+        socket.off("enrollment_request");
+        // Add new listener
+        socket.on("enrollment_request", handleEnrollmentRequest);
 
         // Cleanup: Remove listener when component unmounts
         return () => {
