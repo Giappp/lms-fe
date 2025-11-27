@@ -1,8 +1,9 @@
 "use client"
 
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useCourseEnrollments } from "@/hooks/useEnrollments";
 import { useMyCourses } from "@/hooks/useCourses";
+import { getSocket, onEnrollmentRequest } from "@/lib/socket";
 import { TeacherEnrollmentCard } from "@/components/teacher/enrollments/TeacherEnrollmentCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +55,35 @@ export default function TeacherEnrollmentsPage() {
         currentPage,
         PAGE_SIZE
     );
+
+    // Subscribe to real-time enrollment requests
+    useEffect(() => {
+        const socket = getSocket();
+        if (!socket) return;
+
+        const handleEnrollmentRequest = (enrollment: any) => {
+            console.log("📚 New enrollment request:", enrollment);
+            
+            // Show notification
+            toast({
+                title: "🎓 New Enrollment Request",
+                description: `${enrollment.studentName} has requested to enroll in "${enrollment.courseName}"`,
+                duration: 5000,
+            });
+
+            // Refresh enrollment list if it's for the currently selected course
+            if (selectedCourseId === enrollment.courseId) {
+                mutate();
+            }
+        };
+
+        onEnrollmentRequest(handleEnrollmentRequest);
+
+        // Cleanup: Remove listener when component unmounts
+        return () => {
+            socket.off("enrollment_request", handleEnrollmentRequest);
+        };
+    }, [mutate, selectedCourseId, toast]);
 
     const handleCourseChange = (value: string) => {
         setSelectedCourseId(parseInt(value));

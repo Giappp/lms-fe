@@ -6,6 +6,11 @@ const nextConfig: NextConfig = {
         remotePatterns: [
             {
                 protocol: 'https',
+                hostname: 'img.freepik.com',
+                pathname: '/**',
+            },
+            {
+                protocol: 'https',
                 hostname: 'lms-be-assets-dev.s3.ap-southeast-1.amazonaws.com',
                 port: '',
                 pathname: '/uploads/**',

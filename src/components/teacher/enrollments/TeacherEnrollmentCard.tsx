@@ -24,6 +24,7 @@ interface TeacherEnrollmentCardProps {
     onApprove?: (enrollmentId: number) => void;
     onReject?: (enrollmentId: number, reason?: string) => void;
     isUpdating?: boolean;
+    isNew?: boolean;
 }
 
 const statusColors = {
@@ -42,7 +43,8 @@ export function TeacherEnrollmentCard({
     enrollment,
     onApprove,
     onReject,
-    isUpdating = false
+    isUpdating = false,
+    isNew = false
 }: TeacherEnrollmentCardProps) {
     const { student, status, createdAt } = enrollment;
     const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -72,6 +74,7 @@ export function TeacherEnrollmentCard({
             <Card className={`
                 hover:shadow-md transition-all duration-300
                 ${status === "PENDING" ? "border-l-4 border-l-yellow-500" : ""}
+                ${isNew ? "animate-in fade-in slide-in-from-top-2 duration-500 ring-2 ring-yellow-400 ring-offset-2" : ""}
             `}>
                 <CardContent className="pl-5">
                     <div className="flex items-start gap-4">

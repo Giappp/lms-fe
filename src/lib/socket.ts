@@ -101,3 +101,33 @@ export const onUserOffline = (callback: (data: { userId: number }) => void) => {
         }
     });
 };
+
+/**
+ * Listen for new enrollment requests (Teacher receives)
+ */
+export const onEnrollmentRequest = (callback: (enrollment: any) => void) => {
+    socket?.on("enrollment_request", (data: string | any) => {
+        try {
+            const enrollment = typeof data === 'string' ? JSON.parse(data) : data;
+            console.log("📚 Received enrollment_request:", enrollment);
+            callback(enrollment);
+        } catch (error) {
+            console.error("❌ Failed to parse enrollment_request:", error, data);
+        }
+    });
+};
+
+/**
+ * Listen for enrollment status updates (Student receives)
+ */
+export const onEnrollmentStatusUpdate = (callback: (enrollment: any) => void) => {
+    socket?.on("enrollment_status_update", (data: string | any) => {
+        try {
+            const enrollment = typeof data === 'string' ? JSON.parse(data) : data;
+            console.log("🎓 Received enrollment_status_update:", enrollment);
+            callback(enrollment);
+        } catch (error) {
+            console.error("❌ Failed to parse enrollment_status_update:", error, data);
+        }
+    });
+};

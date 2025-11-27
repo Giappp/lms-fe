@@ -1,9 +1,10 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useMyEnrollments } from "@/hooks/useEnrollments";
 import { StudentEnrollmentCard } from "@/components/student/enrollments/StudentEnrollmentCard";
+import { getSocket, onEnrollmentStatusUpdate } from "@/lib/socket";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -42,6 +43,42 @@ export default function StudentEnrollmentsPage() {
         currentPage,
         PAGE_SIZE
     );
+
+    // Subscribe to real-time enrollment status updates
+    useEffect(() => {
+        const socket = getSocket();
+        if (!socket) return;
+
+        const handleStatusUpdate = (enrollment: any) => {
+            console.log("🎓 Enrollment status updated:", enrollment);
+            
+            // Show notification based on status
+            if (enrollment.status === 'APPROVED') {
+                toast({
+                    title: "✅ Enrollment Approved!",
+                    description: `You have been accepted into "${enrollment.courseName}"`,
+                    duration: 5000,
+                });
+            } else if (enrollment.status === 'REJECTED') {
+                toast({
+                    title: "❌ Enrollment Rejected",
+                    description: `Your request for "${enrollment.courseName}" was rejected${enrollment.reason ? `: ${enrollment.reason}` : ''}`,
+                    variant: "destructive",
+                    duration: 5000,
+                });
+            }
+
+            // Refresh enrollment list to show updated status
+            mutate();
+        };
+
+        onEnrollmentStatusUpdate(handleStatusUpdate);
+
+        // Cleanup: Remove listener when component unmounts
+        return () => {
+            socket.off("enrollment_status_update", handleStatusUpdate);
+        };
+    }, [mutate, toast]);
 
     const handleStatusChange = (value: string) => {
         setStatusFilter(value === "all" ? undefined : value as EnrollmentStatus);
