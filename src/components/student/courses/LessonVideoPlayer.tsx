@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { LessonType } from "@/types/enum";
-import { Card } from "@/components/ui/card";
 import { PlayCircle, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -21,7 +20,6 @@ export function LessonVideoPlayer({ type, videoUrl, title }: LessonVideoPlayerPr
     return null;
   }
 
-  // Kiểm tra nếu là YouTube
   const isYouTube = type === LessonType.YOUTUBE || 
                     videoUrl.includes('youtube.com') || 
                     videoUrl.includes('youtu.be');
@@ -39,7 +37,6 @@ export function LessonVideoPlayer({ type, videoUrl, title }: LessonVideoPlayerPr
     );
   }
 
-  // Render YouTube iframe
   if (isYouTube) {
     const getYouTubeEmbedUrl = (url: string) => {
       const videoId = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/)?.[1];
@@ -47,25 +44,33 @@ export function LessonVideoPlayer({ type, videoUrl, title }: LessonVideoPlayerPr
     };
 
     return (
-      <Card className="overflow-hidden mb-6">
-        <div className="aspect-video bg-black relative">
+      <div className="mb-6 rounded-lg overflow-hidden bg-black shadow-2xl">
+        <div className="aspect-video relative">
+          {loading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+              <div className="text-center">
+                <PlayCircle className="h-16 w-16 text-white/50 mx-auto mb-2 animate-pulse" />
+                <p className="text-white/70 text-sm">Đang tải video...</p>
+              </div>
+            </div>
+          )}
           <iframe
             src={getYouTubeEmbedUrl(videoUrl)}
-            className="absolute inset-0 w-full h-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            className="absolute inset-0 w-full h-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
             onLoad={() => setLoading(false)}
             onError={() => setError(true)}
+            title={title}
           />
         </div>
-      </Card>
+      </div>
     );
   }
 
-  // Render HTML5 video cho S3 và các nguồn video khác
   return (
-    <Card className="overflow-hidden mb-6">
-      <div className="aspect-video bg-black relative">
+    <div className="mb-6 rounded-lg overflow-hidden shadow-2xl">
+      <div className="aspect-video relative">
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
             <div className="text-center">
@@ -76,7 +81,7 @@ export function LessonVideoPlayer({ type, videoUrl, title }: LessonVideoPlayerPr
         )}
         <video
           ref={videoRef}
-          className="w-full h-full"
+          className="absolute inset-0 w-full h-full object-contain"
           controls
           controlsList="nodownload"
           crossOrigin="anonymous"
@@ -101,6 +106,6 @@ export function LessonVideoPlayer({ type, videoUrl, title }: LessonVideoPlayerPr
           Trình duyệt của bạn không hỗ trợ video tag.
         </video>
       </div>
-    </Card>
+    </div>
   );
 }

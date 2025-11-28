@@ -34,22 +34,28 @@ export function StudentEnrollmentCard({
     const { course, status, createdAt } = enrollment;
 
     return (
-        <Card className="hover:shadow-lg transition-shadow duration-300">
+        <Card className="hover:shadow-lg transition-shadow duration-300 overflow-hidden">
             <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                            <BookOpen className="h-5 w-5 text-primary flex-shrink-0" />
-                            <h3 className="font-semibold text-lg line-clamp-1">
+                {/* Use grid to prevent overflow */}
+                <div className="grid grid-cols-[1fr_auto] gap-3 items-start">
+                    {/* Left column - Course info */}
+                    <div className="min-w-0 space-y-2">
+                        <div className="flex items-start gap-2 min-w-0">
+                            <BookOpen className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                            <h3 className="font-semibold text-lg leading-tight break-words overflow-hidden">
                                 {course.title}
                             </h3>
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                            {course.description}
-                        </p>
+                        {course.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                                {course.description}
+                            </p>
+                        )}
                     </div>
+                    
+                    {/* Right column - Status badge */}
                     <Badge 
-                        className={`${statusColors[status]} whitespace-nowrap flex-shrink-0`}
+                        className={`${statusColors[status]} whitespace-nowrap`}
                         variant="outline"
                     >
                         {statusLabels[status]}
@@ -59,11 +65,11 @@ export function StudentEnrollmentCard({
             <CardContent className="space-y-4">
                 {/* Course Info */}
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                        <User className="h-4 w-4" />
+                    <div className="flex items-center gap-2 text-muted-foreground min-w-0">
+                        <User className="h-4 w-4 flex-shrink-0" />
                         <span className="truncate">{course.teacherName}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
+                    <div className="flex items-center gap-2 justify-end">
                         <Badge variant="secondary" className="text-xs">
                             {course.difficulty}
                         </Badge>
@@ -72,17 +78,17 @@ export function StudentEnrollmentCard({
 
                 {/* Enrollment Info */}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground border-t pt-3">
-                    <Calendar className="h-3.5 w-3.5" />
-                    <span>
+                    <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span className="truncate">
                         Requested {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
                     </span>
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-2">
+                <div className="flex flex-wrap gap-2 pt-2">
                     <Button
                         variant="default"
-                        className="flex-1"
+                        className="flex-1 min-w-[120px]"
                         onClick={() => onViewCourse?.(course.id)}
                         disabled={status === "REJECTED"}
                     >
@@ -93,6 +99,7 @@ export function StudentEnrollmentCard({
                             variant="outline"
                             onClick={() => onCancel(enrollment.id)}
                             disabled={isCanceling}
+                            className="min-w-[100px]"
                         >
                             {isCanceling ? "Canceling..." : "Cancel"}
                         </Button>
