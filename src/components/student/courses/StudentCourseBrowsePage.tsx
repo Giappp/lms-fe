@@ -13,8 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, BookOpen, Sparkles } from "lucide-react";
-import { Difficulty } from "@/types/enum";
+import { Badge } from "@/components/ui/badge";
+import { Search, BookOpen, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Difficulty, EnrollmentStatus } from "@/types/enum";
 import { CourseResponse } from "@/types/response";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,14 +35,77 @@ export function StudentCourseBrowsePage() {
     size: 12,
   });
 
+  // Render enrollment status or enroll button
+  const renderCourseAction = (course: CourseResponse) => {
+    if (!course.enrollmentStatus) {
+      // Not enrolled - show enroll button
+      return (
+        <EnrollButton
+          courseId={course.id}
+          isEnrolled={false}
+          variant="default"
+          size="sm"
+          className="w-full"
+        />
+      );
+    }
+
+    // Has enrollment status
+    switch (course.enrollmentStatus) {
+      case EnrollmentStatus.PENDING:
+        return (
+          <Badge className="w-full justify-center py-2 bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100">
+            <Clock className="h-3.5 w-3.5 mr-1.5" />
+            Pending Review
+          </Badge>
+        );
+      
+      case EnrollmentStatus.APPROVED:
+        return (
+          <Badge className="w-full justify-center py-2 bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
+            <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+            Enrolled
+          </Badge>
+        );
+      
+      case EnrollmentStatus.REJECTED:
+        return (
+          <div className="space-y-2">
+            <Badge className="w-full justify-center py-2 bg-red-100 text-red-800 border-red-200 hover:bg-red-100">
+              <XCircle className="h-3.5 w-3.5 mr-1.5" />
+              Rejected
+            </Badge>
+            <EnrollButton
+              courseId={course.id}
+              isEnrolled={false}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            />
+          </div>
+        );
+      
+      default:
+        return (
+          <EnrollButton
+            courseId={course.id}
+            isEnrolled={false}
+            variant="default"
+            size="sm"
+            className="w-full"
+          />
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header with Title */}
       <div className="container mx-auto px-4 pt-8">
-          <h1 className="text-3xl font-bold tracking-tight">Explore Courses</h1>
-          <p className="text-muted-foreground mt-1">
-            Discover your next learning adventure
-          </p>
+        <h1 className="text-3xl font-bold tracking-tight">Explore Courses</h1>
+        <p className="text-muted-foreground mt-1">
+          Discover your next learning adventure
+        </p>
       </div>
 
       <div className="container mx-auto px-4 py-8">
@@ -101,15 +165,7 @@ export function StudentCourseBrowsePage() {
                   key={course.id}
                   course={course}
                   href={`/student/courses/${course.id}`}
-                  actions={
-                    <EnrollButton
-                      courseId={course.id}
-                      isEnrolled={course.isEnrolled}
-                      variant="default"
-                      size="sm"
-                      className="w-full"
-                    />
-                  }
+                  actions={renderCourseAction(course)}
                 />
               ))}
             </div>

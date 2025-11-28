@@ -25,7 +25,7 @@ export class Constants {
     static readonly ENROLLMENT_ROUTES = {
         REQUEST: "/api/enrollments",
         MY_ENROLLMENTS: "/api/enrollments/student",
-        COURSE_ENROLLMENTS: "/api/enrollments/course",
+        COURSE_ENROLLMENTS: "/api/enrollments",
         UPDATE_STATUS: "/api/enrollments",
         CANCEL: "/api/enrollments"
     };

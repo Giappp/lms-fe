@@ -32,8 +32,8 @@ export function useMyEnrollments(
         { revalidateOnFocus: false }
     );
 
-    const cancelEnrollment = async (enrollmentId: number) => {
-        const response = await EnrollmentService.cancelEnrollment(enrollmentId);
+    const cancelEnrollment = async (courseId: number) => {
+        const response = await EnrollmentService.cancelEnrollment(courseId);
         if (response.success) {
             await mutate();
             return { success: true };
@@ -55,9 +55,10 @@ export function useMyEnrollments(
 
 /**
  * Hook for teacher course enrollments
+ * @param courseId - Course ID to filter by, or null for all courses
  */
 export function useCourseEnrollments(
-    courseId: number,
+    courseId: number | null,
     status?: EnrollmentStatus,
     search?: string,
     page: number = 1,
@@ -66,12 +67,12 @@ export function useCourseEnrollments(
     const params = new URLSearchParams();
     params.append("page", page.toString());
     params.append("size", size.toString());
+    if (courseId !== null) params.append("courseId", courseId.toString());
     if (status) params.append("status", status);
     if (search) params.append("search", search);
 
-    const key = courseId 
-        ? `${Constants.ENROLLMENT_ROUTES.COURSE_ENROLLMENTS}/${courseId}?${params.toString()}`
-        : null;
+    // courseId is now a request param (optional)
+    const key = `${Constants.ENROLLMENT_ROUTES.COURSE_ENROLLMENTS}?${params.toString()}`;
 
     const { data, error, isLoading, mutate } = useSWR<PaginatedResponse<EnrollmentResponse> | null>(
         key,

@@ -16,7 +16,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { EnrollmentResponse } from "@/types/response";
-import { Calendar, Mail, User, Check, X, Clock } from "lucide-react";
+import { Mail, Check, X, Clock, BookOpen, DollarSign } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface TeacherEnrollmentCardProps {
@@ -46,7 +46,7 @@ export function TeacherEnrollmentCard({
     isUpdating = false,
     isNew = false
 }: TeacherEnrollmentCardProps) {
-    const { student, status, createdAt } = enrollment;
+    const { student, course, status, createdAt } = enrollment;
     const [showRejectDialog, setShowRejectDialog] = useState(false);
     const [rejectReason, setRejectReason] = useState("");
 
@@ -76,7 +76,7 @@ export function TeacherEnrollmentCard({
                 ${status === "PENDING" ? "border-l-4 border-l-yellow-500" : ""}
                 ${isNew ? "animate-in fade-in slide-in-from-top-2 duration-500 ring-2 ring-yellow-400 ring-offset-2" : ""}
             `}>
-                <CardContent className="pl-5">
+                <CardContent className="pl-5 pt-6">
                     <div className="flex items-start gap-4">
                         {/* Avatar */}
                         <Avatar className="h-12 w-12 flex-shrink-0">
@@ -86,11 +86,12 @@ export function TeacherEnrollmentCard({
                             </AvatarFallback>
                         </Avatar>
 
-                        {/* Student Info */}
+                        {/* Student & Course Info - Side by Side */}
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex items-start justify-between gap-4 mb-2">
+                                {/* Student Info */}
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-base truncate">
+                                    <h4 className="font-semibold text-base line-clamp-1">
                                         {student.fullName}
                                     </h4>
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
@@ -98,8 +99,44 @@ export function TeacherEnrollmentCard({
                                         <span className="truncate">{student.email}</span>
                                     </div>
                                 </div>
+
+                                {/* Course Info - Right beside Student */}
+                                <div className="flex-1 min-w-0 border-l pl-4">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <BookOpen className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                                        <p className="font-medium text-sm line-clamp-1">
+                                            {course.title}
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-1.5">
+                                        <Badge variant="secondary" className="text-xs h-5">
+                                            {course.difficulty}
+                                        </Badge>
+                                        {course.price > 0 && (
+                                            <span className="text-xs text-muted-foreground flex items-center gap-0.5">
+                                                <DollarSign className="h-3 w-3" />
+                                                {course.price}
+                                            </span>
+                                        )}
+                                        {course.categories && course.categories.length > 0 && (
+                                            <Badge 
+                                                variant="outline" 
+                                                className="text-xs h-5"
+                                                style={{ 
+                                                    backgroundColor: course.categories[0].color + "15",
+                                                    borderColor: course.categories[0].color + "30",
+                                                    color: course.categories[0].color
+                                                }}
+                                            >
+                                                {course.categories[0].name}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Status Badge */}
                                 <Badge 
-                                    className={`${statusColors[status]} whitespace-nowrap flex-shrink-0`}
+                                    className={`${statusColors[status]} whitespace-nowrap flex-shrink-0 h-6`}
                                     variant="outline"
                                 >
                                     {statusLabels[status]}
@@ -163,8 +200,8 @@ export function TeacherEnrollmentCard({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Reject Enrollment Request</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to reject the enrollment request from{" "}
-                            <strong>{student.fullName}</strong>?
+                            Are you sure you want to reject <strong>{student.fullName}</strong>'s enrollment request for{" "}
+                            <strong>{course.title}</strong>?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="space-y-2 py-4">

@@ -22,10 +22,10 @@ export class EnrollmentService {
     /**
      * Cancel enrollment (Student/Admin)
      */
-    static async cancelEnrollment(enrollmentId: number) {
+    static async cancelEnrollment(courseId: number) {
         return apiCall(() =>
             axiosInstance.delete(
-                `${Constants.ENROLLMENT_ROUTES.CANCEL}/${enrollmentId}`
+                `${Constants.ENROLLMENT_ROUTES.CANCEL}/${courseId}`
             )
         );
     }

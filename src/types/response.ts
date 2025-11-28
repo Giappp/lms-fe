@@ -1,7 +1,7 @@
 /*
 * All the api response model goes here
 */
-import {AttemptStatus, CourseStatus, Difficulty, LessonType, QuestionType, QuizType, ScoringMethod} from "@/types/enum";
+import {AttemptStatus, CourseStatus, Difficulty, LessonType, QuestionType, QuizType, ScoringMethod, EnrollmentStatus} from "@/types/enum";
 
 export type UserResponse = {
     id: number;
@@ -82,7 +82,7 @@ export interface CourseResponse {
     categories: CategoryResponsePreview[];
     createdAt: Date;
     updatedAt: Date;
-    isEnrolled?: boolean;
+    enrollmentStatus?: EnrollmentStatus;
 }
 
 export interface ChapterResponse {

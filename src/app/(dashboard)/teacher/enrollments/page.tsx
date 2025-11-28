@@ -41,15 +41,10 @@ export default function TeacherEnrollmentsPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Set first course as default when courses load
-    React.useEffect(() => {
-        if (courses.length > 0 && !selectedCourseId) {
-            setSelectedCourseId(courses[0].id);
-        }
-    }, [courses, selectedCourseId]);
+    // No auto-select - default is "All Courses" (null)
 
     const { enrollments, isLoading, isUpdating, mutate, updateEnrollmentStatus } = useCourseEnrollments(
-        selectedCourseId || 0,
+        selectedCourseId,
         statusFilter,
         searchTerm,
         currentPage,
@@ -72,8 +67,8 @@ export default function TeacherEnrollmentsPage() {
             });
             
             // Refresh enrollment list immediately to show the new TeacherEnrollmentCard
-            // Only refresh if viewing the same course OR if courseId is not provided in the event
-            const shouldRefresh = !enrollment.courseId || selectedCourseId === enrollment.courseId;
+            // Refresh if: viewing all courses (null) OR viewing the same course as the event
+            const shouldRefresh = selectedCourseId === null || selectedCourseId === enrollment.courseId;
             if (shouldRefresh) {
                 mutate();
             }
@@ -91,7 +86,7 @@ export default function TeacherEnrollmentsPage() {
     }, [mutate, selectedCourseId, toast]);
 
     const handleCourseChange = (value: string) => {
-        setSelectedCourseId(parseInt(value));
+        setSelectedCourseId(value === "all" ? null : parseInt(value));
         setCurrentPage(1);
     };
 
@@ -181,7 +176,7 @@ export default function TeacherEnrollmentsPage() {
                 <Button 
                     variant="outline" 
                     onClick={() => mutate()}
-                    disabled={isLoading || !selectedCourseId}
+                    disabled={isLoading}
                     className="gap-2"
                 >
                     <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
@@ -218,8 +213,8 @@ export default function TeacherEnrollmentsPage() {
                 </Card>
             )}
 
-            {/* Main Content - Only show when courses exist and one is selected */}
-            {!isLoadingCourses && courses.length > 0 && selectedCourseId && (
+            {/* Main Content - Show when courses exist */}
+            {!isLoadingCourses && courses.length > 0 && (
                 <>
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -300,7 +295,7 @@ export default function TeacherEnrollmentsPage() {
                         <div className="space-y-2">
                             <Label htmlFor="course">Course</Label>
                             <Select 
-                                value={selectedCourseId?.toString() || ""} 
+                                value={selectedCourseId?.toString() || "all"} 
                                 onValueChange={handleCourseChange}
                                 disabled={isLoadingCourses || courses.length === 0}
                             >
@@ -308,6 +303,7 @@ export default function TeacherEnrollmentsPage() {
                                     <SelectValue placeholder={isLoadingCourses ? "Loading courses..." : "Select Course"} />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="all">All Courses</SelectItem>
                                     {courses.map(course => (
                                         <SelectItem key={course.id} value={course.id.toString()}>
                                             {course.title}
