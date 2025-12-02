@@ -3,7 +3,8 @@ import {
     PublishResponse,
     TableOfContentsResponse,
     PaginatedResponse,
-    LessonResponse
+    LessonResponse,
+    CourseSelectResponse
 } from "@/types/response";
 import {
     CourseCreationRequest,
@@ -32,6 +33,13 @@ export const CourseService = {
             axiosInstance.get(`${Constants.COURSES_ROUTES.MY_COURSES}`, {
                 params: {pageNumber, pageSize}
             })
+        );
+    },
+
+    // Get compact course list for dropdown selection
+    getMyCoursesDropdown: async () => {
+        return await apiCall<CourseSelectResponse[]>(() =>
+            axiosInstance.get(`${Constants.COURSES_ROUTES.MY_COURSES_DROPDOWN}`)
         );
     },
 

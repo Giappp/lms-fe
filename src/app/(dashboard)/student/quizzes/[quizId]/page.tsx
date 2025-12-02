@@ -1,11 +1,12 @@
 "use client"
 
+import { use } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { QuizDetailResponse, QuizAttemptResponse } from "@/types/response";
+import { useQuizDetail, useMyAttempts } from "@/hooks/useQuizzes";
 import { QuizType, AttemptStatus } from "@/types/enum";
 import { 
     Clock, 
@@ -14,96 +15,29 @@ import {
     AlertCircle, 
     PlayCircle, 
     History,
+    TrendingUp,
     CheckCircle2,
+    Loader2,
+    XCircle,
     BookOpen,
     Users,
     Calendar
 } from "lucide-react";
 import { AttemptHistoryCard } from "@/components/shared/quiz";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock quiz detail
-const mockQuizDetail: QuizDetailResponse = {
-    id: 1,
-    title: "Introduction to React Hooks",
-    description: "Test your knowledge of React Hooks including useState, useEffect, useContext, and custom hooks. This quiz covers fundamental concepts and best practices.",
-    quizType: QuizType.LESSON_QUIZ,
-    courseId: 1,
-    courseName: "React for Beginners",
-    lessonId: 5,
-    lessonTitle: "React Hooks Deep Dive",
-    maxAttempts: 3,
-    scoringMethod: "HIGHEST" as any,
-    passingPercentage: 70,
-    timeLimitMinutes: 30,
-    isActive: true,
-    shuffleQuestions: false,
-    shuffleAnswers: false,
-    showResults: true,
-    showCorrectAnswers: true,
-    questionCount: 3,
-    totalPoints: 30,
-    createdAt: new Date("2024-01-15"),
-    updatedAt: new Date("2024-01-20"),
-    questions: []
-};
-
-// Mock attempts
-const mockAttempts: QuizAttemptResponse[] = [
-    {
-        id: 1,
-        quizId: 1,
-        quizTitle: "Introduction to React Hooks",
-        studentId: 1,
-        studentName: "John Doe",
-        attemptNumber: 1,
-        score: 20,
-        percentage: 66.67,
-        isPassed: false,
-        status: AttemptStatus.SUBMITTED,
-        startedAt: new Date("2024-01-20T10:00:00"),
-        submittedAt: new Date("2024-01-20T10:25:00"),
-        timeSpentSeconds: 1500,
-        totalQuestions: 3,
-        correctAnswers: 2,
-        incorrectAnswers: 1,
-        unansweredQuestions: 0,
-        isReviewed: false
-    },
-    {
-        id: 2,
-        quizId: 1,
-        quizTitle: "Introduction to React Hooks",
-        studentId: 1,
-        studentName: "John Doe",
-        attemptNumber: 2,
-        score: 30,
-        percentage: 100,
-        isPassed: true,
-        status: AttemptStatus.COMPLETED,
-        startedAt: new Date("2024-01-21T14:00:00"),
-        submittedAt: new Date("2024-01-21T14:28:00"),
-        timeSpentSeconds: 1680,
-        totalQuestions: 3,
-        correctAnswers: 3,
-        incorrectAnswers: 0,
-        unansweredQuestions: 0,
-        isReviewed: true,
-        teacherFeedback: "Great improvement!"
-    }
-];
-
-export default function QuizDetailPage({ params }: { params: { quizId: string } }) {
+export default function QuizDetailPage({ params }: { params: Promise<{ quizId: string }> }) {
+    const { quizId } = use(params);
     const router = useRouter();
-    const quiz = mockQuizDetail;
-    const attempts = mockAttempts;
-    const attemptsUsed = attempts.length;
-    const attemptsRemaining = quiz.maxAttempts - attemptsUsed;
-    const canTakeQuiz = attemptsRemaining > 0 && quiz.isActive;
-    const bestScore = attempts.length > 0 ? Math.max(...attempts.map(a => a.percentage)) : 0;
+    const { toast } = useToast();
+    const { quiz, isLoading: quizLoading, error: quizError } = useQuizDetail(parseInt(quizId));
+    const { attempts, isLoading: attemptsLoading, startQuiz } = useMyAttempts(parseInt(quizId));
 
-    const handleStartQuiz = () => {
-        router.push(`/student/quizzes/take/${params.quizId}`);
-    };
+    const attemptsUsed = attempts?.length || 0;
+    const attemptsRemaining = quiz ? quiz.maxAttempts - attemptsUsed : 0;
+    const canTakeQuiz = quiz ? attemptsRemaining > 0 && quiz.isActive : false;
+    const bestScore = attempts && attempts.length > 0 ? Math.max(...attempts.map(a => a.percentage || 0)) : 0;
+
     const formatDateTime = (date?: Date) => {
         if (!date) return 'Not set';
         return new Intl.DateTimeFormat('en-US', {
@@ -113,8 +47,57 @@ export default function QuizDetailPage({ params }: { params: { quizId: string } 
             hour: '2-digit',
             minute: '2-digit',
             hour12: true
-        }).format(date);
+        }).format(new Date(date));
     };
+    
+    const handleStartQuiz = async () => {
+        const result = await startQuiz(parseInt(quizId));
+        if (result.success) {
+            const responseData = (result as any).data;
+            if (responseData?.attemptId) {
+                // Store attemptId in session storage for the take quiz page
+                sessionStorage.setItem(`quiz_${quizId}_attempt`, responseData.attemptId.toString());
+                router.push(`/student/quizzes/take/${quizId}`);
+            }
+        } else {
+            const errorMsg = (result as any).error || "Failed to start quiz";
+            toast({
+                title: "Error",
+                description: errorMsg,
+                variant: "destructive"
+            });
+        }
+    };
+
+    if (quizLoading || attemptsLoading) {
+        return (
+            <div className="container mx-auto p-6 max-w-6xl">
+                <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Loading quiz details...</h3>
+                </div>
+            </div>
+        );
+    }
+
+    if (quizError || !quiz) {
+        return (
+            <div className="container mx-auto p-6 max-w-6xl">
+                <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                        <XCircle className="h-12 w-12 text-destructive mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">Failed to load quiz</h3>
+                        <p className="text-muted-foreground text-center mb-4">
+                            {quizError?.message || 'Quiz not found or you do not have access to this quiz'}
+                        </p>
+                        <Button onClick={() => router.push("/student/quizzes")}>
+                            Back to Quizzes
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto p-6 max-w-6xl">
@@ -188,6 +171,7 @@ export default function QuizDetailPage({ params }: { params: { quizId: string } 
                             )}
                         </CardContent>
                     </Card>
+
                     {/* Quiz Details */}
                     <Card>
                         <CardHeader>
@@ -287,14 +271,14 @@ export default function QuizDetailPage({ params }: { params: { quizId: string } 
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <History className="h-5 w-5" />
-                                Your Attempts ({attempts.length})
+                                Your Attempts ({attempts?.length || 0})
                             </CardTitle>
                             <CardDescription>
                                 Review your previous attempts and track your progress
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {attempts.length > 0 ? (
+                            {attempts && attempts.length > 0 ? (
                                 <div className="space-y-3">
                                     {attempts.map((attempt) => (
                                         <AttemptHistoryCard
@@ -333,7 +317,7 @@ export default function QuizDetailPage({ params }: { params: { quizId: string } 
                                         </p>
                                     </div>
 
-                                    {attempts.length > 0 && (
+                                    {attempts && attempts.length > 0 && (
                                         <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
                                             <p className="text-sm font-medium text-green-900 dark:text-green-100">
                                                 Your Best Score
@@ -350,7 +334,7 @@ export default function QuizDetailPage({ params }: { params: { quizId: string } 
                                         onClick={handleStartQuiz}
                                     >
                                         <PlayCircle className="h-5 w-5" />
-                                        {attempts.length > 0 ? "Take Quiz Again" : "Start Quiz"}
+                                        {attempts && attempts.length > 0 ? "Take Quiz Again" : "Start Quiz"}
                                     </Button>
 
                                     <div className="flex items-start gap-2 text-sm text-muted-foreground">

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, TrendingUp, Award } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { AttemptStatus } from "@/types/enum";
 
 interface AttemptHistoryCardProps {
     attempt: QuizAttemptResponse;
@@ -19,10 +20,25 @@ export function AttemptHistoryCard({ attempt, onView }: AttemptHistoryCardProps)
         return `${minutes}m ${secs}s`;
     };
 
+    const getBorderColor = () => {
+        if (attempt.status === AttemptStatus.IN_PROGRESS) return "border-l-blue-500";
+        return attempt.isPassed ? "border-l-green-500" : "border-l-red-500";
+    };
+
+    const getBadgeVariant = () => {
+        if (attempt.status === AttemptStatus.IN_PROGRESS) return "secondary";
+        return attempt.isPassed ? "default" : "destructive";
+    };
+
+    const getBadgeText = () => {
+        if (attempt.status === AttemptStatus.IN_PROGRESS) return "In Progress";
+        return attempt.isPassed ? "Passed" : "Failed";
+    };
+
     return (
         <Card className={cn(
             "hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4",
-            attempt.isPassed ? "border-l-green-500" : "border-l-red-500"
+            getBorderColor()
         )} onClick={onView}>
             <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -33,8 +49,8 @@ export function AttemptHistoryCard({ attempt, onView }: AttemptHistoryCardProps)
                             <span>{formatDistanceToNow(new Date(attempt.startedAt), { addSuffix: true })}</span>
                         </div>
                     </div>
-                    <Badge variant={attempt.isPassed ? "default" : "destructive"}>
-                        {attempt.isPassed ? "Passed" : "Failed"}
+                    <Badge variant={getBadgeVariant()}>
+                        {getBadgeText()}
                     </Badge>
                 </div>
             </CardHeader>
@@ -45,7 +61,9 @@ export function AttemptHistoryCard({ attempt, onView }: AttemptHistoryCardProps)
                     <div className="flex items-center gap-2">
                         <Award className={cn(
                             "h-5 w-5",
-                            attempt.isPassed ? "text-green-600" : "text-red-600"
+                            attempt.status === AttemptStatus.IN_PROGRESS 
+                                ? "text-blue-600" 
+                                : attempt.isPassed ? "text-green-600" : "text-red-600"
                         )} />
                         <span className="text-sm font-medium">Score</span>
                     </div>

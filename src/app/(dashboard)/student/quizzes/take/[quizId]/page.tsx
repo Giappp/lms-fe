@@ -1,15 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { QuestionCard } from "@/components/shared/quiz/QuestionCard";
 import { QuizTimer } from "@/components/shared/quiz/QuizTimer";
 import { QuizProgress } from "@/components/shared/quiz/QuizProgress";
 import { QuizResultCard } from "@/components/shared/quiz/QuizResultCard";
-import { QuizDetailResponse, QuizSubmitResultResponse } from "@/types/response";
-import { QuestionType, QuizType } from "@/types/enum";
-import { ChevronLeft, ChevronRight, Save, Send, AlertTriangle } from "lucide-react";
+import { QuizSubmitResultResponse } from "@/types/response";
+import { AnswerProgress } from "@/types/request";
+import { QuestionType } from "@/types/enum";
+import { ChevronLeft, ChevronRight, Save, Send, AlertTriangle, Loader2, XCircle } from "lucide-react";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -20,86 +21,104 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { useAttemptDetail, useQuizDetail } from "@/hooks/useQuizzes";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock quiz data
-const mockQuiz: QuizDetailResponse = {
-    id: 1,
-    title: "Introduction to React Hooks",
-    description: "Test your knowledge of React Hooks",
-    quizType: QuizType.LESSON_QUIZ,
-    courseId: 1,
-    courseName: "React for Beginners",
-    lessonId: 5,
-    maxAttempts: 3,
-    scoringMethod: "HIGHEST" as any,
-    passingPercentage: 70,
-    timeLimitMinutes: 30,
-    isActive: true,
-    shuffleQuestions: false,
-    shuffleAnswers: false,
-    showResults: true,
-    showCorrectAnswers: true,
-    questionCount: 3,
-    totalPoints: 30,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    questions: [
-        {
-            id: 1,
-            type: QuestionType.SINGLE_CHOICE,
-            questionText: "What is the purpose of useState hook in React?",
-            orderIndex: 1,
-            points: 10,
-            explanation: "useState is a Hook that lets you add React state to function components.",
-            answers: [
-                { id: 1, answerText: "To add state management to functional components", isCorrect: true, orderIndex: 1 },
-                { id: 2, answerText: "To handle side effects", isCorrect: false, orderIndex: 2 },
-                { id: 3, answerText: "To create context providers", isCorrect: false, orderIndex: 3 },
-                { id: 4, answerText: "To optimize performance", isCorrect: false, orderIndex: 4 }
-            ]
-        },
-        {
-            id: 2,
-            type: QuestionType.SINGLE_CHOICE,
-            questionText: "When does useEffect run by default?",
-            orderIndex: 2,
-            points: 10,
-            explanation: "By default, useEffect runs after every render, including the first render.",
-            answers: [
-                { id: 5, answerText: "Only on component mount", isCorrect: false, orderIndex: 1 },
-                { id: 6, answerText: "After every render", isCorrect: true, orderIndex: 2 },
-                { id: 7, answerText: "Only when dependencies change", isCorrect: false, orderIndex: 3 },
-                { id: 8, answerText: "Before every render", isCorrect: false, orderIndex: 4 }
-            ]
-        },
-        {
-            id: 3,
-            type: QuestionType.SINGLE_CHOICE,
-            questionText: "What does the dependency array in useEffect control?",
-            orderIndex: 3,
-            points: 10,
-            explanation: "The dependency array determines when the effect should re-run based on value changes.",
-            answers: [
-                { id: 9, answerText: "When the effect should re-run", isCorrect: true, orderIndex: 1 },
-                { id: 10, answerText: "Which props to pass down", isCorrect: false, orderIndex: 2 },
-                { id: 11, answerText: "The render order", isCorrect: false, orderIndex: 3 },
-                { id: 12, answerText: "The cleanup function", isCorrect: false, orderIndex: 4 }
-            ]
-        }
-    ]
+type TakeQuizPageProps = {
+    params: Promise<{ quizId: string }>;
 };
 
-export default function TakeQuizPage() {
+export default function TakeQuizPage({ params }: TakeQuizPageProps) {
+    const { quizId } = use(params);
     const router = useRouter();
+    const { toast } = useToast();
+    
+    // Get quiz details
+    const { quiz, isLoading: quizLoading } = useQuizDetail(parseInt(quizId));
+    
+    // Get attemptId from session storage
+    const [attemptId, setAttemptId] = useState<number | undefined>();
+    const { attempt, isLoading: attemptLoading, error, saveProgress, submitQuiz } = useAttemptDetail(attemptId);
+    
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<number, number[]>>({});
     const [showSubmitDialog, setShowSubmitDialog] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [result, setResult] = useState<QuizSubmitResultResponse | null>(null);
-    const [startedAt] = useState(new Date());
+    const [isSavingProgress, setIsSavingProgress] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const currentQuestion = mockQuiz.questions[currentQuestionIndex];
+    // Auto-save progress when component unmounts (user exits quiz)
+    useEffect(() => {
+        return () => {
+            // Only auto-save if there's an active attempt and answers
+            if (attemptId && Object.keys(answers).length > 0 && !isSubmitted) {
+                const answerProgress: AnswerProgress[] = [];
+                
+                Object.entries(answers).forEach(([questionId, selectedAnswerIds]) => {
+                    if (selectedAnswerIds.length > 0) {
+                        selectedAnswerIds.forEach(answerId => {
+                            answerProgress.push({
+                                questionId: parseInt(questionId),
+                                selectedAnswerId: answerId
+                            });
+                        });
+                    } else {
+                        answerProgress.push({
+                            questionId: parseInt(questionId),
+                            selectedAnswerId: null
+                        });
+                    }
+                });
+
+                // Auto-save on unmount (async, fire and forget)
+                saveProgress({
+                    answers: answerProgress
+                }).catch(() => {
+                    // Silently fail on unmount
+                });
+            }
+        };
+    }, [attemptId, answers, isSubmitted, saveProgress]);
+
+    // Get attemptId from session storage on mount
+    useEffect(() => {
+        const storedAttemptId = sessionStorage.getItem(`quiz_${quizId}_attempt`);
+        if (storedAttemptId) {
+            setAttemptId(parseInt(storedAttemptId));
+        } else {
+            toast({
+                title: "No Active Attempt",
+                description: "Please start the quiz from the quiz page",
+                variant: "destructive"
+            });
+            router.push(`/student/quizzes/${quizId}`);
+        }
+    }, [quizId, router, toast]);
+
+    // Initialize answers from existing attempt data
+    useEffect(() => {
+        if (attempt?.attemptAnswers) {
+            const answerMap: Record<number, number[]> = {};
+            
+            // Group answers by questionId since backend sends one entry per selected answer
+            attempt.attemptAnswers.forEach(ans => {
+                if (!answerMap[ans.questionId]) {
+                    answerMap[ans.questionId] = [];
+                }
+                if (ans.selectedAnswerId) {
+                    answerMap[ans.questionId].push(ans.selectedAnswerId);
+                }
+            });
+            
+            setAnswers(answerMap);
+        }
+    }, [attempt]);
+
+    const currentQuestion = quiz?.questions[currentQuestionIndex];
     const answeredCount = Object.keys(answers).length;
+    const isLoading = quizLoading || attemptLoading;
 
     const handleAnswerChange = (questionId: number, answerIds: number[]) => {
         setAnswers(prev => ({
@@ -115,7 +134,7 @@ export default function TakeQuizPage() {
     };
 
     const handleNext = () => {
-        if (currentQuestionIndex < mockQuiz.questions.length - 1) {
+        if (quiz && currentQuestionIndex < quiz.questions.length - 1) {
             setCurrentQuestionIndex(currentQuestionIndex + 1);
         }
     };
@@ -124,60 +143,172 @@ export default function TakeQuizPage() {
         setCurrentQuestionIndex(index);
     };
 
-    const handleSaveProgress = () => {
-        console.log("Progress saved:", answers);
-        // TODO: Call API to save progress
+    const handleSaveProgress = async () => {
+        if (!attemptId) return;
+        
+        setIsSavingProgress(true);
+        try {
+            // Transform answers to match backend DTO - each answer gets its own entry
+            const answerProgress: AnswerProgress[] = [];
+            
+            Object.entries(answers).forEach(([questionId, selectedAnswerIds]) => {
+                if (selectedAnswerIds.length > 0) {
+                    selectedAnswerIds.forEach(answerId => {
+                        answerProgress.push({
+                            questionId: parseInt(questionId),
+                            selectedAnswerId: answerId
+                        });
+                    });
+                } else {
+                    answerProgress.push({
+                        questionId: parseInt(questionId),
+                        selectedAnswerId: null
+                    });
+                }
+            });
+
+            const result = await saveProgress({
+                answers: answerProgress
+            });
+
+            if (result.success) {
+                toast({
+                    title: "Progress Saved",
+                    description: "Your answers have been saved successfully"
+                });
+                // Exit quiz page after saving progress
+                router.push(`/student/quizzes/${quizId}`);
+            } else {
+                const errorMsg = (result as any).error || "Failed to save progress";
+                toast({
+                    title: "Error",
+                    description: errorMsg,
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "An error occurred while saving progress",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSavingProgress(false);
+        }
     };
 
-    const handleSubmit = () => {
-        // Mock result calculation
-        const correctAnswers = mockQuiz.questions.filter((q, idx) => {
-            const userAnswer = answers[q.id];
-            const correctAnswer = q.answers.find(a => a.isCorrect)?.id;
-            return userAnswer && userAnswer[0] === correctAnswer;
-        }).length;
+    const handleSubmit = async () => {
+        if (!attemptId || !quiz) return;
+        
+        setIsSubmitting(true);
+        try {
+            // Transform answers to match backend DTO - flatten to individual answer entries
+            const questionAnswers = Object.entries(answers).flatMap(([questionId, selectedAnswerIds]) => 
+                selectedAnswerIds.map(answerId => ({
+                    questionId: parseInt(questionId),
+                    selectedAnswerId: answerId
+                }))
+            );
 
-        const mockResult: QuizSubmitResultResponse = {
-            attemptId: 1,
-            score: correctAnswers * 10,
-            percentage: (correctAnswers / mockQuiz.questions.length) * 100,
-            isPassed: (correctAnswers / mockQuiz.questions.length) * 100 >= mockQuiz.passingPercentage,
-            totalQuestions: mockQuiz.questions.length,
-            correctAnswers,
-            incorrectAnswers: mockQuiz.questions.length - correctAnswers,
-            unansweredQuestions: mockQuiz.questions.length - Object.keys(answers).length,
-            timeSpentSeconds: Math.floor((new Date().getTime() - startedAt.getTime()) / 1000),
-            submittedAt: new Date()
-        };
+            const result = await submitQuiz({
+                attemptId,
+                answers: questionAnswers
+            });
 
-        setResult(mockResult);
-        setIsSubmitted(true);
-        setShowSubmitDialog(false);
+            if (result.success) {
+                const responseData = (result as any).data;
+                if (responseData) {
+                    setResult(responseData);
+                    setIsSubmitted(true);
+                    setShowSubmitDialog(false);
+                    sessionStorage.removeItem(`quiz_${quizId}_attempt`);
+                    
+                    toast({
+                        title: "Quiz Submitted",
+                        description: "Your quiz has been submitted successfully"
+                    });
+                }
+            } else {
+                const errorMsg = (result as any).error || "Failed to submit quiz";
+                toast({
+                    title: "Error",
+                    description: errorMsg,
+                    variant: "destructive"
+                });
+                setIsSubmitting(false);
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "An error occurred while submitting quiz",
+                variant: "destructive"
+            });
+            setIsSubmitting(false);
+        }
     };
 
     const handleTimeUp = () => {
+        toast({
+            title: "Time's Up!",
+            description: "Quiz time limit reached. Submitting your answers...",
+            variant: "destructive"
+        });
         handleSubmit();
     };
 
-    if (isSubmitted && result) {
+    if (isLoading || !attemptId) {
+        return (
+            <div className="container mx-auto p-6">
+                <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Loading quiz...</h3>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !quiz || !attempt) {
+        return (
+            <div className="container mx-auto p-6">
+                <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                        <XCircle className="h-12 w-12 text-destructive mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">Failed to load quiz</h3>
+                        <p className="text-muted-foreground text-center mb-4">
+                            {error?.message || 'Quiz attempt not found or has expired'}
+                        </p>
+                        <Button onClick={() => router.push(`/student/quizzes/${quizId}`)}>
+                            Back to Quiz
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    if (isSubmitted && result && quiz) {
         return (
             <div className="container mx-auto p-6 max-w-4xl">
                 <QuizResultCard
                     result={result}
-                    passingPercentage={mockQuiz.passingPercentage}
-                    onViewDetails={() => router.push(`/student/quizzes/${mockQuiz.id}/attempt/${result.attemptId}`)}
-                    onRetake={() => window.location.reload()}
+                    passingPercentage={quiz.passingPercentage}
+                    onViewDetails={() => router.push(`/student/quizzes/${quizId}/attempt/${result.attemptId}`)}
+                    onRetake={() => router.push(`/student/quizzes/${quizId}`)}
                 />
             </div>
         );
+    }
+
+    if (!currentQuestion) {
+        return null;
     }
 
     return (
         <div className="container mx-auto p-6">
             {/* Header */}
             <div className="mb-6">
-                <h1 className="text-2xl font-bold">{mockQuiz.title}</h1>
-                <p className="text-muted-foreground">{mockQuiz.description}</p>
+                <h1 className="text-2xl font-bold">{quiz.title}</h1>
+                <p className="text-muted-foreground">{quiz.description}</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -210,19 +341,39 @@ export default function TakeQuizPage() {
                             <Button
                                 variant="outline"
                                 onClick={handleSaveProgress}
+                                disabled={isSavingProgress}
                                 className="gap-2"
                             >
-                                <Save className="h-4 w-4" />
-                                Save Progress
+                                {isSavingProgress ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="h-4 w-4" />
+                                        Save Progress
+                                    </>
+                                )}
                             </Button>
 
-                            {currentQuestionIndex === mockQuiz.questions.length - 1 ? (
+                            {currentQuestionIndex === quiz.questions.length - 1 ? (
                                 <Button
                                     onClick={() => setShowSubmitDialog(true)}
+                                    disabled={isSubmitting}
                                     className="gap-2"
                                 >
-                                    <Send className="h-4 w-4" />
-                                    Submit Quiz
+                                    {isSubmitting ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            Submitting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send className="h-4 w-4" />
+                                            Submit Quiz
+                                        </>
+                                    )}
                                 </Button>
                             ) : (
                                 <Button onClick={handleNext} className="gap-2">
@@ -237,12 +388,13 @@ export default function TakeQuizPage() {
                 {/* Sidebar */}
                 <div className="space-y-6">
                     <QuizTimer
-                        timeLimitMinutes={mockQuiz.timeLimitMinutes}
-                        startedAt={startedAt}
+                        timeLimitMinutes={quiz.timeLimitMinutes}
+                        startedAt={new Date(attempt.startedAt)}
+                        timeSpentSeconds={attempt.timeSpentSeconds}
                         onTimeUp={handleTimeUp}
                     />
                     <QuizProgress
-                        totalQuestions={mockQuiz.questions.length}
+                        totalQuestions={quiz.questions.length}
                         answeredQuestions={answeredCount}
                         currentQuestionIndex={currentQuestionIndex}
                         onQuestionClick={handleQuestionNavigation}
@@ -259,10 +411,10 @@ export default function TakeQuizPage() {
                             Submit Quiz?
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                            You have answered {answeredCount} out of {mockQuiz.questions.length} questions.
-                            {answeredCount < mockQuiz.questions.length && (
+                            You have answered {answeredCount} out of {quiz.questions.length} questions.
+                            {answeredCount < quiz.questions.length && (
                                 <span className="block mt-2 text-orange-600 font-medium">
-                                    Warning: You have {mockQuiz.questions.length - answeredCount} unanswered question(s).
+                                    Warning: You have {quiz.questions.length - answeredCount} unanswered question(s).
                                 </span>
                             )}
                             <span className="block mt-2">
@@ -271,9 +423,9 @@ export default function TakeQuizPage() {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Review Answers</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleSubmit}>
-                            Submit Quiz
+                        <AlertDialogCancel disabled={isSubmitting}>Review Answers</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleSubmit} disabled={isSubmitting}>
+                            {isSubmitting ? 'Submitting...' : 'Submit Quiz'}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

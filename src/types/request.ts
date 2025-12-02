@@ -230,14 +230,20 @@ export interface UpdateQuestionOrderRequest {
 
 export interface QuizAttemptAnswerRequest {
     questionId: number;
-    selectedAnswerIds: number[];
+    selectedAnswerId: number;
+}
+
+export interface AnswerProgress {
+    questionId: number;
+    selectedAnswerId: number | null; // Single answer ID - for multiple choice, send multiple AnswerProgress entries
 }
 
 export interface SaveProgressRequest {
-    answers: QuizAttemptAnswerRequest[];
+    answers: AnswerProgress[];
 }
 
 export interface SubmitQuizRequest {
+    attemptId: number;
     answers: QuizAttemptAnswerRequest[];
 }
 

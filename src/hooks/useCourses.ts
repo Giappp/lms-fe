@@ -1,5 +1,5 @@
 import useSWR from "swr";
-import {PaginatedResponse, CourseResponse} from "@/types/response";
+import {PaginatedResponse, CourseResponse, CourseSelectResponse} from "@/types/response";
 import {CourseCreationRequest, CourseUpdateRequest, CoursesFilterParams} from "@/types/request";
 import {CourseService} from "@/api/services/course-service";
 import {CourseStatus, Difficulty} from "@/types/enum";
@@ -112,6 +112,31 @@ export function useMyCourses(pageNumber: number = 1, pageSize: number = 20) {
         totalElements: data?.totalElements ?? 0,
         totalPages: data?.totalPages ?? 0,
         currentPage: data?.number ?? (pageNumber - 1),
+        isLoading,
+        isError: !!error,
+        error,
+        mutate,
+        refresh: () => mutate(),
+    };
+}
+
+/**
+ * Hook for fetching compact course list for dropdown selection
+ */
+export function useMyCoursesDropdown() {
+    const key = Constants.COURSES_ROUTES.MY_COURSES_DROPDOWN;
+    
+    const {data, error, isLoading, mutate} = useSWR<CourseSelectResponse[]>(
+        key,
+        swrFetcher,
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: true,
+        }
+    );
+
+    return {
+        courses: data ?? [],
         isLoading,
         isError: !!error,
         error,

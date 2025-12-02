@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +34,7 @@ import {
     UpdateQuestionOrderRequest,
     AnswerRequest 
 } from "@/types/request";
-import { QuizDetailResponse, QuestionResponse } from "@/types/response";
+import { QuestionResponse } from "@/types/response";
 import { QuestionType, QuizType, ScoringMethod } from "@/types/enum";
 import { 
     Save, 
@@ -45,101 +45,65 @@ import {
     ChevronUp, 
     ChevronDown,
     Check,
-    X
+    X,
+    Loader2,
+    AlertCircle
 } from "lucide-react";
+import { useQuizDetail } from "@/hooks/useQuizzes";
+import { QuizService } from "@/api/services/quiz-service";
+import { useToast } from "@/hooks/use-toast";
 
-// Mock quiz data
-const mockQuizData: QuizDetailResponse = {
-    id: 1,
-    title: "Introduction to React Hooks",
-    description: "Test your knowledge of React Hooks including useState, useEffect, useContext, and custom hooks.",
-    quizType: QuizType.LESSON_QUIZ,
-    courseId: 1,
-    courseName: "React for Beginners",
-    lessonId: 5,
-    maxAttempts: 3,
-    scoringMethod: "HIGHEST" as any,
-    passingPercentage: 70,
-    timeLimitMinutes: 30,
-    isActive: true,
-    shuffleQuestions: false,
-    shuffleAnswers: false,
-    showResults: true,
-    showCorrectAnswers: true,
-    questionCount: 3,
-    totalPoints: 30,
-    createdAt: new Date("2024-01-15"),
-    updatedAt: new Date("2024-01-20"),
-    questions: [
-        {
-            id: 1,
-            type: QuestionType.SINGLE_CHOICE,
-            questionText: "What is the purpose of useState hook in React?",
-            orderIndex: 1,
-            points: 10,
-            explanation: "useState is a Hook that lets you add React state to function components.",
-            answers: [
-                { id: 1, answerText: "To add state management to functional components", isCorrect: true, orderIndex: 1 },
-                { id: 2, answerText: "To handle side effects", isCorrect: false, orderIndex: 2 },
-                { id: 3, answerText: "To create context providers", isCorrect: false, orderIndex: 3 },
-                { id: 4, answerText: "To optimize performance", isCorrect: false, orderIndex: 4 }
-            ]
-        },
-        {
-            id: 2,
-            type: QuestionType.SINGLE_CHOICE,
-            questionText: "When does useEffect run by default?",
-            orderIndex: 2,
-            points: 10,
-            explanation: "By default, useEffect runs after every render, including the first render.",
-            answers: [
-                { id: 5, answerText: "Only on component mount", isCorrect: false, orderIndex: 1 },
-                { id: 6, answerText: "After every render", isCorrect: true, orderIndex: 2 },
-                { id: 7, answerText: "Only when dependencies change", isCorrect: false, orderIndex: 3 },
-                { id: 8, answerText: "Before every render", isCorrect: false, orderIndex: 4 }
-            ]
-        },
-        {
-            id: 3,
-            type: QuestionType.SINGLE_CHOICE,
-            questionText: "What does the dependency array in useEffect control?",
-            orderIndex: 3,
-            points: 10,
-            explanation: "The dependency array determines when the effect should re-run based on value changes.",
-            answers: [
-                { id: 9, answerText: "When the effect should re-run", isCorrect: true, orderIndex: 1 },
-                { id: 10, answerText: "Which props to pass down", isCorrect: false, orderIndex: 2 },
-                { id: 11, answerText: "The render order", isCorrect: false, orderIndex: 3 },
-                { id: 12, answerText: "The cleanup function", isCorrect: false, orderIndex: 4 }
-            ]
-        }
-    ]
+type EditQuizPageProps = {
+    params: Promise<{ quizId: string }>;
 };
 
-export default function EditQuizPage({ params }: { params: Promise<{ quizId: string }> }) {
+export default function EditQuizPage({ params }: EditQuizPageProps) {
     const { quizId } = use(params);
     const router = useRouter();
-    const [quiz] = useState<QuizDetailResponse>(mockQuizData);
-    const [questions, setQuestions] = useState<QuestionResponse[]>(mockQuizData.questions);
+    const { toast } = useToast();
+    const { quiz, isLoading, error, mutate } = useQuizDetail(parseInt(quizId));
+    
+    const [questions, setQuestions] = useState<QuestionResponse[]>([]);
     const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
     const [isAddingQuestion, setIsAddingQuestion] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [questionToDelete, setQuestionToDelete] = useState<number | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     // Quiz update form state
     const [quizUpdateForm, setQuizUpdateForm] = useState<QuizUpdateRequest>({
-        title: quiz.title,
-        description: quiz.description,
-        timeLimitMinutes: quiz.timeLimitMinutes,
-        maxAttempts: quiz.maxAttempts,
-        passingPercentage: quiz.passingPercentage,
-        scoringMethod: quiz.scoringMethod,
-        shuffleQuestions: quiz.shuffleQuestions,
-        shuffleAnswers: quiz.shuffleAnswers,
-        showResults: quiz.showResults,
-        showCorrectAnswers: quiz.showCorrectAnswers,
-        isActive: quiz.isActive
+        title: '',
+        description: '',
+        timeLimitMinutes: 30,
+        maxAttempts: 3,
+        passingPercentage: 70,
+        scoringMethod: 'HIGHEST' as any,
+        shuffleQuestions: false,
+        shuffleAnswers: false,
+        showResults: true,
+        showCorrectAnswers: true,
+        isActive: true
     });
+
+    // Initialize form when quiz data loads
+    useEffect(() => {
+        if (quiz) {
+            setQuizUpdateForm({
+                title: quiz.title,
+                description: quiz.description || '',
+                timeLimitMinutes: quiz.timeLimitMinutes,
+                maxAttempts: quiz.maxAttempts,
+                passingPercentage: quiz.passingPercentage,
+                scoringMethod: quiz.scoringMethod,
+                shuffleQuestions: quiz.shuffleQuestions,
+                shuffleAnswers: quiz.shuffleAnswers,
+                showResults: quiz.showResults,
+                showCorrectAnswers: quiz.showCorrectAnswers,
+                isActive: quiz.isActive
+            });
+            setQuestions(quiz.questions || []);
+        }
+    }, [quiz]);
 
     // New question form state
     const [newQuestion, setNewQuestion] = useState<QuestionRequest>({
@@ -157,15 +121,49 @@ export default function EditQuizPage({ params }: { params: Promise<{ quizId: str
     });
 
     // Handle quiz update
-    const handleQuizUpdate = () => {
-        console.log("QuizUpdateRequest:", quizUpdateForm);
-        // TODO: Call API to update quiz
-        alert("Quiz updated successfully! (Check console for QuizUpdateRequest)");
+    const handleQuizUpdate = async () => {
+        if (!quiz) return;
+        
+        if (!quizUpdateForm.title?.trim()) {
+            toast({
+                title: "Validation Error",
+                description: "Quiz title is required",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const result = await QuizService.updateQuiz(parseInt(quizId), quizUpdateForm);
+            if (result.success) {
+                await mutate();
+                toast({
+                    title: "Success",
+                    description: "Quiz updated successfully"
+                });
+            } else {
+                const errorMsg = (result as any).error || "Failed to update quiz";
+                toast({
+                    title: "Error",
+                    description: errorMsg,
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "An error occurred while updating quiz",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     // Handle question reorder - move up
-    const handleMoveQuestionUp = (index: number) => {
-        if (index === 0) return;
+    const handleMoveQuestionUp = async (index: number) => {
+        if (index === 0 || !quiz) return;
         const newQuestions = [...questions];
         [newQuestions[index - 1], newQuestions[index]] = [newQuestions[index], newQuestions[index - 1]];
         
@@ -177,13 +175,31 @@ export default function EditQuizPage({ params }: { params: Promise<{ quizId: str
             }))
         };
         
-        console.log("UpdateQuestionOrderRequest:", updateOrderRequest);
+        // Optimistically update UI
         setQuestions(newQuestions);
+        
+        // Call API
+        try {
+            const result = await QuizService.reorderQuestions(parseInt(quizId), updateOrderRequest);
+            if (result.success) {
+                await mutate();
+            } else {
+                // Revert on error
+                setQuestions(questions);
+                toast({
+                    title: "Error",
+                    description: "Failed to reorder questions",
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            setQuestions(questions);
+        }
     };
 
     // Handle question reorder - move down
-    const handleMoveQuestionDown = (index: number) => {
-        if (index === questions.length - 1) return;
+    const handleMoveQuestionDown = async (index: number) => {
+        if (index === questions.length - 1 || !quiz) return;
         const newQuestions = [...questions];
         [newQuestions[index], newQuestions[index + 1]] = [newQuestions[index + 1], newQuestions[index]];
         
@@ -195,12 +211,32 @@ export default function EditQuizPage({ params }: { params: Promise<{ quizId: str
             }))
         };
         
-        console.log("UpdateQuestionOrderRequest:", updateOrderRequest);
+        // Optimistically update UI
         setQuestions(newQuestions);
+        
+        // Call API
+        try {
+            const result = await QuizService.reorderQuestions(parseInt(quizId), updateOrderRequest);
+            if (result.success) {
+                await mutate();
+            } else {
+                // Revert on error
+                setQuestions(questions);
+                toast({
+                    title: "Error",
+                    description: "Failed to reorder questions",
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            setQuestions(questions);
+        }
     };
 
     // Handle question update
-    const handleUpdateQuestion = (questionId: number, updates: Partial<QuestionResponse>) => {
+    const handleUpdateQuestion = async (questionId: number, updates: Partial<QuestionResponse>) => {
+        if (!quiz) return;
+        
         const questionUpdateRequest: QuestionUpdateRequest = {
             type: updates.type,
             questionText: updates.questionText,
@@ -214,86 +250,195 @@ export default function EditQuizPage({ params }: { params: Promise<{ quizId: str
             })) || []
         };
         
-        console.log("QuestionUpdateRequest:", questionUpdateRequest);
-        
+        // Optimistically update UI
         setQuestions(questions.map(q => 
             q.id === questionId ? { ...q, ...updates } : q
         ));
         setEditingQuestionId(null);
-        alert("Question updated! (Check console for QuestionUpdateRequest)");
+        
+        // Call API
+        try {
+            const result = await QuizService.updateQuestion(parseInt(quizId), questionId, questionUpdateRequest);
+            if (result.success) {
+                await mutate();
+                toast({
+                    title: "Success",
+                    description: "Question updated successfully"
+                });
+            } else {
+                toast({
+                    title: "Error",
+                    description: "Failed to update question",
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "An error occurred while updating question",
+                variant: "destructive"
+            });
+        }
     };
 
     // Handle add new question
-    const handleAddQuestion = () => {
+    const handleAddQuestion = async () => {
+        if (!quiz) return;
+        
         // Validate
         if (!newQuestion.questionText.trim()) {
-            alert("Please enter a question text");
+            toast({
+                title: "Validation Error",
+                description: "Please enter a question text",
+                variant: "destructive"
+            });
             return;
         }
         
         const validAnswers = newQuestion.answers.filter(a => a.answerText.trim());
         if (validAnswers.length < 2) {
-            alert("Please provide at least 2 answers");
+            toast({
+                title: "Validation Error",
+                description: "Please provide at least 2 answers",
+                variant: "destructive"
+            });
             return;
         }
         
         if (!validAnswers.some(a => a.isCorrect)) {
-            alert("Please mark at least one answer as correct");
+            toast({
+                title: "Validation Error",
+                description: "Please mark at least one answer as correct",
+                variant: "destructive"
+            });
             return;
         }
 
-        console.log("QuestionRequest (Add New):", {
-            ...newQuestion,
-            answers: validAnswers
-        });
-
-        // Add question
-        const newQuestionData: QuestionResponse = {
-            id: Math.max(...questions.map(q => q.id)) + 1,
+        const questionRequest: QuestionRequest = {
             type: newQuestion.type,
             questionText: newQuestion.questionText,
             orderIndex: questions.length + 1,
             points: newQuestion.points,
             explanation: newQuestion.explanation,
             answers: validAnswers.map((a, idx) => ({
-                id: Date.now() + idx,
                 answerText: a.answerText,
                 isCorrect: a.isCorrect,
                 orderIndex: idx + 1
             }))
         };
 
-        setQuestions([...questions, newQuestionData]);
-        setIsAddingQuestion(false);
-        
-        // Reset form
-        setNewQuestion({
-            type: QuestionType.SINGLE_CHOICE,
-            questionText: "",
-            orderIndex: questions.length + 2,
-            points: 10,
-            explanation: "",
-            answers: [
-                { answerText: "", isCorrect: false, orderIndex: 1 },
-                { answerText: "", isCorrect: false, orderIndex: 2 },
-                { answerText: "", isCorrect: false, orderIndex: 3 },
-                { answerText: "", isCorrect: false, orderIndex: 4 }
-            ]
-        });
-        
-        alert("Question added! (Check console for QuestionRequest)");
+        try {
+            const result = await QuizService.addQuestion(parseInt(quizId), questionRequest);
+            if (result.success && result.data) {
+                // Refresh quiz data from API to get complete question with answers
+                await mutate();
+                
+                // Reset form
+                setNewQuestion({
+                    type: QuestionType.SINGLE_CHOICE,
+                    questionText: "",
+                    orderIndex: questions.length + 2,
+                    points: 10,
+                    explanation: "",
+                    answers: [
+                        { answerText: "", isCorrect: false, orderIndex: 1 },
+                        { answerText: "", isCorrect: false, orderIndex: 2 },
+                        { answerText: "", isCorrect: false, orderIndex: 3 },
+                        { answerText: "", isCorrect: false, orderIndex: 4 }
+                    ]
+                });
+                
+                setIsAddingQuestion(false);
+                
+                toast({
+                    title: "Success",
+                    description: "Question added successfully"
+                });
+            } else {
+                const errorMsg = (result as any).error || "Failed to add question";
+                toast({
+                    title: "Error",
+                    description: errorMsg,
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "An error occurred while adding question",
+                variant: "destructive"
+            });
+        }
     };
 
     // Handle delete question
-    const handleDeleteQuestion = () => {
-        if (questionToDelete === null) return;
+    const handleDeleteQuestion = async () => {
+        if (questionToDelete === null || !quiz) return;
         
-        console.log("Delete question ID:", questionToDelete);
+        // Optimistically update UI
+        const originalQuestions = [...questions];
         setQuestions(questions.filter(q => q.id !== questionToDelete));
         setShowDeleteDialog(false);
+        const deletedId = questionToDelete;
         setQuestionToDelete(null);
-        alert("Question deleted!");
+        
+        // Call API
+        try {
+            const result = await QuizService.deleteQuestion(parseInt(quizId), deletedId);
+            if (result.success) {
+                await mutate();
+                toast({
+                    title: "Success",
+                    description: "Question deleted successfully"
+                });
+            } else {
+                // Revert on error
+                setQuestions(originalQuestions);
+                toast({
+                    title: "Error",
+                    description: "Failed to delete question",
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            setQuestions(originalQuestions);
+            toast({
+                title: "Error",
+                description: "An error occurred while deleting question",
+                variant: "destructive"
+            });
+        }
     };
+
+    if (isLoading) {
+        return (
+            <div className="container mx-auto p-6 max-w-6xl">
+                <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Loading quiz...</h3>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !quiz) {
+        return (
+            <div className="container mx-auto p-6 max-w-6xl">
+                <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                        <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">Failed to load quiz</h3>
+                        <p className="text-muted-foreground text-center mb-4">
+                            {error?.message || 'Quiz not found or you do not have access to this quiz'}
+                        </p>
+                        <Button onClick={() => router.push("/teacher/quizzes")}>
+                            Back to Quizzes
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto p-6 max-w-6xl">
@@ -312,9 +457,18 @@ export default function EditQuizPage({ params }: { params: Promise<{ quizId: str
                         Update quiz details, questions, and settings
                     </p>
                 </div>
-                <Button onClick={handleQuizUpdate} className="gap-2">
-                    <Save className="h-4 w-4" />
-                    Save Changes
+                <Button onClick={handleQuizUpdate} className="gap-2" disabled={isSaving}>
+                    {isSaving ? (
+                        <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Saving...
+                        </>
+                    ) : (
+                        <>
+                            <Save className="h-4 w-4" />
+                            Save Changes
+                        </>
+                    )}
                 </Button>
             </div>
 
@@ -713,7 +867,7 @@ export default function EditQuizPage({ params }: { params: Promise<{ quizId: str
                                                 </div>
                                                 <div className="space-y-2">
                                                     <Label>Answers</Label>
-                                                    {question.answers.map((answer, idx) => (
+                                                    {question.answers?.map((answer, idx) => (
                                                         <div key={answer.id} className="flex items-center gap-2">
                                                             <Badge variant="outline">
                                                                 {String.fromCharCode(65 + idx)}
@@ -723,7 +877,7 @@ export default function EditQuizPage({ params }: { params: Promise<{ quizId: str
                                                                 onChange={(e) => {
                                                                     const updated = questions.map(q => {
                                                                         if (q.id === question.id) {
-                                                                            const newAnswers = [...q.answers];
+                                                                            const newAnswers = [...(q.answers || [])];
                                                                             newAnswers[idx] = {
                                                                                 ...newAnswers[idx],
                                                                                 answerText: e.target.value
@@ -741,7 +895,7 @@ export default function EditQuizPage({ params }: { params: Promise<{ quizId: str
                                                                 onClick={() => {
                                                                     const updated = questions.map(q => {
                                                                         if (q.id === question.id) {
-                                                                            const newAnswers = q.answers.map((a, i) => ({
+                                                                            const newAnswers = (q.answers || []).map((a, i) => ({
                                                                                 ...a,
                                                                                 isCorrect: i === idx ? !a.isCorrect : a.isCorrect
                                                                             }));
@@ -768,7 +922,10 @@ export default function EditQuizPage({ params }: { params: Promise<{ quizId: str
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={() => {
-                                                            setQuestions(mockQuizData.questions);
+                                                            // Revert to original quiz data from API
+                                                            if (quiz) {
+                                                                setQuestions(quiz.questions);
+                                                            }
                                                             setEditingQuestionId(null);
                                                         }}
                                                     >
@@ -778,7 +935,7 @@ export default function EditQuizPage({ params }: { params: Promise<{ quizId: str
                                             </div>
                                         ) : (
                                             <div className="space-y-2">
-                                                {question.answers.map((answer, idx) => (
+                                                {question.answers?.map((answer, idx) => (
                                                     <div 
                                                         key={answer.id} 
                                                         className={`flex items-center gap-2 p-2 rounded ${

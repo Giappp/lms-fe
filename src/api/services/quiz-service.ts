@@ -1,6 +1,7 @@
 import {
     QuizCreationRequest,
     QuizUpdateRequest,
+    QuestionRequest,
     QuestionUpdateRequest,
     UpdateQuestionOrderRequest,
     SubmitQuizRequest,
@@ -18,7 +19,9 @@ import {
     QuizAnalyticsResponse,
     CourseQuizStatisticsResponse,
     StudentQuizResultResponse,
-    ImportQuizResponse
+    ImportQuizResponse,
+    PaginatedResponse,
+    QuestionResponse
 } from "@/types/response";
 import {apiCall} from "@/api/core/apiCall";
 import {axiosInstance} from "@/api/core/axiosInstance";
@@ -63,44 +66,59 @@ export const QuizService = {
         );
     },
 
+    /**
+     * Search quizzes with role-based filtering
+     * - STUDENT: auto-filtered by enrolled courses and active quizzes only
+     * - TEACHER/ADMIN: can filter by all criteria including status
+     */
     searchQuizzes: async (params: {
-        keyword?: string;
         courseId?: number;
+        title?: string;
         quizType?: string;
         isActive?: boolean;
+        startDate?: string;
+        endDate?: string;
         page?: number;
         size?: number;
     }) => {
         const queryParams = new URLSearchParams();
-        if (params.keyword) queryParams.append('keyword', params.keyword);
         if (params.courseId) queryParams.append('courseId', params.courseId.toString());
+        if (params.title) queryParams.append('title', params.title);
         if (params.quizType) queryParams.append('quizType', params.quizType);
         if (params.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
+        if (params.startDate) queryParams.append('startDate', params.startDate);
+        if (params.endDate) queryParams.append('endDate', params.endDate);
         if (params.page !== undefined) queryParams.append('page', params.page.toString());
         if (params.size !== undefined) queryParams.append('size', params.size.toString());
 
-        return await apiCall<QuizResponse[]>(() => 
+        return await apiCall<PaginatedResponse<QuizResponse>>(() => 
             axiosInstance.get(`${Constants.QUIZ_ROUTES.SEARCH}?${queryParams.toString()}`)
         );
     },
 
     // ==================== Question Management ====================
 
+    addQuestion: async (quizId: number, payload: QuestionRequest) => {
+        return await apiCall<QuestionResponse>(() => 
+            axiosInstance.post(`${Constants.QUIZ_ROUTES.ADD_QUESTION}/${quizId}/questions`, payload)
+        );
+    },
+
     updateQuestion: async (quizId: number, questionId: number, payload: QuestionUpdateRequest) => {
-        return await apiCall<void>(() => 
-            axiosInstance.put(`${Constants.QUIZ_ROUTES.UPDATE_QUESTION}/${quizId}/${questionId}`, payload)
+        return await apiCall<QuestionResponse>(() => 
+            axiosInstance.put(`${Constants.QUIZ_ROUTES.UPDATE_QUESTION}/${quizId}/questions/${questionId}`, payload)
         );
     },
 
     deleteQuestion: async (quizId: number, questionId: number) => {
         return await apiCall<void>(() => 
-            axiosInstance.delete(`${Constants.QUIZ_ROUTES.DELETE_QUESTION}/${quizId}/${questionId}`)
+            axiosInstance.delete(`${Constants.QUIZ_ROUTES.DELETE_QUESTION}/${quizId}/questions/${questionId}`)
         );
     },
 
     reorderQuestions: async (quizId: number, payload: UpdateQuestionOrderRequest) => {
         return await apiCall<void>(() => 
-            axiosInstance.put(`${Constants.QUIZ_ROUTES.REORDER_QUESTIONS}/${quizId}`, payload)
+            axiosInstance.patch(`${Constants.QUIZ_ROUTES.REORDER_QUESTIONS}/${quizId}/questions/reorder`, payload)
         );
     },
 
@@ -114,21 +132,21 @@ export const QuizService = {
 
     saveProgress: async (attemptId: number, payload: SaveProgressRequest) => {
         return await apiCall<void>(() => 
-            axiosInstance.put(`${Constants.QUIZ_ROUTES.SAVE_PROGRESS}/${attemptId}/save-progress`, payload)
+            axiosInstance.post(`${Constants.QUIZ_ROUTES.SAVE_PROGRESS}/${attemptId}/save-progress`, payload)
         );
     },
 
-    submitQuiz: async (attemptId: number, payload: SubmitQuizRequest) => {
+    submitQuiz: async (payload: SubmitQuizRequest) => {
         return await apiCall<QuizSubmitResultResponse>(() => 
-            axiosInstance.post(`${Constants.QUIZ_ROUTES.SUBMIT}/${attemptId}/submit`, payload)
+            axiosInstance.post(`${Constants.QUIZ_ROUTES.SUBMIT}/submit`, payload)
         );
     },
 
-    getMyAttempts: async (quizId?: number) => {
-        const url = quizId 
-            ? `${Constants.QUIZ_ROUTES.MY_ATTEMPTS}?quizId=${quizId}`
-            : Constants.QUIZ_ROUTES.MY_ATTEMPTS;
-        
+    getAttemptHistory: async (quizId?: number) => {
+        if (!quizId) return Promise.resolve(null); 
+
+        const url = `${Constants.QUIZ_ROUTES.MY_ATTEMPTS}/${quizId}/history`;
+
         return await apiCall<QuizAttemptResponse[]>(() => 
             axiosInstance.get(url)
         );
@@ -136,7 +154,7 @@ export const QuizService = {
 
     getAttemptDetail: async (attemptId: number) => {
         return await apiCall<QuizAttemptDetailResponse>(() => 
-            axiosInstance.get(`${Constants.QUIZ_ROUTES.ATTEMPT_DETAIL}/${attemptId}`)
+            axiosInstance.get(`${Constants.QUIZ_ROUTES.ATTEMPT_DETAIL}/${attemptId}/detail`)
         );
     },
 

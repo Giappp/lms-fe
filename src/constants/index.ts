@@ -46,6 +46,7 @@ export class Constants {
         // Course management
         SEARCH: "/api/courses/search",
         MY_COURSES: "/api/courses/my-courses",
+        MY_COURSES_DROPDOWN: "/api/courses/my-courses-dropdown",
         CREATE: "/api/courses",
         CREATE_WITH_CONTENT: "/api/courses/with-content",
         UPDATE: "/api/courses",
@@ -95,16 +96,16 @@ export class Constants {
         SEARCH: "/api/quizzes/search",
         
         // Question management
-        ADD_QUESTION: "/api/quizzes/questions",
-        UPDATE_QUESTION: "/api/quizzes/questions",
-        DELETE_QUESTION: "/api/quizzes/questions",
-        REORDER_QUESTIONS: "/api/quizzes/questions/reorder",
+        ADD_QUESTION: "/api/quizzes",
+        UPDATE_QUESTION: "/api/quizzes",
+        DELETE_QUESTION: "/api/quizzes",
+        REORDER_QUESTIONS: "/api/quizzes",
         
         // Quiz attempts
         START_QUIZ: "/api/quiz-attempts/quiz",
         SAVE_PROGRESS: "/api/quiz-attempts",
         SUBMIT: "/api/quiz-attempts",
-        MY_ATTEMPTS: "/api/quiz-attempts/my-attempts",
+        MY_ATTEMPTS: "/api/quiz-attempts/quiz",
         ATTEMPT_DETAIL: "/api/quiz-attempts",
         REVIEW_ATTEMPT: "/api/quiz-attempts",
         

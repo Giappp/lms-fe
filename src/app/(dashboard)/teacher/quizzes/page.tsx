@@ -1,12 +1,15 @@
 "use client"
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, Filter, TrendingUp, X } from "lucide-react";
+import { Plus, Search, Filter, TrendingUp, X, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { useMyCoursesDropdown } from "@/hooks/useCourses";
+import { useQuizSearch } from "@/hooks/useQuizzes";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
     Select,
     SelectContent,
@@ -30,310 +33,57 @@ import {
     PaginationPrevious,
 } from "@/components/ui/pagination";
 import { QuizCard } from "@/components/shared/quiz/QuizCard";
-import { QuizResponse } from "@/types/response";
 import { QuizType } from "@/types/enum";
-
-// Mock data for demonstration
-const mockQuizzes: QuizResponse[] = [
-    {
-        id: 1,
-        title: "Introduction to React Hooks",
-        description: "Test your knowledge of React Hooks including useState, useEffect, and custom hooks",
-        quizType: QuizType.LESSON_QUIZ,
-        courseId: 1,
-        lessonId: 5,
-        startTime: new Date("2025-01-01"),
-        endTime: new Date("2025-12-31"),
-        maxAttempts: 3,
-        scoringMethod: "HIGHEST" as any,
-        passingPercentage: 70,
-        timeLimitMinutes: 30,
-        isActive: true,
-        shuffleQuestions: true,
-        shuffleAnswers: true,
-        showResults: true,
-        showCorrectAnswers: true,
-        questionCount: 15,
-        totalPoints: 100,
-        createdAt: new Date("2025-01-01"),
-        updatedAt: new Date("2025-01-15")
-    },
-    {
-        id: 2,
-        title: "JavaScript Fundamentals - Midterm Exam",
-        description: "Comprehensive assessment covering variables, functions, arrays, objects, and ES6 features",
-        quizType: QuizType.COURSE_QUIZ,
-        courseId: 1,
-        startTime: new Date("2025-01-10"),
-        endTime: new Date("2025-03-31"),
-        maxAttempts: 2,
-        scoringMethod: "LATEST" as any,
-        passingPercentage: 75,
-        timeLimitMinutes: 60,
-        isActive: true,
-        shuffleQuestions: false,
-        shuffleAnswers: true,
-        showResults: true,
-        showCorrectAnswers: false,
-        questionCount: 30,
-        totalPoints: 200,
-        createdAt: new Date("2025-01-05"),
-        updatedAt: new Date("2025-01-20")
-    },
-    {
-        id: 3,
-        title: "TypeScript Advanced Concepts",
-        description: "Deep dive into TypeScript generics, decorators, and advanced types",
-        quizType: QuizType.LESSON_QUIZ,
-        courseId: 2,
-        lessonId: 8,
-        startTime: new Date("2025-02-01"),
-        endTime: new Date("2025-06-30"),
-        maxAttempts: 3,
-        scoringMethod: "HIGHEST" as any,
-        passingPercentage: 80,
-        timeLimitMinutes: 45,
-        isActive: true,
-        shuffleQuestions: true,
-        shuffleAnswers: true,
-        showResults: true,
-        showCorrectAnswers: true,
-        questionCount: 20,
-        totalPoints: 150,
-        createdAt: new Date("2025-01-20"),
-        updatedAt: new Date("2025-01-25")
-    },
-    {
-        id: 4,
-        title: "Node.js Backend Development Final",
-        description: "Complete assessment on REST APIs, Express, and database integration",
-        quizType: QuizType.COURSE_QUIZ,
-        courseId: 3,
-        startTime: new Date("2025-03-01"),
-        endTime: new Date("2025-05-31"),
-        maxAttempts: 1,
-        scoringMethod: "LATEST" as any,
-        passingPercentage: 85,
-        timeLimitMinutes: 90,
-        isActive: false,
-        shuffleQuestions: true,
-        shuffleAnswers: true,
-        showResults: false,
-        showCorrectAnswers: false,
-        questionCount: 40,
-        totalPoints: 250,
-        createdAt: new Date("2025-01-10"),
-        updatedAt: new Date("2025-01-18")
-    },
-    {
-        id: 5,
-        title: "Database Design Principles",
-        description: "Test on normalization, indexing, and query optimization",
-        quizType: QuizType.LESSON_QUIZ,
-        courseId: 4,
-        lessonId: 12,
-        startTime: new Date("2025-01-15"),
-        endTime: new Date("2025-12-31"),
-        maxAttempts: 2,
-        scoringMethod: "AVERAGE" as any,
-        passingPercentage: 70,
-        timeLimitMinutes: 40,
-        isActive: true,
-        shuffleQuestions: false,
-        shuffleAnswers: false,
-        showResults: true,
-        showCorrectAnswers: true,
-        questionCount: 18,
-        totalPoints: 120,
-        createdAt: new Date("2025-01-12"),
-        updatedAt: new Date("2025-01-22")
-    },
-    {
-        id: 6,
-        title: "Web Security Best Practices",
-        description: "Assessment covering XSS, CSRF, authentication, and authorization",
-        quizType: QuizType.COURSE_QUIZ,
-        courseId: 5,
-        startTime: new Date("2025-02-15"),
-        endTime: new Date("2025-04-30"),
-        maxAttempts: 2,
-        scoringMethod: "HIGHEST" as any,
-        passingPercentage: 90,
-        timeLimitMinutes: 50,
-        isActive: true,
-        shuffleQuestions: true,
-        shuffleAnswers: true,
-        showResults: true,
-        showCorrectAnswers: false,
-        questionCount: 25,
-        totalPoints: 180,
-        createdAt: new Date("2025-01-25"),
-        updatedAt: new Date("2025-02-01")
-    },
-    {
-        id: 7,
-        title: "Web Security Best Practices",
-        description: "Assessment covering XSS, CSRF, authentication, and authorization",
-        quizType: QuizType.COURSE_QUIZ,
-        courseId: 5,
-        startTime: new Date("2025-02-15"),
-        endTime: new Date("2025-04-30"),
-        maxAttempts: 2,
-        scoringMethod: "HIGHEST" as any,
-        passingPercentage: 90,
-        timeLimitMinutes: 50,
-        isActive: true,
-        shuffleQuestions: true,
-        shuffleAnswers: true,
-        showResults: true,
-        showCorrectAnswers: false,
-        questionCount: 25,
-        totalPoints: 180,
-        createdAt: new Date("2025-01-25"),
-        updatedAt: new Date("2025-02-01")
-    },
-    {
-        id: 8,
-        title: "Web Security Best Practices",
-        description: "Assessment covering XSS, CSRF, authentication, and authorization",
-        quizType: QuizType.COURSE_QUIZ,
-        courseId: 5,
-        startTime: new Date("2025-02-15"),
-        endTime: new Date("2025-04-30"),
-        maxAttempts: 2,
-        scoringMethod: "HIGHEST" as any,
-        passingPercentage: 90,
-        timeLimitMinutes: 50,
-        isActive: true,
-        shuffleQuestions: true,
-        shuffleAnswers: true,
-        showResults: true,
-        showCorrectAnswers: false,
-        questionCount: 25,
-        totalPoints: 180,
-        createdAt: new Date("2025-01-25"),
-        updatedAt: new Date("2025-02-01")
-    },
-    {
-        id: 9,
-        title: "Web Security Best Practices",
-        description: "Assessment covering XSS, CSRF, authentication, and authorization",
-        quizType: QuizType.COURSE_QUIZ,
-        courseId: 5,
-        startTime: new Date("2025-02-15"),
-        endTime: new Date("2025-04-30"),
-        maxAttempts: 2,
-        scoringMethod: "HIGHEST" as any,
-        passingPercentage: 90,
-        timeLimitMinutes: 50,
-        isActive: true,
-        shuffleQuestions: true,
-        shuffleAnswers: true,
-        showResults: true,
-        showCorrectAnswers: false,
-        questionCount: 25,
-        totalPoints: 180,
-        createdAt: new Date("2025-01-25"),
-        updatedAt: new Date("2025-02-01")
-    },
-    {
-        id: 10,
-        title: "Web Security Best Practices",
-        description: "Assessment covering XSS, CSRF, authentication, and authorization",
-        quizType: QuizType.COURSE_QUIZ,
-        courseId: 5,
-        startTime: new Date("2025-02-15"),
-        endTime: new Date("2025-04-30"),
-        maxAttempts: 2,
-        scoringMethod: "HIGHEST" as any,
-        passingPercentage: 90,
-        timeLimitMinutes: 50,
-        isActive: true,
-        shuffleQuestions: true,
-        shuffleAnswers: true,
-        showResults: true,
-        showCorrectAnswers: false,
-        questionCount: 25,
-        totalPoints: 180,
-        createdAt: new Date("2025-01-25"),
-        updatedAt: new Date("2025-02-01")
-    }
-];
-
-// Mock courses for filter dropdown
-const mockCourses = [
-    { id: 1, name: "React Fundamentals" },
-    { id: 2, name: "Advanced TypeScript" },
-    { id: 3, name: "Node.js Backend Development" },
-    { id: 4, name: "Database Design" },
-    { id: 5, name: "Web Security" }
-];
 
 const ITEMS_PER_PAGE = 6;
 
 export default function TeacherQuizManagementPage() {
     const router = useRouter();
+    const { courses } = useMyCoursesDropdown();
+    
+    // Filter states
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCourse, setSelectedCourse] = useState<string>("all");
     const [filterType, setFilterType] = useState<string>("all");
     const [filterStatus, setFilterStatus] = useState<string>("all");
-    const [dateFrom, setDateFrom] = useState("");
-    const [dateTo, setDateTo] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
 
-    const filteredQuizzes = useMemo(() => {
-        let result = mockQuizzes;
+    // Debounce search term to avoid too many API calls
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-        // Search by title
-        if (searchTerm) {
-            result = result.filter(quiz =>
-                quiz.title.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
+    // Convert filter status to boolean for API
+    const isActiveFilter = filterStatus === "all" ? null : filterStatus === "active";
 
-        // Filter by course
-        if (selectedCourse !== "all") {
-            result = result.filter(quiz => quiz.courseId === parseInt(selectedCourse));
-        }
+    // Format date for API (ISO format)
+    const formatDateForApi = (date: string) => {
+        if (!date) return undefined;
+        return new Date(date).toISOString();
+    };
 
-        // Filter by quiz type
-        if (filterType !== "all") {
-            result = result.filter(quiz => quiz.quizType === filterType);
-        }
-
-        // Filter by status
-        if (filterStatus !== "all") {
-            result = result.filter(quiz =>
-                (filterStatus === "active" && quiz.isActive) ||
-                (filterStatus === "inactive" && !quiz.isActive)
-            );
-        }
-
-        // Filter by date range
-        if (dateFrom) {
-            const fromDate = new Date(dateFrom);
-            result = result.filter(quiz => quiz.startTime && quiz.startTime >= fromDate);
-        }
-        if (dateTo) {
-            const toDate = new Date(dateTo);
-            toDate.setHours(23, 59, 59, 999);
-            result = result.filter(quiz => quiz.endTime && quiz.endTime <= toDate);
-        }
-
-        return result;
-    }, [searchTerm, selectedCourse, filterType, filterStatus, dateFrom, dateTo]);
-
-    // Pagination
-    const totalPages = Math.ceil(filteredQuizzes.length / ITEMS_PER_PAGE);
-    const paginatedQuizzes = useMemo(() => {
-        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-        return filteredQuizzes.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-    }, [filteredQuizzes, currentPage]);
+    // Fetch quizzes using the search hook
+    const { 
+        quizzes, 
+        totalElements, 
+        totalPages, 
+        isLoading, 
+        refresh 
+    } = useQuizSearch({
+        title: debouncedSearchTerm || undefined,
+        courseId: selectedCourse !== "all" ? parseInt(selectedCourse) : null,
+        quizType: filterType !== "all" ? filterType : null,
+        isActive: isActiveFilter,
+        startDate: formatDateForApi(startDate),
+        endDate: formatDateForApi(endDate),
+        page: currentPage,
+        size: ITEMS_PER_PAGE,
+    });
 
     // Reset to page 1 when filters change
-    useMemo(() => {
+    useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, selectedCourse, filterType, filterStatus, dateFrom, dateTo]);
+    }, [debouncedSearchTerm, selectedCourse, filterType, filterStatus, startDate, endDate]);
 
     // Clear all filters
     const clearFilters = () => {
@@ -341,12 +91,12 @@ export default function TeacherQuizManagementPage() {
         setSelectedCourse("all");
         setFilterType("all");
         setFilterStatus("all");
-        setDateFrom("");
-        setDateTo("");
+        setStartDate("");
+        setEndDate("");
         setCurrentPage(1);
     };
 
-    const hasActiveFilters = searchTerm || selectedCourse !== "all" || filterType !== "all" || filterStatus !== "all" || dateFrom || dateTo;
+    const hasActiveFilters = searchTerm || selectedCourse !== "all" || filterType !== "all" || filterStatus !== "all" || startDate || endDate;
 
     return (
         <div className="container mx-auto p-6 space-y-6">
@@ -359,6 +109,15 @@ export default function TeacherQuizManagementPage() {
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    <Button 
+                        variant="outline" 
+                        className="gap-2"
+                        onClick={refresh}
+                        disabled={isLoading}
+                    >
+                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        Refresh
+                    </Button>
                     <Button 
                         variant="outline" 
                         className="gap-2"
@@ -414,9 +173,9 @@ export default function TeacherQuizManagementPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Courses</SelectItem>
-                                    {mockCourses.map(course => (
+                                    {courses.map(course => (
                                         <SelectItem key={course.id} value={course.id.toString()}>
-                                            {course.name}
+                                            {course.title}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -455,23 +214,23 @@ export default function TeacherQuizManagementPage() {
 
                         {/* Date Range - From */}
                         <div className="space-y-2">
-                            <Label htmlFor="dateFrom">Start Date From</Label>
+                            <Label htmlFor="startDate">Start Date From</Label>
                             <Input
-                                id="dateFrom"
+                                id="startDate"
                                 type="date"
-                                value={dateFrom}
-                                onChange={(e) => setDateFrom(e.target.value)}
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
                             />
                         </div>
 
                         {/* Date Range - To */}
                         <div className="space-y-2">
-                            <Label htmlFor="dateTo">End Date To</Label>
+                            <Label htmlFor="endDate">End Date To</Label>
                             <Input
-                                id="dateTo"
+                                id="endDate"
                                 type="date"
-                                value={dateTo}
-                                onChange={(e) => setDateTo(e.target.value)}
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
                             />
                         </div>
 
@@ -497,7 +256,7 @@ export default function TeacherQuizManagementPage() {
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <h2 className="text-lg font-semibold">
-                            {filteredQuizzes.length} {filteredQuizzes.length === 1 ? 'Quiz' : 'Quizzes'} Found
+                            {isLoading ? 'Loading...' : `${totalElements} ${totalElements === 1 ? 'Quiz' : 'Quizzes'} Found`}
                         </h2>
                         {hasActiveFilters && (
                             <Badge variant="secondary">Filtered</Badge>
@@ -505,7 +264,14 @@ export default function TeacherQuizManagementPage() {
                     </div>
                 </div>
 
-                {paginatedQuizzes.length === 0 ? (
+                {isLoading ? (
+                    <Card>
+                        <CardContent className="flex flex-col items-center justify-center py-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                            <h3 className="text-lg font-semibold mb-2">Loading quizzes...</h3>
+                        </CardContent>
+                    </Card>
+                ) : quizzes.length === 0 ? (
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-12">
                             <Filter className="h-12 w-12 text-muted-foreground mb-4"/>
@@ -533,7 +299,7 @@ export default function TeacherQuizManagementPage() {
                 ) : (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {paginatedQuizzes.map((quiz) => (
+                            {quizzes.map((quiz) => (
                                 <QuizCard
                                     key={quiz.id}
                                     quiz={quiz}

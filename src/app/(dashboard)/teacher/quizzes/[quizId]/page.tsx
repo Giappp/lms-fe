@@ -1,12 +1,14 @@
 "use client"
 
-import { use, useState } from "react";
+import { use } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { QuizDetailResponse } from "@/types/response";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useQuizDetail } from "@/hooks/useQuizzes";
 import { QuizType } from "@/types/enum";
 import { 
     Clock, 
@@ -18,91 +20,20 @@ import {
     Eye,
     EyeOff,
     PlayCircle,
-    Settings,
     Check,
     X as XIcon,
     BookOpen,
-    Calendar
+    Calendar,
+    Loader2,
+    Settings
 } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { QuestionType } from "@/types/enum";
-
-// Mock quiz detail
-const mockQuizDetail: QuizDetailResponse = {
-    id: 1,
-    title: "Introduction to React Hooks",
-    description: "Test your knowledge of React Hooks including useState, useEffect, useContext, and custom hooks. This comprehensive quiz covers fundamental concepts and best practices for using hooks in modern React applications.",
-    quizType: QuizType.LESSON_QUIZ,
-    courseId: 1,
-    courseName: "React Fundamentals",
-    lessonId: 5,
-    lessonTitle: "React Hooks Deep Dive",
-    startTime: new Date("2024-11-20T08:00:00"),
-    endTime: new Date("2024-12-20T23:59:59"),
-    maxAttempts: 3,
-    scoringMethod: "HIGHEST" as any,
-    passingPercentage: 70,
-    timeLimitMinutes: 30,
-    isActive: true,
-    shuffleQuestions: false,
-    shuffleAnswers: false,
-    showResults: true,
-    showCorrectAnswers: true,
-    questionCount: 3,
-    totalPoints: 30,
-    createdAt: new Date("2024-01-15"),
-    updatedAt: new Date("2024-01-20"),
-    questions: [
-        {
-            id: 1,
-            type: QuestionType.SINGLE_CHOICE,
-            questionText: "What is the purpose of the useState hook in React?",
-            orderIndex: 1,
-            points: 10,
-            explanation: "useState is a Hook that lets you add state to functional components. It returns an array with the current state value and a function to update it.",
-            answers: [
-                { id: 1, answerText: "To add state management to functional components", isCorrect: true, orderIndex: 1 },
-                { id: 2, answerText: "To make API calls", isCorrect: false, orderIndex: 2 },
-                { id: 3, answerText: "To handle routing", isCorrect: false, orderIndex: 3 },
-                { id: 4, answerText: "To manage component lifecycle", isCorrect: false, orderIndex: 4 }
-            ]
-        },
-        {
-            id: 2,
-            type: QuestionType.SINGLE_CHOICE,
-            questionText: "When does the useEffect hook run by default?",
-            orderIndex: 2,
-            points: 10,
-            explanation: "By default, useEffect runs after every render (both mount and update). You can control this behavior using the dependency array.",
-            answers: [
-                { id: 5, answerText: "Only on component mount", isCorrect: false, orderIndex: 1 },
-                { id: 6, answerText: "After every render", isCorrect: true, orderIndex: 2 },
-                { id: 7, answerText: "Before every render", isCorrect: false, orderIndex: 3 },
-                { id: 8, answerText: "Only on component unmount", isCorrect: false, orderIndex: 4 }
-            ]
-        },
-        {
-            id: 3,
-            type: QuestionType.SINGLE_CHOICE,
-            questionText: "What does the useContext hook do?",
-            orderIndex: 3,
-            points: 10,
-            explanation: "useContext is a Hook that lets you subscribe to React context without introducing nesting. It accepts a context object and returns the current context value.",
-            answers: [
-                { id: 9, answerText: "It creates a new context", isCorrect: false, orderIndex: 1 },
-                { id: 10, answerText: "It consumes context values from a provider", isCorrect: true, orderIndex: 2 },
-                { id: 11, answerText: "It updates the context provider", isCorrect: false, orderIndex: 3 },
-                { id: 12, answerText: "It deletes context from memory", isCorrect: false, orderIndex: 4 }
-            ]
-        }
-    ]
-};
+import { useState } from "react";
 
 export default function TeacherQuizDetailPage({ params }: { params: Promise<{ quizId: string }> }) {
     const { quizId } = use(params);
     const router = useRouter();
-    const quiz = mockQuizDetail;
+    const { quiz, isLoading, error } = useQuizDetail(parseInt(quizId));
     const [expandedQuestionId, setExpandedQuestionId] = useState<number | null>(null);
 
     const toggleQuestion = (questionId: number) => {
@@ -118,8 +49,38 @@ export default function TeacherQuizDetailPage({ params }: { params: Promise<{ qu
             hour: '2-digit',
             minute: '2-digit',
             hour12: true
-        }).format(date);
+        }).format(new Date(date));
     };
+
+    if (isLoading) {
+        return (
+            <div className="container mx-auto p-6 max-w-6xl">
+                <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Loading quiz details...</h3>
+                </div>
+            </div>
+        );
+    }
+
+    if (error || !quiz) {
+        return (
+            <div className="container mx-auto p-6 max-w-6xl">
+                <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                        <XIcon className="h-12 w-12 text-destructive mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">Failed to load quiz</h3>
+                        <p className="text-muted-foreground text-center mb-4">
+                            {error?.message || 'Quiz not found'}
+                        </p>
+                        <Button onClick={() => router.push("/teacher/quizzes")}>
+                            Back to Quizzes
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto p-6 max-w-6xl">

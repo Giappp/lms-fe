@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { useCourseEnrollments } from "@/hooks/useEnrollments";
-import { useMyCourses } from "@/hooks/useCourses";
+import { useMyCoursesDropdown } from "@/hooks/useCourses";
 import { getSocket, onEnrollmentRequest } from "@/lib/socket";
 import { TeacherEnrollmentCard } from "@/components/teacher/enrollments/TeacherEnrollmentCard";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ const PAGE_SIZE = 10;
 
 export default function TeacherEnrollmentsPage() {
     const { toast } = useToast();
-    const { courses, isLoading: isLoadingCourses } = useMyCourses();
+    const { courses, isLoading: isLoadingCourses } = useMyCoursesDropdown();
     const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
     const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | undefined>(undefined);
     const [searchTerm, setSearchTerm] = useState("");

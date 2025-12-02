@@ -1,5 +1,6 @@
 "use client"
 import React, {useState} from 'react'
+import {useRouter} from 'next/navigation';
 import {QuestionType} from "@/types/enum"; // Use the imported enum
 import {Button} from "@/components/ui/button";
 import {AlertCircle, Eye, FileText, Loader2, Plus, Save, Target} from "lucide-react";
@@ -16,6 +17,7 @@ import QuestionCard from "@/components/teacher/quizzes/QuestionCard";
 import QuizSettings from "@/components/teacher/quizzes/QuizSettings";
 import QuizPreview from "@/components/teacher/quizzes/QuizPreview";
 import {useQuizBuilder} from "@/hooks/useQuizBuilder";
+import {useMyCoursesDropdown} from "@/hooks/useCourses";
 
 // Configuration for Add Buttons
 const ADD_BUTTONS = [
@@ -33,7 +35,9 @@ const ADD_BUTTONS = [
 ];
 
 const QuizBuilder = () => {
+    const router = useRouter();
     const [activeTab, setActiveTab] = useState('build');
+    const { courses, isLoading: isLoadingCourses } = useMyCoursesDropdown();
 
     const {
         quiz,
@@ -64,7 +68,17 @@ const QuizBuilder = () => {
                         </Button>
                         <Button
                             className="gap-2"
-                            onClick={saveQuiz}
+                            onClick={async () => {
+                                const result = await saveQuiz();
+                                if (result.success) {
+                                    const quizId = (result as any).data?.id;
+                                    if (quizId) {
+                                        router.push(`/teacher/quizzes/${quizId}/edit`);
+                                    } else {
+                                        router.push('/teacher/quizzes');
+                                    }
+                                }
+                            }}
                             disabled={isSaving}
                         >
                             {isSaving ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>}
@@ -100,15 +114,17 @@ const QuizBuilder = () => {
                                 <Select
                                     value={quiz.courseId?.toString()}
                                     onValueChange={(value) => setQuiz({...quiz, courseId: parseInt(value)})}
+                                    disabled={isLoadingCourses}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select a course"/>
+                                        <SelectValue placeholder={isLoadingCourses ? "Loading courses..." : "Select a course"}/>
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="1">Advanced Mathematics</SelectItem>
-                                        <SelectItem value="2">Physics 101</SelectItem>
-                                        <SelectItem value="3">Calculus II</SelectItem>
-                                        <SelectItem value="4">Statistics</SelectItem>
+                                        {courses.map(course => (
+                                            <SelectItem key={course.id} value={course.id.toString()}>
+                                                {course.title}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>

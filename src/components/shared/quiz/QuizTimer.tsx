@@ -8,23 +8,30 @@ import { cn } from "@/lib/utils";
 interface QuizTimerProps {
     timeLimitMinutes: number;
     startedAt: Date;
+    timeSpentSeconds: number;
     onTimeUp?: () => void;
     mustSubmitBefore?: Date;
 }
 
-export function QuizTimer({ timeLimitMinutes, startedAt, onTimeUp, mustSubmitBefore }: QuizTimerProps) {
+export function QuizTimer({ timeLimitMinutes, startedAt, timeSpentSeconds, onTimeUp, mustSubmitBefore }: QuizTimerProps) {
     const [timeRemaining, setTimeRemaining] = useState<number>(0);
     const [isWarning, setIsWarning] = useState(false);
+    const [mountTime] = useState<number>(Date.now());
 
     useEffect(() => {
         const calculateTimeRemaining = () => {
-            const now = new Date().getTime();
-            const started = new Date(startedAt).getTime();
-            const deadline = mustSubmitBefore 
-                ? new Date(mustSubmitBefore).getTime()
-                : started + (timeLimitMinutes * 60 * 1000);
+            // Calculate remaining time using: TimeRemaining = QuizTimeLimit - (timeSpentSeconds / 60)
+            // This ensures timer resumes correctly after user exits and returns
+            const timeLimitSeconds = timeLimitMinutes * 60;
             
-            const remaining = Math.max(0, Math.floor((deadline - now) / 1000));
+            // Calculate time elapsed since component mounted (user resumed quiz)
+            const elapsedSinceMount = Math.floor((Date.now() - mountTime) / 1000);
+            
+            // Total time spent = backend tracked time + time since resuming
+            const totalTimeSpent = timeSpentSeconds + elapsedSinceMount;
+            
+            // Remaining time = time limit - total time spent
+            const remaining = Math.max(0, timeLimitSeconds - totalTimeSpent);
             return remaining;
         };
 
@@ -48,7 +55,7 @@ export function QuizTimer({ timeLimitMinutes, startedAt, onTimeUp, mustSubmitBef
         const interval = setInterval(updateTimer, 1000);
 
         return () => clearInterval(interval);
-    }, [timeLimitMinutes, startedAt, mustSubmitBefore, onTimeUp]);
+    }, [timeLimitMinutes, timeSpentSeconds, mountTime, onTimeUp]);
 
     const formatTime = (seconds: number): string => {
         const hours = Math.floor(seconds / 3600);

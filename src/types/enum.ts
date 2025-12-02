@@ -15,8 +15,11 @@ export enum QuizType {
     COURSE_QUIZ = "COURSE_QUIZ"
 }
 
-export type ScoringMethod = 'HIGHEST' | 'AVERAGE' | 'LATEST';
-
+export enum ScoringMethod {
+    HIGHEST = "HIGHEST",
+    LATEST = "LATEST",
+    AVERAGE = "AVERAGE"
+}
 export enum AttemptStatus {
     IN_PROGRESS = "IN_PROGRESS",
     SUBMITTED = "SUBMITTED",

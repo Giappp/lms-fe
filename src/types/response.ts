@@ -85,6 +85,11 @@ export interface CourseResponse {
     enrollmentStatus?: EnrollmentStatus;
 }
 
+export interface CourseSelectResponse {
+    id: number;
+    title: string;
+}
+
 export interface ChapterResponse {
     id: number;
     title: string;
@@ -242,7 +247,7 @@ export interface QuizAttemptDetailResponse {
     reviewedBy?: number;
     reviewerName?: string;
 
-    answers: QuizAttemptAnswerDetailResponse[];
+    attemptAnswers: QuizAttemptAnswerDetailResponse[];
 }
 
 export interface QuizAttemptAnswerDetailResponse {
@@ -250,11 +255,11 @@ export interface QuizAttemptAnswerDetailResponse {
     questionId: number;
     questionText: string;
     questionType: QuestionType;
-    questionPoints: number;
+    orderIndex: number;
+    points: number;
 
-    selectedAnswerIds: number[];
-    correctAnswerIds: number[];
-
+    selectedAnswerId: number;
+    selectedAnswerText: string;
     isCorrect: boolean;
     pointsEarned: number;
 

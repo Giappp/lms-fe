@@ -22,7 +22,11 @@ const QuizSettings = ({
     onUpdate: (updated: Partial<QuizCreationRequest>) => void;
 }) => {
     const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(new Set());
-    const {curriculum, isLoading: isCurriculumLoading} = useCourseCurriculum(quiz.courseId);
+
+    const shouldFetchCurriculum = quiz.type === QuizType.LESSON_QUIZ && !!quiz.courseId;
+    const {chapters, isLoading: isCurriculumLoading} = useCourseCurriculum(
+        shouldFetchCurriculum ? quiz.courseId : undefined
+    );
 
     const toggleChapter = (chapterId: string) => {
         setCollapsedChapters(prev => {
@@ -95,7 +99,7 @@ const QuizSettings = ({
                                     <div className="text-center py-8 text-muted-foreground border rounded-lg">
                                         <p className="text-sm">Loading curriculum...</p>
                                     </div>
-                                ) : !curriculum || curriculum.length === 0 ? (
+                                ) : !chapters || chapters.length === 0 ? (
                                     <div className="text-center py-8 text-muted-foreground border rounded-lg">
                                         <p className="text-sm">No curriculum available for this course</p>
                                     </div>
@@ -105,14 +109,14 @@ const QuizSettings = ({
                                         onValueChange={(value) => onUpdate({ ...quiz, lessonId: parseInt(value) })}
                                     >
                                         <div className="space-y-2 max-h-[400px] overflow-y-auto border rounded-lg p-3">
-                                            {curriculum.map((chapter) => (
-                                                <div key={chapter._id} className="space-y-2">
+                                            {chapters.map((chapter) => (
+                                                <div key={chapter.id} className="space-y-2">
                                                     {/* Chapter Header */}
                                                     <div
                                                         className="flex items-center gap-2 p-2 bg-muted rounded cursor-pointer hover:bg-muted/80"
-                                                        onClick={() => toggleChapter(chapter._id)}
+                                                        onClick={() => toggleChapter(chapter.id.toString())}
                                                     >
-                                                        {collapsedChapters.has(chapter._id) ? (
+                                                        {collapsedChapters.has(chapter.id.toString()) ? (
                                                             <ChevronRight className="h-4 w-4" />
                                                         ) : (
                                                             <ChevronDown className="h-4 w-4" />
@@ -126,11 +130,11 @@ const QuizSettings = ({
                                                     </div>
 
                                                     {/* Lessons */}
-                                                    {!collapsedChapters.has(chapter._id) && (
+                                                    {!collapsedChapters.has(chapter.id.toString()) && (
                                                         <div className="ml-6 space-y-1">
                                                             {chapter.lessons.map((lesson) => (
                                                                 <div
-                                                                    key={lesson._id}
+                                                                    key={lesson.id}
                                                                     className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50"
                                                                 >
                                                                     <RadioGroupItem

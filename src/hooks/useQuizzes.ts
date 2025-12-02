@@ -11,7 +11,8 @@ import {
     QuizAnalyticsResponse,
     CourseQuizStatisticsResponse,
     StudentQuizResultResponse,
-    StudentQuizHistoryResponse
+    StudentQuizHistoryResponse,
+    PaginatedResponse
 } from '@/types/response';
 import {
     QuizCreationRequest,
@@ -21,6 +22,63 @@ import {
     ReviewQuizAttemptRequest
 } from '@/types/request';
 import {Constants} from '@/constants';
+import {QuizType} from '@/types/enum';
+
+// ==================== Quiz Search Hook ====================
+
+export interface QuizSearchParams {
+    courseId?: number | null;
+    title?: string;
+    quizType?: QuizType | string | null;
+    isActive?: boolean | null;
+    startDate?: string;  // ISO date string
+    endDate?: string;    // ISO date string
+    page?: number;
+    size?: number;
+}
+
+/**
+ * Hook for searching quizzes with role-based filtering
+ * - STUDENT: auto-filtered by enrolled courses and active quizzes only
+ * - TEACHER/ADMIN: can filter by all criteria including status
+ */
+export const useQuizSearch = (params: QuizSearchParams = {}) => {
+    const queryParams = new URLSearchParams();
+    
+    if (params.courseId) queryParams.append('courseId', params.courseId.toString());
+    if (params.title) queryParams.append('title', params.title);
+    if (params.quizType && params.quizType !== 'all') queryParams.append('quizType', params.quizType);
+    if (params.isActive !== null && params.isActive !== undefined) {
+        queryParams.append('isActive', params.isActive.toString());
+    }
+    if (params.startDate) queryParams.append('startDate', params.startDate);
+    if (params.endDate) queryParams.append('endDate', params.endDate);
+    queryParams.append('page', (params.page ?? 1).toString());
+    queryParams.append('size', (params.size ?? 10).toString());
+
+    const key = `${Constants.QUIZ_ROUTES.SEARCH}?${queryParams.toString()}`;
+
+    const { data, error, isLoading, mutate } = useSWR<PaginatedResponse<QuizResponse> | null>(
+        key,
+        swrFetcher,
+        {
+            revalidateOnFocus: false,
+            keepPreviousData: true,
+        }
+    );
+
+    return {
+        quizzes: data?.content ?? [],
+        totalElements: data?.totalElements ?? 0,
+        totalPages: data?.totalPages ?? 0,
+        currentPage: (data?.pageable?.pageNumber ?? 0) + 1, // API returns 0-indexed
+        isLoading,
+        isError: !!error,
+        error,
+        mutate,
+        refresh: () => mutate(),
+    };
+};
 
 // ==================== Quiz CRUD Hooks ====================
 
@@ -113,8 +171,8 @@ export const useQuizDetail = (quizId: number | undefined) => {
 
 export const useMyAttempts = (quizId?: number) => {
     const key = quizId 
-        ? `${Constants.QUIZ_ROUTES.MY_ATTEMPTS}?quizId=${quizId}`
-        : Constants.QUIZ_ROUTES.MY_ATTEMPTS;
+        ? `${Constants.QUIZ_ROUTES.MY_ATTEMPTS}/${quizId}/history`
+        : null;
     
     const {data, error, mutate, isLoading} = useSWR<QuizAttemptResponse[] | null>(
         key,
@@ -140,7 +198,7 @@ export const useMyAttempts = (quizId?: number) => {
 };
 
 export const useAttemptDetail = (attemptId: number | undefined) => {
-    const key = attemptId ? `${Constants.QUIZ_ROUTES.ATTEMPT_DETAIL}/${attemptId}` : null;
+    const key = attemptId ? `${Constants.QUIZ_ROUTES.ATTEMPT_DETAIL}/${attemptId}/detail` : null;
     const {data, error, mutate, isLoading} = useSWR<QuizAttemptDetailResponse | null>(
         key,
         swrFetcher,
@@ -158,7 +216,7 @@ export const useAttemptDetail = (attemptId: number | undefined) => {
 
     const submitQuiz = async (payload: SubmitQuizRequest) => {
         if (!attemptId) return {success: false, error: 'Attempt ID is required'};
-        const result = await QuizService.submitQuiz(attemptId, payload);
+        const result = await QuizService.submitQuiz(payload);
         if (result.success) {
             await mutate();
         }
