@@ -42,6 +42,15 @@ export class Constants {
         PRESIGNED_URL: "/api/file/presigned-url"
     };
 
+    static readonly CATEGORY_ROUTES = {
+        GET_ALL: "/api/categories",
+        CREATE: "/api/categories",
+        GET_BY_ID: "/api/categories",
+        UPDATE: "/api/categories",
+        DELETE: "/api/categories",
+        SEARCH: "/api/categories/search"
+    };
+
     static readonly COURSES_ROUTES = {
         // Course management
         SEARCH: "/api/courses/search",
