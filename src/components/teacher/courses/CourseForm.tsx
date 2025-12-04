@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { CourseCreationRequest, CourseUpdateRequest } from "@/types/request";
-import { CourseResponse, CategoryResponse } from "@/types/response";
+import { CourseResponse } from "@/types/response";
 import { CourseStatus, Difficulty } from "@/types/enum";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +31,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ThumbnailUploader } from "@/components/shared/upload/ThumbnailUploader";
+import { useAllCategories } from "@/hooks/useCategories";
+import { CategoryIcon } from "@/components/shared/CategoryIcon";
 
 const courseFormSchema = z.object({
     title: z.string()
@@ -56,7 +58,6 @@ type CourseFormValues = z.infer<typeof courseFormSchema>;
 interface CourseFormProps {
     mode: "create" | "edit";
     initialData?: CourseResponse;
-    categories?: CategoryResponse[];
     teacherId: number;
     teacherName: string;
     onSubmit: (data: CourseCreationRequest | CourseUpdateRequest, thumbnail?: File) => Promise<void>;
@@ -67,13 +68,13 @@ interface CourseFormProps {
 export function CourseForm({
     mode,
     initialData,
-    categories = [],
     teacherId,
     teacherName,
     onSubmit,
     onCancel,
     isLoading = false,
 }: CourseFormProps) {
+    const { categories, isLoading: isCategoriesLoading } = useAllCategories();
     const [thumbnail, setThumbnail] = useState<File | null>(null);
     const [thumbnailValue, setThumbnailValue] = useState<File | string | null>(
         initialData?.thumbnailUrl || null
@@ -290,50 +291,59 @@ export function CourseForm({
                 />
 
                 {/* Categories */}
-                {categories.length > 0 && (
-                    <div className="space-y-3">
-                        <FormLabel>Categories (Optional)</FormLabel>
+                <div className="space-y-3">
+                    <FormLabel>Categories (Optional)</FormLabel>
+                    <FormDescription>
+                        Select categories that best describe your course
+                    </FormDescription>
+                    {isCategoriesLoading ? (
                         <Card>
                             <CardContent className="pt-6">
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                    {categories.map((category) => (
-                                        <div
-                                            key={category.id}
-                                            className="flex items-center space-x-2"
-                                        >
-                                            <Checkbox
-                                                id={`category-${category.id}`}
-                                                checked={selectedCategories.includes(category.id)}
-                                                onCheckedChange={() => toggleCategory(category.id)}
-                                                disabled={isLoading}
-                                            />
-                                            <label
-                                                htmlFor={`category-${category.id}`}
-                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                                            >
-                                                <Badge
-                                                    variant="outline"
-                                                    style={{
-                                                        borderColor: category.color,
-                                                        color: category.color,
-                                                    }}
-                                                >
-                                                    {category.icon && (
-                                                        <span className="mr-1">{category.icon}</span>
-                                                    )}
-                                                    {category.name}
-                                                </Badge>
-                                            </label>
-                                        </div>
-                                    ))}
+                                <div className="flex items-center justify-center py-8">
+                                    <div className="text-sm text-muted-foreground">Loading categories...</div>
                                 </div>
                             </CardContent>
                         </Card>
-                        <FormDescription>
-                            Select categories that best describe your course
-                        </FormDescription>
-                    </div>
-                )}
+                    ) : categories.length > 0 ? (
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="flex flex-wrap gap-2">
+                                    {categories.map((category) => {
+                                        const isSelected = selectedCategories.includes(category.id);
+                                        return (
+                                            <Badge
+                                                key={category.id}
+                                                variant={isSelected ? "default" : "outline"}
+                                                className="cursor-pointer px-3 py-2 text-sm font-medium transition-all hover:scale-105"
+                                                style={{
+                                                    backgroundColor: isSelected ? category.color : 'transparent',
+                                                    borderColor: category.color,
+                                                    color: isSelected ? '#ffffff' : category.color,
+                                                }}
+                                                onClick={() => !isLoading && toggleCategory(category.id)}
+                                            >
+                                                <span className="flex items-center gap-1.5">
+                                                    {category.icon && (
+                                                        <CategoryIcon icon={category.icon} className="w-3.5 h-3.5" />
+                                                    )}
+                                                    <span>{category.name}</span>
+                                                </span>
+                                            </Badge>
+                                        );
+                                    })}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="flex items-center justify-center py-8">
+                                    <div className="text-sm text-muted-foreground">No categories available</div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
 
                 {/* Form Errors */}
                 {form.formState.errors.root && (
