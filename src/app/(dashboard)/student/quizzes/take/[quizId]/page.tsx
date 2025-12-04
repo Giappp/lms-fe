@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { QuestionCard } from "@/components/shared/quiz/QuestionCard";
@@ -9,8 +9,7 @@ import { QuizProgress } from "@/components/shared/quiz/QuizProgress";
 import { QuizResultCard } from "@/components/shared/quiz/QuizResultCard";
 import { QuizSubmitResultResponse } from "@/types/response";
 import { AnswerProgress } from "@/types/request";
-import { QuestionType } from "@/types/enum";
-import { ChevronLeft, ChevronRight, Save, Send, AlertTriangle, Loader2, XCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send, AlertTriangle, Loader2, XCircle } from "lucide-react";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -49,38 +48,106 @@ export default function TakeQuizPage({ params }: TakeQuizPageProps) {
     const [isSavingProgress, setIsSavingProgress] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Auto-save progress when component unmounts (user exits quiz)
+    // Use refs to access latest values in event handlers without re-registering listeners
+    const answersRef = useRef(answers);
+    const isSubmittedRef = useRef(isSubmitted);
+    const attemptIdRef = useRef(attemptId);
+    const saveProgressRef = useRef(saveProgress);
+
+    // Update refs whenever values change
     useEffect(() => {
-        return () => {
-            // Only auto-save if there's an active attempt and answers
-            if (attemptId && Object.keys(answers).length > 0 && !isSubmitted) {
-                const answerProgress: AnswerProgress[] = [];
-                
-                Object.entries(answers).forEach(([questionId, selectedAnswerIds]) => {
-                    if (selectedAnswerIds.length > 0) {
-                        selectedAnswerIds.forEach(answerId => {
-                            answerProgress.push({
-                                questionId: parseInt(questionId),
-                                selectedAnswerId: answerId
-                            });
-                        });
-                    } else {
+        answersRef.current = answers;
+        isSubmittedRef.current = isSubmitted;
+        attemptIdRef.current = attemptId;
+        saveProgressRef.current = saveProgress;
+    }, [answers, isSubmitted, attemptId, saveProgress]);
+
+    // Auto-save progress when user exits quiz (browser close, tab close, refresh, navigation)
+    useEffect(() => {
+        if (!attemptId || isSubmitted) return;
+
+        let isSaving = false;
+
+        const saveCurrentProgress = () => {
+            // Use refs to get latest values
+            const currentAttemptId = attemptIdRef.current;
+            const currentAnswers = answersRef.current;
+            const currentIsSubmitted = isSubmittedRef.current;
+            const currentSaveProgress = saveProgressRef.current;
+
+            // Prevent duplicate saves
+            if (isSaving || Object.keys(currentAnswers).length === 0 || currentIsSubmitted || !currentAttemptId) return;
+            
+            isSaving = true;
+
+            const answerProgress: AnswerProgress[] = [];
+            
+            Object.entries(currentAnswers).forEach(([questionId, selectedAnswerIds]) => {
+                if (selectedAnswerIds.length > 0) {
+                    selectedAnswerIds.forEach(answerId => {
                         answerProgress.push({
                             questionId: parseInt(questionId),
-                            selectedAnswerId: null
+                            selectedAnswerId: answerId
                         });
-                    }
-                });
+                    });
+                } else {
+                    answerProgress.push({
+                        questionId: parseInt(questionId),
+                        selectedAnswerId: null
+                    });
+                }
+            });
 
-                // Auto-save on unmount (async, fire and forget)
-                saveProgress({
-                    answers: answerProgress
-                }).catch(() => {
-                    // Silently fail on unmount
-                });
+            // Use synchronous approach for reliable saving during page unload
+            // We use the existing saveProgress function which uses axiosInstance
+            currentSaveProgress({
+                answers: answerProgress
+            }).catch(() => {
+                // Silently fail during unload
+            });
+        };
+
+        // Handle page unload (browser/tab close, refresh)
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (Object.keys(answersRef.current).length > 0 && !isSubmittedRef.current) {
+                saveCurrentProgress();
+                // Show confirmation dialog for unsaved changes
+                e.preventDefault();
+                e.returnValue = '';
             }
         };
-    }, [attemptId, answers, isSubmitted, saveProgress]);
+
+        // Handle visibility change (tab switch, minimize, mobile background)
+        const handleVisibilityChange = () => {
+            if (document.hidden && Object.keys(answersRef.current).length > 0 && !isSaving && !isSubmittedRef.current) {
+                saveCurrentProgress();
+            }
+        };
+
+        // Handle page hide (more reliable than beforeunload on mobile Safari/Chrome)
+        const handlePageHide = (e: PageTransitionEvent) => {
+            if (Object.keys(answersRef.current).length > 0 && !isSaving && !isSubmittedRef.current) {
+                saveCurrentProgress();
+            }
+        };
+
+        // Register event listeners
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('pagehide', handlePageHide);
+
+        // Cleanup on component unmount (navigation within app)
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('pagehide', handlePageHide);
+            
+            // Save progress on unmount (navigation away within app)
+            if (Object.keys(answersRef.current).length > 0 && !isSaving && !isSubmittedRef.current) {
+                saveCurrentProgress();
+            }
+        };
+    }, [attemptId, isSubmitted]); // Only re-run if attemptId or isSubmitted changes, not on every answer change
 
     // Get attemptId from session storage on mount
     useEffect(() => {
@@ -338,24 +405,6 @@ export default function TakeQuizPage({ params }: TakeQuizPageProps) {
                         </Button>
 
                         <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={handleSaveProgress}
-                                disabled={isSavingProgress}
-                                className="gap-2"
-                            >
-                                {isSavingProgress ? (
-                                    <>
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                        Saving...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Save className="h-4 w-4" />
-                                        Save Progress
-                                    </>
-                                )}
-                            </Button>
 
                             {currentQuestionIndex === quiz.questions.length - 1 ? (
                                 <Button

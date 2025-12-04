@@ -33,7 +33,15 @@ export default function QuizDetailPage({ params }: { params: Promise<{ quizId: s
     const { quiz, isLoading: quizLoading, error: quizError } = useQuizDetail(parseInt(quizId));
     const { attempts, isLoading: attemptsLoading, startQuiz } = useMyAttempts(parseInt(quizId));
 
-    const attemptsUsed = attempts?.length || 0;
+    // Find IN_PROGRESS attempt (if any)
+    const inProgressAttempt = attempts?.find(a => a.status === AttemptStatus.IN_PROGRESS);
+    
+    // Only count COMPLETED/SUBMITTED attempts as "used"
+    const completedAttempts = attempts?.filter(a => 
+        a.status === AttemptStatus.COMPLETED || a.status === AttemptStatus.SUBMITTED
+    ) || [];
+    
+    const attemptsUsed = completedAttempts.length;
     const attemptsRemaining = quiz ? quiz.maxAttempts - attemptsUsed : 0;
     const canTakeQuiz = quiz ? attemptsRemaining > 0 && quiz.isActive : false;
     const bestScore = attempts && attempts.length > 0 ? Math.max(...attempts.map(a => a.percentage || 0)) : 0;
@@ -303,11 +311,29 @@ export default function QuizDetailPage({ params }: { params: Promise<{ quizId: s
                     {/* Start Quiz Card */}
                     <Card className="border-2">
                         <CardHeader>
-                            <CardTitle className="text-lg">Ready to Start?</CardTitle>
+                            <CardTitle className="text-lg">
+                                {inProgressAttempt ? "Continue Your Quiz" : "Ready to Start?"}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {canTakeQuiz ? (
+                            {canTakeQuiz || inProgressAttempt ? (
                                 <>
+                                    {inProgressAttempt && (
+                                        <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                                            <div className="flex items-start gap-2 mb-2">
+                                                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                                                <div>
+                                                    <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                                                        Quiz In Progress
+                                                    </p>
+                                                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                                                        You have an unfinished attempt. Click below to continue where you left off.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
                                         <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
                                             Attempts Remaining
@@ -315,9 +341,14 @@ export default function QuizDetailPage({ params }: { params: Promise<{ quizId: s
                                         <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                                             {attemptsRemaining} / {quiz.maxAttempts}
                                         </p>
+                                        {inProgressAttempt && (
+                                            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                                                (1 attempt in progress)
+                                            </p>
+                                        )}
                                     </div>
 
-                                    {attempts && attempts.length > 0 && (
+                                    {completedAttempts.length > 0 && (
                                         <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
                                             <p className="text-sm font-medium text-green-900 dark:text-green-100">
                                                 Your Best Score
@@ -332,16 +363,24 @@ export default function QuizDetailPage({ params }: { params: Promise<{ quizId: s
                                         className="w-full gap-2" 
                                         size="lg"
                                         onClick={handleStartQuiz}
+                                        variant={inProgressAttempt ? "default" : "default"}
                                     >
                                         <PlayCircle className="h-5 w-5" />
-                                        {attempts && attempts.length > 0 ? "Take Quiz Again" : "Start Quiz"}
+                                        {inProgressAttempt 
+                                            ? "Continue Quiz" 
+                                            : completedAttempts.length > 0 
+                                                ? "Take Quiz Again" 
+                                                : "Start Quiz"
+                                        }
                                     </Button>
 
                                     <div className="flex items-start gap-2 text-sm text-muted-foreground">
                                         <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                                         <p>
-                                            Make sure you have enough time to complete the quiz. 
-                                            You can save progress but must submit before time runs out.
+                                            {inProgressAttempt 
+                                                ? "Your previous answers have been saved. Continue from where you left off."
+                                                : "Make sure you have enough time to complete the quiz. Your progress will be auto-saved when you leave."
+                                            }
                                         </p>
                                     </div>
                                 </>
