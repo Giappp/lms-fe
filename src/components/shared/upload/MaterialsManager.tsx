@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react";
-import { Upload, FileText, Download, Trash2, Loader2 } from "lucide-react";
+import { Upload, FileText, Download, ExternalLink, Loader2, File, FileCode, FileSpreadsheet, Presentation, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +20,7 @@ interface MaterialsManagerProps {
     onUpload?: (file: File) => Promise<void>;
     onDelete?: (materialId: number) => Promise<void>;
     onDownload?: (materialId: number, filename: string) => Promise<void>;
+    onFilesChange?: (files: File[]) => void; // Callback to expose collected files
     disabled?: boolean;
     maxSize?: number; // in MB
 }
@@ -30,6 +31,7 @@ export function MaterialsManager({
     onUpload,
     onDelete,
     onDownload,
+    onFilesChange,
     disabled = false,
     maxSize = 50,
 }: MaterialsManagerProps) {
@@ -44,6 +46,38 @@ export function MaterialsManager({
         const sizes = ['Bytes', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    };
+
+    const getFileIcon = (filename: string) => {
+        const ext = filename.split('.').pop()?.toLowerCase();
+        switch (ext) {
+            case 'pdf':
+                return <FileText className="h-10 w-10 text-red-500" />;
+            case 'doc':
+            case 'docx':
+                return <FileText className="h-10 w-10 text-blue-500" />;
+            case 'xls':
+            case 'xlsx':
+                return <FileSpreadsheet className="h-10 w-10 text-green-500" />;
+            case 'ppt':
+            case 'pptx':
+                return <Presentation className="h-10 w-10 text-orange-500" />;
+            case 'txt':
+                return <File className="h-10 w-10 text-gray-500" />;
+            case 'html':
+            case 'css':
+            case 'js':
+            case 'json':
+                return <FileCode className="h-10 w-10 text-purple-500" />;
+            default:
+                return <File className="h-10 w-10 text-muted-foreground" />;
+        }
+    };
+
+    const handleFileClick = (material: Material) => {
+        if (material.url) {
+            window.open(material.url, '_blank');
+        }
     };
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +121,15 @@ export function MaterialsManager({
                 size: file.size,
                 file,
             };
-            setMaterials([...materials, newMaterial]);
+            const updatedMaterials = [...materials, newMaterial];
+            setMaterials(updatedMaterials);
+            
+            // Notify parent component of file changes
+            if (onFilesChange) {
+                const files = updatedMaterials.filter(m => m.file).map(m => m.file!);
+                onFilesChange(files);
+            }
+            
             toast({
                 title: "File added",
                 description: "Material will be uploaded when the lesson is created",
@@ -124,7 +166,15 @@ export function MaterialsManager({
             }
         } else {
             // Remove from local state
-            setMaterials(materials.filter((_, i) => i !== index));
+            const updatedMaterials = materials.filter((_, i) => i !== index);
+            setMaterials(updatedMaterials);
+            
+            // Notify parent component of file changes
+            if (onFilesChange) {
+                const files = updatedMaterials.filter(m => m.file).map(m => m.file!);
+                onFilesChange(files);
+            }
+            
             toast({
                 title: "File removed",
                 description: "Material removed from the list",
@@ -191,57 +241,79 @@ export function MaterialsManager({
 
             {/* Materials list */}
             {materials.length > 0 && (
-                <div className="space-y-2">
-                    <p className="text-sm font-medium">Materials ({materials.length})</p>
-                    <div className="space-y-2">
+                <div className="space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">
+                        Materials ({materials.length})
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {materials.map((material, index) => {
                             const isDeleting = material.id && deletingIds.has(material.id);
+                            const hasUrl = !!material.url;
                             
                             return (
                                 <Card
                                     key={material.id || `temp-${index}`}
-                                    className="p-3 flex items-center justify-between"
+                                    className={`
+                                        group relative overflow-hidden transition-all duration-200
+                                        ${hasUrl 
+                                            ? 'hover:shadow-md hover:border-primary/50 cursor-pointer' 
+                                            : 'hover:shadow-sm'
+                                        }
+                                    `}
                                 >
-                                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                                        <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-medium truncate">
+                                    {/* Delete button - top right corner */}
+                                    {!disabled && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="absolute top-2 right-2 h-6 w-6 rounded-full bg-background/80 hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(material, index);
+                                            }}
+                                            disabled={!!isDeleting}
+                                        >
+                                            {isDeleting ? (
+                                                <Loader2 className="h-3 w-3 animate-spin" />
+                                            ) : (
+                                                <X className="h-3 w-3" />
+                                            )}
+                                        </Button>
+                                    )}
+
+                                    <div 
+                                        className="p-4 flex items-start gap-3"
+                                        onClick={() => hasUrl && handleFileClick(material)}
+                                    >
+                                        {/* File Icon */}
+                                        <div className="flex-shrink-0">
+                                            {getFileIcon(material.filename)}
+                                        </div>
+
+                                        {/* File Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="text-sm font-medium truncate group-hover:text-primary transition-colors">
                                                 {material.filename}
-                                            </p>
+                                            </h4>
                                             {material.size && (
-                                                <p className="text-xs text-muted-foreground">
+                                                <p className="text-xs text-muted-foreground mt-1">
                                                     {formatFileSize(material.size)}
                                                 </p>
+                                            )}
+                                            {hasUrl && (
+                                                <div className="flex items-center gap-1 mt-2 text-xs text-primary">
+                                                    <ExternalLink className="h-3 w-3" />
+                                                    <span>Click to open</span>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-1">
-                                        {material.id && onDownload && (
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleDownload(material)}
-                                                disabled={disabled}
-                                            >
-                                                <Download className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleDelete(material, index)}
-                                            disabled={disabled || !!isDeleting}
-                                        >
-                                            {isDeleting ? (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <Trash2 className="h-4 w-4" />
-                                            )}
-                                        </Button>
-                                    </div>
+                                    {/* Hover gradient overlay for clickable items */}
+                                    {hasUrl && (
+                                        <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                                    )}
                                 </Card>
                             );
                         })}

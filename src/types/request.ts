@@ -50,6 +50,7 @@ export type UpdateProfileRequest = {
     lastName: string;
     bio?: string;
     learningGoals?: string;
+    dateOfBirth?: Date;
 }
 
 export type SignUpData = {

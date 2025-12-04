@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { EnrollmentService } from "@/api/services/enrollment-service";
 import Link from "next/link";
+import { EnrollmentStatus } from "@/types/enum";
 
 interface StudentCourseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -27,11 +28,12 @@ export function StudentCourseDetailPage({ params }: StudentCourseDetailPageProps
   const { user } = useAuth();
 
   const { tableOfContents, course, chapters, isLoading, mutate } = useCourseCurriculum(courseId);
-  const { enrollments } = useMyEnrollments();
-
-  const isEnrolled = enrollments?.content?.find(
-    (e: any) => e.course.id === courseId && e.status === "APPROVED"
-  );
+ 
+  
+  const enrollmentStatus = course?.enrollmentStatus;
+  const isApproved = enrollmentStatus === EnrollmentStatus.APPROVED;
+  const isPending = enrollmentStatus === EnrollmentStatus.PENDING;
+  const isRejected = enrollmentStatus === EnrollmentStatus.REJECTED;
 
   const handleEnroll = async () => {
     if (!user) {
@@ -109,9 +111,17 @@ export function StudentCourseDetailPage({ params }: StudentCourseDetailPageProps
         course={course}
         enrolledCount={tableOfContents?.enrolledCount || 0}
         actions={
-          isEnrolled ? (
+          isApproved ? (
             <Button size="lg" onClick={handleStartLearning}>
               Start Learning
+            </Button>
+          ) : isPending ? (
+            <Button size="lg" disabled variant="secondary">
+              Enrollment Pending
+            </Button>
+          ) : isRejected ? (
+            <Button size="lg" onClick={handleEnroll}>
+              Enroll Again
             </Button>
           ) : (
             <Button size="lg" onClick={handleEnroll}>
@@ -159,7 +169,7 @@ export function StudentCourseDetailPage({ params }: StudentCourseDetailPageProps
                   <ChapterAccordion
                     chapters={chapters}
                     onLessonClick={
-                      isEnrolled
+                      isApproved
                         ? (lessonId) => router.push(`/student/courses/${courseId}/learn?lesson=${lessonId}`)
                         : undefined
                     }
@@ -233,7 +243,7 @@ export function StudentCourseDetailPage({ params }: StudentCourseDetailPageProps
             </Card>
 
             {/* What You'll Learn (if enrolled) */}
-            {isEnrolled && (
+            {isApproved && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">What you'll learn</CardTitle>
@@ -256,12 +266,47 @@ export function StudentCourseDetailPage({ params }: StudentCourseDetailPageProps
               </Card>
             )}
 
+            {/* Enrollment Status Card */}
+            {isPending && (
+              <Card className="border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20">
+                <CardHeader>
+                  <CardTitle className="text-lg text-yellow-900 dark:text-yellow-100">
+                    Enrollment Pending
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    Your enrollment request is being reviewed by the instructor. You'll be notified once it's approved.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {isRejected && (
+              <Card className="border-red-500/50 bg-red-50 dark:bg-red-950/20">
+                <CardHeader>
+                  <CardTitle className="text-lg text-red-900 dark:text-red-100">
+                    Enrollment Rejected
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-red-800 dark:text-red-200">
+                    Your enrollment request was not approved. You can try enrolling again or contact the instructor.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Enroll CTA (mobile) */}
-            {!isEnrolled && (
+            {!isApproved && !isPending && (
               <Card className="lg:hidden">
                 <CardContent className="pt-6">
-                  <Button size="lg" onClick={handleEnroll} className="w-full">
-                    Enroll Now
+                  <Button 
+                    size="lg" 
+                    onClick={handleEnroll} 
+                    className="w-full"
+                  >
+                    {isRejected ? "Enroll Again" : "Enroll Now"}
                   </Button>
                 </CardContent>
               </Card>

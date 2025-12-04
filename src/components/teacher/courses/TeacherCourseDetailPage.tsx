@@ -62,11 +62,11 @@ export function TeacherCourseDetailPage({ params }: TeacherCourseDetailPageProps
   const totalDuration = chapters?.reduce((sum, ch) => sum + (ch.totalDuration || 0), 0) || 0;
   const totalChapters = chapters?.length || 0;
 
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
     if (hours > 0) {
-      return `${hours}h ${minutes}m`;
+      return `${hours}h ${remainingMinutes}m`;
     }
     return `${minutes}m`;
   };

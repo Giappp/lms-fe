@@ -182,14 +182,14 @@ export function CourseEditPage({ params }: CourseEditPageProps) {
     }
   };
 
-  const handleLessonSubmit = async (data: any, videoFile?: File) => {
+  const handleLessonSubmit = async (data: any, videoFile?: File, materialFiles?: File[]) => {
     try {
       setIsSubmitting(true);
       if (editingLessonId) {
-        await LessonService.updateLesson(editingLessonId, data, videoFile);
+        await LessonService.updateLesson(editingLessonId, data, videoFile, materialFiles);
         toast({ title: "Lesson updated successfully" });
       } else if (selectedChapterId) {
-        await LessonService.createLesson(selectedChapterId, data, videoFile);
+        await LessonService.createLesson(selectedChapterId, data, videoFile, materialFiles);
         toast({ title: "Lesson created successfully" });
       }
       // Force revalidation to update UI immediately

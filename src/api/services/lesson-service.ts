@@ -13,7 +13,7 @@ export const LessonService = {
     },
 
     // Create new lesson
-    createLesson: async (chapterId: number, request: LessonRequest, videoFile?: File) => {
+    createLesson: async (chapterId: number, request: LessonRequest, videoFile?: File, materialFiles?: File[]) => {
         const formData = new FormData();
         
         // Append all lesson fields
@@ -27,6 +27,13 @@ export const LessonService = {
             formData.append('videoFile', videoFile);
         }
         
+        // Append material files
+        if (materialFiles && materialFiles.length > 0) {
+            materialFiles.forEach((file) => {
+                formData.append('materialFiles', file);
+            });
+        }
+        
         return await apiCall<LessonResponse>(() =>
             axiosInstance.post(`/api/lessons/${chapterId}`, formData, {
                 headers: {"Content-Type": "multipart/form-data"},
@@ -35,7 +42,7 @@ export const LessonService = {
     },
 
     // Update lesson
-    updateLesson: async (lessonId: number, request: LessonRequest, videoFile?: File) => {
+    updateLesson: async (lessonId: number, request: LessonRequest, videoFile?: File, materialFiles?: File[]) => {
         const formData = new FormData();
         
         // Append all lesson fields
@@ -47,6 +54,13 @@ export const LessonService = {
         
         if (videoFile) {
             formData.append('videoFile', videoFile);
+        }
+        
+        // Append material files
+        if (materialFiles && materialFiles.length > 0) {
+            materialFiles.forEach((file) => {
+                formData.append('materialFiles', file);
+            });
         }
         
         return await apiCall<LessonResponse>(() =>

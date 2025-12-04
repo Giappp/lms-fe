@@ -64,7 +64,7 @@ interface LessonFormProps {
     mode: "create" | "edit";
     chapterId: number;
     initialData?: LessonResponse;
-    onSubmit: (data: LessonRequest, videoFile?: File) => Promise<void>;
+    onSubmit: (data: LessonRequest, videoFile?: File, materialFiles?: File[]) => Promise<void>;
     isLoading?: boolean;
 }
 
@@ -81,6 +81,7 @@ export function LessonForm({
     const [videoValue, setVideoValue] = useState<File | string | null>(
         initialData?.videoUrl || null
     );
+    const [materialFiles, setMaterialFiles] = useState<File[]>([]);
     const [selectedType, setSelectedType] = useState<LessonType>(
         initialData?.type || LessonType.VIDEO
     );
@@ -113,10 +114,15 @@ export function LessonForm({
                 videoUrl: values.type === LessonType.YOUTUBE ? values.videoUrl : undefined,
             };
 
-            await onSubmit(data, videoFile || undefined);
+            await onSubmit(
+                data, 
+                videoFile || undefined,
+                materialFiles.length > 0 ? materialFiles : undefined
+            );
             form.reset();
             setVideoFile(null);
             setVideoValue(null);
+            setMaterialFiles([]);
             onOpenChange(false);
         } catch (error) {
             // Error is already handled by parent component
@@ -128,6 +134,7 @@ export function LessonForm({
         form.reset();
         setVideoFile(null);
         setVideoValue(null);
+        setMaterialFiles([]);
         onOpenChange(false);
     };
 
@@ -329,6 +336,7 @@ export function LessonForm({
                                     url: m.url,
                                     size: m.size,
                                 })) || []}
+                                onFilesChange={setMaterialFiles}
                                 disabled={isLoading}
                                 maxSize={50}
                             />

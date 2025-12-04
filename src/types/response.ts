@@ -13,6 +13,7 @@ export type UserResponse = {
     isVerified?: boolean;
     bio?: string;
     learningGoals?: string;
+    dateOfBirth?: Date;
 }
 
 export type FileResponse = {
