@@ -1,7 +1,16 @@
 /*
 * All the api response model goes here
 */
-import {AttemptStatus, CourseStatus, Difficulty, LessonType, QuestionType, QuizType, ScoringMethod, EnrollmentStatus} from "@/types/enum";
+import {
+    AttemptStatus,
+    CourseStatus,
+    Difficulty,
+    EnrollmentStatus,
+    LessonType,
+    QuestionType,
+    QuizType,
+    ScoringMethod
+} from "@/types/enum";
 
 export type UserResponse = {
     id: number;
@@ -407,4 +416,12 @@ export type ConversationResponse = {
     participants: ParticipantInfo[];
     createdDate: string;
     modifiedDate: string;
+}
+
+export interface StudentDashboardStats {
+    activeCourses: number;
+    completedCourses: number;
+    totalCertificates: number;
+    averageScore: number;
+    totalLearningHours: number;
 }
