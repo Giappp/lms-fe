@@ -43,13 +43,10 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
 
     const shouldFetchUser = useMemo(() => {
         const disableAuthCheckPrefixes = ["/verify", "/signin", "/signup"];
-        // Don't fetch on the exact landing page (if that is your intent)
         if (pathname === "/") return false;
 
-        // Don't fetch if path starts with ignored prefixes
         if (disableAuthCheckPrefixes.some((route) => pathname.startsWith(route))) return false;
 
-        // Otherwise, fetch!
         return true;
     }, [pathname]);
 
@@ -75,18 +72,16 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
             localStorage.setItem(Constants.LOCAL_STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
 
             Cookies.set(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN, accessToken, {
-                expires: 1, // 1 day (adjust based on your token expiry)
+                expires: 1,
                 secure: window.location.protocol === 'https:',
                 sameSite: 'strict'
             });
 
-            // 2. Decode Token to find Role
             const decoded: any = jwtDecode(accessToken);
-            const role = decoded.role; // Ensure this matches your JWT payload field
+            const role = decoded.role;
 
             await mutate();
 
-            // 3. Dynamic Redirect based on Role
             if (role === "STUDENT") {
                 router.push("/student");
             } else if (role === "TEACHER") {
@@ -95,12 +90,9 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
                 // Fallback if role is weird
                 router.push("/");
             }
-        } catch (err: unknown) {
-            let errorMessage = "Unknown error";
-            if (axios.isAxiosError(err)) {
-                errorMessage = err.response?.data?.message ?? "Login failed";
-            }
-            throw new Error(errorMessage);
+        } catch (normalizedError) {
+            console.log("Sign In Error:", normalizedError);
+            throw normalizedError;
         }
     }, [mutate, router]);
 
