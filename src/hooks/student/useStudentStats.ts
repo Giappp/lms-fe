@@ -3,8 +3,8 @@ import {StudentDashboardStats} from "@/types";
 import {swrFetcher} from "@/lib/swrFetcher";
 
 export const useStudentStats = (studentId: number | undefined) => {
-    const key = studentId ? `/api/v1/dashboard/stats/${studentId}` : null;
-    const {data, error, isLoading, mutate} = useSWR<StudentDashboardStats>(key, swrFetcher, {
+    const STUDENT_STATS_ENDPOINT = studentId ? `/api/v1/dashboard/stats/${studentId}` : null;
+    const {data, error, isLoading, mutate} = useSWR<StudentDashboardStats>(STUDENT_STATS_ENDPOINT, swrFetcher, {
         revalidateOnFocus: false,
         revalidateOnReconnect: false,
         shouldRetryOnError: true,

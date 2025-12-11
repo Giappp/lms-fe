@@ -29,8 +29,7 @@ export function middleware(request: NextRequest) {
         // If trying to access protected routes, redirect to Login
         if (
             studentRoutes.some(path => pathname.startsWith(path)) ||
-            teacherRoutes.some(path => pathname.startsWith(path)) ||
-            pathname === "/" // Redirect root to signin if not logged in
+            teacherRoutes.some(path => pathname.startsWith(path))
         ) {
             return NextResponse.redirect(new URL("/signin", request.url));
         }

@@ -1,14 +1,10 @@
-import { LearningPage } from "@/components/student/courses/LearningPage";
+import {LearningPage} from "@/components/student/courses/LearningPage";
 
 type Props = {
     params: Promise<{ id: string }>;
 };
 
 const Page = (props: Props) => {
-    return <LearningPage params={props.params} />;
-};
-    return (
-        <CourseDetailPage courseId={courseId}/>
-    );
+    return <LearningPage params={props.params}/>;
 };
 export default Page
