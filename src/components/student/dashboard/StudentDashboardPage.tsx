@@ -14,7 +14,7 @@ const StudentDashboardPage = () => {
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
             <div className="mx-auto space-y-8">
 
-                <WelcomeSection fullName={fullName} upcomingAssignments={3}/>
+                <WelcomeSection fullName={fullName}/>
                 <StatsCards userId={user?.id}/>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
