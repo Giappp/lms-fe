@@ -49,7 +49,7 @@ export function middleware(request: NextRequest) {
     }
 
     // --- SCENARIO 3: Redirect Logged-in users away from Auth pages ---
-    if (publicRoutes.some(path => pathname.startsWith(path)) || pathname === "/") {
+    if (publicRoutes.some(path => pathname.startsWith(path))) {
         if (userRole === "STUDENT") {
             return NextResponse.redirect(new URL("/student", request.url));
         } else if (userRole === "TEACHER") {

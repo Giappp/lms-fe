@@ -42,10 +42,18 @@ export const AuthProvider = ({children}: { children: React.ReactNode }) => {
     const router = useRouter();
 
     const shouldFetchUser = useMemo(() => {
-        const disableAuthCheckPrefixes = ["/verify", "/signin", "/signup"];
-        if (pathname === "/") return false;
+        // 1. Check if the Access Token cookie exists
+        // Note: We use js-cookie here because we are on the client side
+        const hasToken = !!Cookies.get(Constants.LOCAL_STORAGE_KEYS.ACCESS_TOKEN);
 
-        if (disableAuthCheckPrefixes.some((route) => pathname.startsWith(route))) return false;
+        // 2. If no token exists, there is no point in fetching /me
+        // The Middleware handles protecting private routes, so we don't need to panic here.
+        if (!hasToken) return false;
+
+        // 3. (Optional) Explicitly disable fetching on Auth pages
+        // purely to prevent race conditions during sign-out/redirects
+        const authRoutes = ["/signin", "/signup", "/verify", "/forgot-password"];
+        if (authRoutes.some(route => pathname.startsWith(route))) return false;
 
         return true;
     }, [pathname]);
