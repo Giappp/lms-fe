@@ -2,27 +2,26 @@ import useSWR from 'swr';
 import {swrFetcher} from '@/lib/swrFetcher';
 import {QuizService} from '@/api/services/quiz-service';
 import {
-    QuizResponse,
-    QuizDetailResponse,
-    QuizAttemptResponse,
-    QuizAttemptDetailResponse,
-    StartQuizResponse,
-    QuizSubmitResultResponse,
-    QuizAnalyticsResponse,
     CourseQuizStatisticsResponse,
-    StudentQuizResultResponse,
+    PaginatedResponse,
+    QuizAnalyticsResponse,
+    QuizAttemptDetailResponse,
+    QuizAttemptResponse,
+    QuizDetailResponse,
+    QuizResponse,
     StudentQuizHistoryResponse,
-    PaginatedResponse
+    StudentQuizResultResponse
 } from '@/types/response';
 import {
     QuizCreationRequest,
     QuizUpdateRequest,
-    SubmitQuizRequest,
+    ReviewQuizAttemptRequest,
     SaveProgressRequest,
-    ReviewQuizAttemptRequest
+    SubmitQuizRequest
 } from '@/types/request';
 import {Constants} from '@/constants';
 import {QuizType} from '@/types/enum';
+import {defaultSWRConfig} from "@/lib/swrConfig";
 
 // ==================== Quiz Search Hook ====================
 
@@ -44,7 +43,7 @@ export interface QuizSearchParams {
  */
 export const useQuizSearch = (params: QuizSearchParams = {}) => {
     const queryParams = new URLSearchParams();
-    
+
     if (params.courseId) queryParams.append('courseId', params.courseId.toString());
     if (params.title) queryParams.append('title', params.title);
     if (params.quizType && params.quizType !== 'all') queryParams.append('quizType', params.quizType);
@@ -58,11 +57,14 @@ export const useQuizSearch = (params: QuizSearchParams = {}) => {
 
     const key = `${Constants.QUIZ_ROUTES.SEARCH}?${queryParams.toString()}`;
 
-    const { data, error, isLoading, mutate } = useSWR<PaginatedResponse<QuizResponse> | null>(
+    const {data, error, isLoading, mutate} = useSWR<PaginatedResponse<QuizResponse> | null>(
         key,
         swrFetcher,
         {
             revalidateOnFocus: false,
+            revalidateOnReconnect: true,
+            shouldRetryOnError: false,
+            dedupingInterval: 5000,
             keepPreviousData: true,
         }
     );
@@ -87,7 +89,13 @@ export const useQuizzesByCourse = (courseId: number | undefined) => {
     const {data, error, mutate, isLoading} = useSWR<QuizResponse[] | null>(
         key,
         swrFetcher,
-        {revalidateOnFocus: false}
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: true,
+            shouldRetryOnError: false,
+            dedupingInterval: 5000,
+            keepPreviousData: true,
+        }
     );
 
     const createQuiz = async (payload: QuizCreationRequest) => {
@@ -130,7 +138,13 @@ export const useQuizzesByLesson = (lessonId: number | undefined) => {
     const {data, error, mutate, isLoading} = useSWR<QuizResponse[] | null>(
         key,
         swrFetcher,
-        {revalidateOnFocus: false}
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: true,
+            shouldRetryOnError: false,
+            dedupingInterval: 5000,
+            keepPreviousData: true,
+        }
     );
 
     return {
@@ -146,7 +160,13 @@ export const useQuizDetail = (quizId: number | undefined) => {
     const {data, error, mutate, isLoading} = useSWR<QuizDetailResponse | null>(
         key,
         swrFetcher,
-        {revalidateOnFocus: false}
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: true,
+            shouldRetryOnError: false,
+            dedupingInterval: 5000,
+            keepPreviousData: true,
+        }
     );
 
     const updateQuiz = async (payload: QuizUpdateRequest) => {
@@ -170,14 +190,20 @@ export const useQuizDetail = (quizId: number | undefined) => {
 // ==================== Quiz Attempt Hooks (Student) ====================
 
 export const useMyAttempts = (quizId?: number) => {
-    const key = quizId 
+    const key = quizId
         ? `${Constants.QUIZ_ROUTES.MY_ATTEMPTS}/${quizId}/history`
         : null;
-    
+
     const {data, error, mutate, isLoading} = useSWR<QuizAttemptResponse[] | null>(
         key,
         swrFetcher,
-        {revalidateOnFocus: false}
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: true,
+            shouldRetryOnError: false,
+            dedupingInterval: 5000,
+            keepPreviousData: true,
+        }
     );
 
     const startQuiz = async (targetQuizId: number) => {
@@ -202,7 +228,13 @@ export const useAttemptDetail = (attemptId: number | undefined) => {
     const {data, error, mutate, isLoading} = useSWR<QuizAttemptDetailResponse | null>(
         key,
         swrFetcher,
-        {revalidateOnFocus: false}
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: true,
+            shouldRetryOnError: false,
+            dedupingInterval: 5000,
+            keepPreviousData: true,
+        }
     );
 
     const saveProgress = async (payload: SaveProgressRequest) => {
@@ -240,7 +272,13 @@ export const useQuizAnalytics = (quizId: number | undefined) => {
     const {data, error, mutate, isLoading} = useSWR<QuizAnalyticsResponse | null>(
         key,
         swrFetcher,
-        {revalidateOnFocus: false}
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: true,
+            shouldRetryOnError: false,
+            dedupingInterval: 5000,
+            keepPreviousData: true,
+        }
     );
 
     return {
@@ -256,7 +294,13 @@ export const useCourseQuizStatistics = (courseId: number | undefined) => {
     const {data, error, mutate, isLoading} = useSWR<CourseQuizStatisticsResponse | null>(
         key,
         swrFetcher,
-        {revalidateOnFocus: false}
+        {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: true,
+            shouldRetryOnError: false,
+            dedupingInterval: 5000,
+            keepPreviousData: true,
+        }
     );
 
     return {
@@ -268,14 +312,14 @@ export const useCourseQuizStatistics = (courseId: number | undefined) => {
 };
 
 export const useStudentQuizResults = (courseId: number | undefined, quizId: number | undefined) => {
-    const key = (courseId && quizId) 
+    const key = (courseId && quizId)
         ? `${Constants.QUIZ_ROUTES.STUDENT_RESULTS}/${courseId}/quiz/${quizId}/students`
         : null;
-    
+
     const {data, error, mutate, isLoading} = useSWR<StudentQuizResultResponse[] | null>(
         key,
         swrFetcher,
-        {revalidateOnFocus: false}
+        defaultSWRConfig
     );
 
     return {
@@ -290,7 +334,7 @@ export const useStudentQuizHistory = (courseId: number | undefined, studentId: n
     const key = (courseId && studentId)
         ? `${Constants.QUIZ_ROUTES.STUDENT_HISTORY}/${courseId}/student/${studentId}`
         : null;
-    
+
     const {data, error, mutate, isLoading} = useSWR<StudentQuizHistoryResponse | null>(
         key,
         swrFetcher,

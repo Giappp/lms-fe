@@ -1,15 +1,12 @@
 import useSWR from "swr";
-import { EnrollmentService } from "@/api/services/enrollment-service";
-import { Constants } from "@/constants";
-import { EnrollmentStatus } from "@/types/enum";
-import { useState } from "react";
-import { 
-    EnrollmentPreviewResponse, 
-    EnrollmentResponse, 
-    PaginatedResponse 
-} from "@/types/response";
-import { UpdateEnrollmentStatusRequest } from "@/types/request";
-import { swrFetcher } from "@/lib/swrFetcher";
+import {EnrollmentService} from "@/api/services/enrollment-service";
+import {Constants} from "@/constants";
+import {EnrollmentStatus} from "@/types/enum";
+import {useState} from "react";
+import {EnrollmentPreviewResponse, EnrollmentResponse, PaginatedResponse} from "@/types/response";
+import {UpdateEnrollmentStatusRequest} from "@/types/request";
+import {swrFetcher} from "@/lib/swrFetcher";
+import {defaultSWRConfig} from "@/lib/swrConfig";
 
 /**
  * Hook for student enrollments
@@ -26,21 +23,26 @@ export function useMyEnrollments(
 
     const key = `${Constants.ENROLLMENT_ROUTES.MY_ENROLLMENTS}?${params.toString()}`;
 
-    const { data, error, isLoading, mutate } = useSWR<PaginatedResponse<EnrollmentPreviewResponse> | null>(
+    const {data, error, isLoading, mutate} = useSWR<PaginatedResponse<EnrollmentPreviewResponse> | null>(
         key,
-        swrFetcher,
-        { revalidateOnFocus: false }
+        swrFetcher, {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: true,
+            shouldRetryOnError: false, // Don't retry immediately if user is navigating away
+            dedupingInterval: 5000,    // Increase this to prevent duplicate requests
+            keepPreviousData: true,    // VITAL: Keeps old data visible while fetching new data
+        }
     );
 
     const cancelEnrollment = async (courseId: number) => {
         const response = await EnrollmentService.cancelEnrollment(courseId);
         if (response.success) {
             await mutate();
-            return { success: true };
+            return {success: true};
         }
-        return { 
-            success: false, 
-            error: response.message || "Failed to cancel enrollment" 
+        return {
+            success: false,
+            error: response.message || "Failed to cancel enrollment"
         };
     };
 
@@ -74,10 +76,10 @@ export function useCourseEnrollments(
     // courseId is now a request param (optional)
     const key = `${Constants.ENROLLMENT_ROUTES.COURSE_ENROLLMENTS}?${params.toString()}`;
 
-    const { data, error, isLoading, mutate } = useSWR<PaginatedResponse<EnrollmentResponse> | null>(
+    const {data, error, isLoading, mutate} = useSWR<PaginatedResponse<EnrollmentResponse> | null>(
         key,
         swrFetcher,
-        { revalidateOnFocus: false }
+        defaultSWRConfig
     );
 
     const [isUpdating, setIsUpdating] = useState(false);
@@ -89,14 +91,14 @@ export function useCourseEnrollments(
         setIsUpdating(true);
         const response = await EnrollmentService.updateEnrollmentStatus(enrollmentId, request);
         setIsUpdating(false);
-        
+
         if (response.success) {
             await mutate();
-            return { success: true };
+            return {success: true};
         }
-        return { 
-            success: false, 
-            error: response.message || "Failed to update enrollment status" 
+        return {
+            success: false,
+            error: response.message || "Failed to update enrollment status"
         };
     };
 

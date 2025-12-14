@@ -1,11 +1,12 @@
 import useSWR from "swr";
-import {PaginatedResponse, CourseResponse, CourseSelectResponse} from "@/types/response";
-import {CourseCreationRequest, CourseUpdateRequest, CoursesFilterParams} from "@/types/request";
+import {CourseResponse, CourseSelectResponse, PaginatedResponse} from "@/types/response";
+import {CourseCreationRequest, CoursesFilterParams, CourseUpdateRequest} from "@/types/request";
 import {CourseService} from "@/api/services/course-service";
 import {CourseStatus, Difficulty} from "@/types/enum";
 import {useCallback} from "react";
 import {swrFetcher} from "@/lib/swrFetcher";
 import {Constants} from "@/constants";
+import {defaultSWRConfig} from "@/lib/swrConfig";
 
 export interface CourseFilter {
     page?: number;
@@ -48,6 +49,9 @@ export function useCourses(filters?: CourseFilter) {
             shouldRetryOnError: true,
             errorRetryCount: 3,
             dedupingInterval: 2000,
+            keepPreviousData: true,
+            suspense: false,
+            fallbackData: null
         }
     );
 
@@ -80,7 +84,7 @@ export function useCourses(filters?: CourseFilter) {
         totalElements: data?.totalElements ?? 0,
         totalPages: (data as any)?.totalPage ?? data?.totalPages ?? 0,
         currentPage: data?.number ?? (filters?.page ?? 0),
-        isLoading,
+        isLoading: isLoading && !data,
         isValidating,
         isError: !!error,
         error,
@@ -97,14 +101,11 @@ export function useCourses(filters?: CourseFilter) {
  */
 export function useMyCourses(pageNumber: number = 1, pageSize: number = 20) {
     const key = `${Constants.COURSES_ROUTES.MY_COURSES}?pageNumber=${pageNumber}&pageSize=${pageSize}`;
-    
+
     const {data, error, isLoading, mutate} = useSWR<PaginatedResponse<CourseResponse>>(
         key,
         swrFetcher,
-        {
-            revalidateOnFocus: false,
-            revalidateOnReconnect: true,
-        }
+        defaultSWRConfig
     );
 
     return {
@@ -125,14 +126,9 @@ export function useMyCourses(pageNumber: number = 1, pageSize: number = 20) {
  */
 export function useMyCoursesDropdown() {
     const key = Constants.COURSES_ROUTES.MY_COURSES_DROPDOWN;
-    
+
     const {data, error, isLoading, mutate} = useSWR<CourseSelectResponse[]>(
-        key,
-        swrFetcher,
-        {
-            revalidateOnFocus: false,
-            revalidateOnReconnect: true,
-        }
+        key
     );
 
     return {

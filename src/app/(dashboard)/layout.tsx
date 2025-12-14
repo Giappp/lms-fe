@@ -1,6 +1,5 @@
 import React from 'react'
-import RedirectIfNotAuthenticated from "@/components/shared/RedirectIfNotAuthenticated";
-import { Toaster } from "@/components/ui/toaster";
+import {Toaster} from "@/components/ui/toaster";
 
 const Layout = ({
                     children,
@@ -8,10 +7,10 @@ const Layout = ({
     children: React.ReactNode;
 }>) => {
     return (
-        <RedirectIfNotAuthenticated>
+        <>
             {children}
-            <Toaster />
-        </RedirectIfNotAuthenticated>
+            <Toaster/>
+        </>
     )
 }
 export default Layout

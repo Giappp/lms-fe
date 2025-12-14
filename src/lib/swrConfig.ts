@@ -5,6 +5,10 @@ import {swrFetcher} from "./swrFetcher";
 
 export const defaultSWRConfig: SWRConfiguration = {
     fetcher: swrFetcher,
-    revalidateOnFocus: true,
-    shouldRetryOnError: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+    shouldRetryOnError: true,
+    errorRetryCount: 2,
+    dedupingInterval: 5000,
+    keepPreviousData: true,
 };
