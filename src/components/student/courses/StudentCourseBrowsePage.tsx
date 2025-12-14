@@ -32,7 +32,7 @@ export function StudentCourseBrowsePage() {
     difficulty: difficulty === "ALL" ? undefined : difficulty,
     status: "PUBLISHED" as any,
     page: pageNumber,
-    size: 12,
+    size: 20,
   });
 
   // Render enrollment status or enroll button

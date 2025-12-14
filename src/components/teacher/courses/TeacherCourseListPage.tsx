@@ -1,7 +1,7 @@
 "use client";
 
 import {useState} from "react";
-import {useCourses} from "@/hooks/useCourses";
+import {useMyCourses} from "@/hooks/useCourses";
 import {CourseCard} from "@/components/shared/course/CourseCard";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
@@ -17,21 +17,28 @@ export function TeacherCourseListPage() {
     const [keyword, setKeyword] = useState("");
     const [status, setStatus] = useState<CourseStatus | "ALL">("ALL");
     const [difficulty, setDifficulty] = useState<Difficulty | "ALL">("ALL");
+    const [currentPage, setCurrentPage] = useState(1);
 
     const debouncedKeyword = useDebounce(keyword, 500);
 
     const {
         courses,
         totalPages,
-        currentPage,
+        currentPage: pageNumber,
         isLoading,
         isError,
-        isValidating
-    } = useCourses({
-        keyword: debouncedKeyword || undefined,
-        status: status === "ALL" ? undefined : status,
-        difficulty: difficulty === "ALL" ? undefined : difficulty,
-        size: 20,
+    } = useMyCourses(currentPage, 20);
+
+    // Client-side filtering
+    const filteredCourses = courses.filter((course: CourseResponse) => {
+        const matchesKeyword = !debouncedKeyword || 
+            course.title.toLowerCase().includes(debouncedKeyword.toLowerCase()) ||
+            course.description?.toLowerCase().includes(debouncedKeyword.toLowerCase());
+        
+        const matchesStatus = status === "ALL" || course.status === status;
+        const matchesDifficulty = difficulty === "ALL" || course.difficulty === difficulty;
+        
+        return matchesKeyword && matchesStatus && matchesDifficulty;
     });
 
     if (isError) {
@@ -112,10 +119,10 @@ export function TeacherCourseListPage() {
                     ))}
                 </div>
             ) : (
-                <div className={`transition-opacity duration-300 ${isValidating ? 'opacity-60' : 'opacity-100'}`}>
-                    {courses && courses.length > 0 ? (
+                <div className="transition-opacity duration-300">
+                    {filteredCourses && filteredCourses.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {courses.map((course: CourseResponse) => (
+                            {filteredCourses.map((course: CourseResponse) => (
                                 <CourseCard
                                     key={course.id}
                                     course={course}
@@ -155,15 +162,23 @@ export function TeacherCourseListPage() {
             {/* Pagination - Chỉ hiện khi không loading và có dữ liệu */}
             {!isLoading && courses && courses.length > 0 && totalPages > 1 && (
                 <div className="flex justify-center gap-2 mt-8">
-                    <Button variant="outline" disabled={currentPage === 0}>
+                    <Button 
+                        variant="outline" 
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    >
                         Previous
                     </Button>
                     <div className="flex items-center gap-2 px-4">
             <span className="text-sm text-muted-foreground">
-              Page {currentPage + 1} of {totalPages}
+              Page {currentPage} of {totalPages}
             </span>
                     </div>
-                    <Button variant="outline" disabled={currentPage + 1 >= totalPages}>
+                    <Button 
+                        variant="outline" 
+                        disabled={currentPage >= totalPages}
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    >
                         Next
                     </Button>
                 </div>

@@ -3,6 +3,7 @@
 import { use, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCourseCurriculum } from "@/hooks/useCourseCurriculum";
+import { useQuizzesByLesson } from "@/hooks/useQuizzes";
 import { CourseService } from "@/api/services/course-service";
 import { LessonService } from "@/api/services/lesson-service";
 import { LessonResponse } from "@/types/response";
@@ -13,7 +14,7 @@ import { ChapterAccordion } from "@/components/shared/course/ChapterAccordion";
 import { LessonVideoPlayer } from "./LessonVideoPlayer";
 import { LessonContent } from "./LessonContent";
 import { LessonMaterials } from "./LessonMaterials";
-import { ArrowLeft, ChevronLeft, ChevronRight, Menu, X, Clock } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Menu, X, Clock, FileQuestion } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +32,7 @@ export function LearningPage({ params }: LearningPageProps) {
   const { toast } = useToast();
 
   const { tableOfContents: curriculum, isLoading: curriculumLoading } = useCourseCurriculum(courseId);
+  const { quizzes: lessonQuizzes, isLoading: quizzesLoading } = useQuizzesByLesson(lessonId ? parseInt(lessonId) : undefined);
   const [currentLesson, setCurrentLesson] = useState<LessonResponse | null>(null);
   const [lessonLoading, setLessonLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -229,6 +231,61 @@ export function LearningPage({ params }: LearningPageProps) {
                     materials={currentLesson.materials}
                     lessonId={currentLesson.id}
                   />
+                </div>
+              )}
+
+              {/* Lesson Quizzes */}
+              {lessonQuizzes && lessonQuizzes.length > 0 && (
+                <div className="mt-6">
+                  <Card>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <FileQuestion className="h-5 w-5 text-primary" />
+                        Quizzes
+                      </h3>
+                      <div className="space-y-3">
+                        {lessonQuizzes.map((quiz) => (
+                          <Link
+                            key={quiz.id}
+                            href={`/student/quizzes/${quiz.id}`}
+                            className="block"
+                          >
+                            <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <FileQuestion className="h-5 w-5 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="font-medium">{quiz.title}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {quiz.questionCount} questions • {quiz.timeLimitMinutes} minutes
+                                  </p>
+                                </div>
+                              </div>
+                              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {quizzesLoading && lessonId && (
+                <div className="mt-6">
+                  <Card>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <FileQuestion className="h-5 w-5 text-primary" />
+                        Quizzes
+                      </h3>
+                      <div className="space-y-3">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )}
 
