@@ -8,8 +8,8 @@ import {cn} from "@/lib/utils";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {
     faBook,
+    faCalendar,
     faCertificate,
-    faChartBar,
     faChartLine,
     faChevronUp,
     faFileAlt,
@@ -49,7 +49,7 @@ const menuList = [
         title: "Learning",
         subMenus: [
             {title: "Browse Courses", url: "/student/courses", icon: faBook},
-            {title: "My Progress", url: "/student/my-progress", icon: faChartBar},
+            {title: "Calendar", url: "/student/my-progress", icon: faCalendar},
         ],
     },
     {
