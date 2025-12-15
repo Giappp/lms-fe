@@ -3,7 +3,6 @@ import {
     faBook,
     faBookOpen,
     faCertificate,
-    faChartBar,
     faChartLine,
     faFileAlt,
     faMessage,
@@ -48,16 +47,15 @@ const menuGroups = [
         title: "Assessment",
         subMenus: [
             {title: "Quizzes", url: "/teacher/quizzes", icon: faFileAlt},
-            {title: "Templates", url: "/teacher/quizzes/templates", icon: faCertificate},
             {title: "Import (Excel)", url: "/teacher/quizzes/import", icon: faFileAlt},
         ],
     },
-    {
-        title: "Insights",
-        subMenus: [
-            {title: "Analytics", url: "/teacher/analytics", icon: faChartBar},
-        ],
-    },
+    // {
+    //     title: "Insights",
+    //     subMenus: [
+    //         {title: "Analytics", url: "/teacher/analytics", icon: faChartBar},
+    //     ],
+    // },
     {
         title: "Account",
         subMenus: [
