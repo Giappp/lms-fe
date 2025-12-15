@@ -1,6 +1,6 @@
 export class Constants {
-    static readonly BACKEND_URL = 'http://54.255.181.154:8081';
-    static readonly SOCKET_URL = "http://54.255.181.154:9092";
+    static readonly BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8081';
+    static readonly SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:9092';
 
     static readonly ROLES = {
         STUDENT: "STUDENT",
