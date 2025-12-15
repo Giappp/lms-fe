@@ -1,17 +1,16 @@
 import {
     CourseResponse,
-    PublishResponse,
-    TableOfContentsResponse,
-    PaginatedResponse,
+    CourseSelectResponse,
     LessonResponse,
-    CourseSelectResponse
+    PaginatedResponse,
+    TableOfContentsResponse
 } from "@/types/response";
 import {
     CourseCreationRequest,
+    CoursesFilterParams,
     CourseUpdateRequest,
     CourseWithContentRequest,
-    ReorderTableOfContentsRequest,
-    CoursesFilterParams
+    ReorderTableOfContentsRequest
 } from "@/types/request";
 import {axiosInstance} from "@/api/core/axiosInstance";
 import {buildParamsFromOptions} from "@/api/core/utils";

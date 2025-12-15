@@ -1,21 +1,15 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useMyEnrollments } from "@/hooks/useEnrollments";
-import { StudentEnrollmentCard } from "@/components/student/enrollments/StudentEnrollmentCard";
-import { getSocket, onEnrollmentStatusUpdate } from "@/lib/socket";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { 
-    Select, 
-    SelectContent, 
-    SelectItem, 
-    SelectTrigger, 
-    SelectValue 
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { 
+import React, {useEffect, useState} from "react";
+import {useRouter} from "next/navigation";
+import {useMyEnrollments} from "@/hooks/useEnrollments";
+import {StudentEnrollmentCard} from "@/components/student/enrollments/StudentEnrollmentCard";
+import {getSocket, onEnrollmentStatusUpdate} from "@/lib/socket";
+import {Button} from "@/components/ui/button";
+import {Card, CardContent} from "@/components/ui/card";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
+import {Label} from "@/components/ui/label";
+import {
     Pagination,
     PaginationContent,
     PaginationItem,
@@ -23,22 +17,21 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from "@/components/ui/pagination";
-import { EnrollmentStatus } from "@/types/enum";
-import { Filter, RefreshCw, BookOpen, AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
+import {EnrollmentStatus} from "@/types/enum";
+import {BookOpen, RefreshCw} from "lucide-react";
+import {Skeleton} from "@/components/ui/skeleton";
+import {useToast} from "@/hooks/use-toast";
 
 const PAGE_SIZE = 12;
 
 export default function StudentEnrollmentsPage() {
     const router = useRouter();
-    const { toast } = useToast();
+    const {toast} = useToast();
     const [statusFilter, setStatusFilter] = useState<EnrollmentStatus | undefined>(undefined);
     const [currentPage, setCurrentPage] = useState(1);
     const [cancelingId, setCancelingId] = useState<number | null>(null);
 
-    const { enrollments, isLoading, mutate, cancelEnrollment } = useMyEnrollments(
+    const {enrollments, isLoading, mutate, cancelEnrollment} = useMyEnrollments(
         statusFilter,
         currentPage,
         PAGE_SIZE
@@ -51,7 +44,7 @@ export default function StudentEnrollmentsPage() {
 
         const handleStatusUpdate = (enrollment: any) => {
             console.log("🎓 Enrollment status updated:", enrollment);
-            
+
             // Show notification based on status
             if (enrollment.status === 'APPROVED') {
                 toast({
@@ -122,17 +115,17 @@ export default function StudentEnrollmentsPage() {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         onClick={handleRefresh}
                         disabled={isLoading}
                         className="gap-2"
                     >
-                        <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+                        <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}/>
                         Refresh
                     </Button>
                     <Button onClick={() => router.push("/student/courses")} className="gap-2">
-                        <BookOpen className="h-4 w-4" />
+                        <BookOpen className="h-4 w-4"/>
                         Browse Courses
                     </Button>
                 </div>
@@ -179,12 +172,12 @@ export default function StudentEnrollmentsPage() {
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="status">Filter by Status</Label>
-                                <Select 
-                                    value={statusFilter || "all"} 
+                                <Select
+                                    value={statusFilter || "all"}
                                     onValueChange={handleStatusChange}
                                 >
                                     <SelectTrigger id="status">
-                                        <SelectValue placeholder="All Statuses" />
+                                        <SelectValue placeholder="All Statuses"/>
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Statuses</SelectItem>
@@ -202,13 +195,13 @@ export default function StudentEnrollmentsPage() {
             {/* Loading State */}
             {isLoading && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Array.from({ length: 6 }).map((_, i) => (
+                    {Array.from({length: 6}).map((_, i) => (
                         <Card key={i}>
                             <CardContent className="pt-6 space-y-4">
-                                <Skeleton className="h-6 w-3/4" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-10 w-full" />
+                                <Skeleton className="h-6 w-3/4"/>
+                                <Skeleton className="h-4 w-full"/>
+                                <Skeleton className="h-4 w-full"/>
+                                <Skeleton className="h-10 w-full"/>
                             </CardContent>
                         </Card>
                     ))}
@@ -219,10 +212,10 @@ export default function StudentEnrollmentsPage() {
             {!isLoading && enrollments && enrollments.content.length === 0 && (
                 <Card>
                     <CardContent className="flex flex-col items-center justify-center py-12">
-                        <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
+                        <BookOpen className="h-16 w-16 text-muted-foreground mb-4"/>
                         <h3 className="text-xl font-semibold mb-2">No enrollments found</h3>
                         <p className="text-muted-foreground text-center mb-6">
-                            {statusFilter 
+                            {statusFilter
                                 ? `You don't have any ${statusFilter.toLowerCase()} enrollments`
                                 : "You haven't enrolled in any courses yet"}
                         </p>
@@ -257,14 +250,14 @@ export default function StudentEnrollmentsPage() {
                                         <PaginationPrevious
                                             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                             className={
-                                                currentPage === 1 
-                                                    ? "pointer-events-none opacity-50" 
+                                                currentPage === 1
+                                                    ? "pointer-events-none opacity-50"
                                                     : "cursor-pointer"
                                             }
                                         />
                                     </PaginationItem>
 
-                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                    {Array.from({length: totalPages}, (_, i) => i + 1).map((page) => (
                                         <PaginationItem key={page}>
                                             <PaginationLink
                                                 onClick={() => setCurrentPage(page)}
@@ -280,8 +273,8 @@ export default function StudentEnrollmentsPage() {
                                         <PaginationNext
                                             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                                             className={
-                                                currentPage === totalPages 
-                                                    ? "pointer-events-none opacity-50" 
+                                                currentPage === totalPages
+                                                    ? "pointer-events-none opacity-50"
                                                     : "cursor-pointer"
                                             }
                                         />
