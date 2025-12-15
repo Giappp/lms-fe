@@ -1,6 +1,6 @@
 export class Constants {
-    static readonly BACKEND_URL = 'http://localhost:8081';
-    static readonly SOCKET_URL = "http://localhost:9092";
+    static readonly BACKEND_URL = 'http://54.255.181.154:8081';
+    static readonly SOCKET_URL = "http://54.255.181.154:9092";
 
     static readonly ROLES = {
         STUDENT: "STUDENT",
@@ -62,7 +62,7 @@ export class Constants {
         DELETE: "/api/courses",
         DETAIL: "/api/course",
         REORDER_TOC: "/api/courses", // /{courseId}/reorder-toc
-        
+
         // Navigation
         NAVIGATION: "/api/courses", // /{courseId}/navigation
         TABLE_OF_CONTENTS: "/api/courses", // /{courseId}/navigation/table-of-contents
@@ -103,13 +103,13 @@ export class Constants {
         BY_COURSE: "/api/quizzes/course",
         BY_LESSON: "/api/quizzes/lesson",
         SEARCH: "/api/quizzes/search",
-        
+
         // Question management
         ADD_QUESTION: "/api/quizzes",
         UPDATE_QUESTION: "/api/quizzes",
         DELETE_QUESTION: "/api/quizzes",
         REORDER_QUESTIONS: "/api/quizzes",
-        
+
         // Quiz attempts
         START_QUIZ: "/api/quiz-attempts/quiz",
         SAVE_PROGRESS: "/api/quiz-attempts",
@@ -117,13 +117,13 @@ export class Constants {
         MY_ATTEMPTS: "/api/quiz-attempts/quiz",
         ATTEMPT_DETAIL: "/api/quiz-attempts",
         REVIEW_ATTEMPT: "/api/quiz-attempts",
-        
+
         // Statistics & Analytics
         ANALYTICS: "/api/quizzes",
         COURSE_STATISTICS: "/api/quiz-statistics/course",
         STUDENT_RESULTS: "/api/quiz-statistics/course",
         STUDENT_HISTORY: "/api/quiz-statistics/student",
-        
+
         // Import/Export
         IMPORT_EXCEL: "/api/quizzes/import/excel",
         EXPORT_EXCEL: "/api/quizzes"

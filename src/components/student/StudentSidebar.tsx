@@ -62,7 +62,6 @@ const menuList = [
         title: "Assessment",
         subMenus: [
             {title: "Available Quizzes", url: "/student/quizzes", icon: faFileAlt},
-            {title: "Quiz Results", url: "/student/results", icon: faTrophy},
         ]
     },
     {
