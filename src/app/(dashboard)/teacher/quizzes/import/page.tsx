@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
     Upload, 
     FileSpreadsheet, 
@@ -18,7 +19,10 @@ import {
     Download,
     ArrowLeft,
     FileText,
-    HelpCircle
+    HelpCircle,
+    Loader2,
+    ChevronDown,
+    ChevronRight
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -30,54 +34,68 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-// Mock courses data
-const mockCourses = [
-    { id: 1, title: "React Fundamentals", lessons: 8 },
-    { id: 2, title: "Advanced JavaScript", lessons: 6 },
-    { id: 3, title: "TypeScript Basics", lessons: 5 },
-    { id: 4, title: "Node.js Backend Development", lessons: 10 },
-    { id: 5, title: "Full Stack Web Development", lessons: 12 }
-];
-
-// Mock lessons data
-const mockLessons: Record<number, Array<{ id: number; title: string; chapterTitle: string }>> = {
-    1: [
-        { id: 1, title: "Introduction to React", chapterTitle: "Getting Started" },
-        { id: 2, title: "Setting up Development Environment", chapterTitle: "Getting Started" },
-        { id: 3, title: "Your First React Component", chapterTitle: "Getting Started" },
-        { id: 4, title: "useState and useEffect", chapterTitle: "React Hooks" },
-        { id: 5, title: "useContext and useReducer", chapterTitle: "React Hooks" },
-        { id: 6, title: "Custom Hooks", chapterTitle: "React Hooks" },
-        { id: 7, title: "Higher Order Components", chapterTitle: "Advanced Patterns" },
-        { id: 8, title: "Render Props", chapterTitle: "Advanced Patterns" }
-    ],
-    2: [
-        { id: 9, title: "Arrow Functions", chapterTitle: "ES6+ Features" },
-        { id: 10, title: "Promises and Async/Await", chapterTitle: "ES6+ Features" }
-    ]
-};
+import { useCourseCurriculum } from "@/hooks/useCourseCurriculum";
+import { QuizService } from "@/api/services/quiz-service";
+import { CourseService } from "@/api/services/course-service";
+import { useToast } from "@/hooks/use-toast";
 
 type ImportResult = {
     success: boolean;
     quizId?: number;
-    quizTitle?: string;
     questionsImported?: number;
-    totalAnswers?: number;
     errors?: string[];
 };
 
 export default function QuizImportPage() {
     const router = useRouter();
-    const [courseId, setCourseId] = useState<number>(0);
+    const { toast } = useToast();
+    const [courseId, setCourseId] = useState<number | undefined>(undefined);
     const [lessonId, setLessonId] = useState<number | undefined>(undefined);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [importResult, setImportResult] = useState<ImportResult | null>(null);
     const [showResultDialog, setShowResultDialog] = useState(false);
+    const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(new Set());
+    const [courses, setCourses] = useState<Array<{id: number; title: string}>>([]);
+    const [isLoadingCourses, setIsLoadingCourses] = useState(false);
 
-    const selectedCourseLessons = courseId ? mockLessons[courseId] || [] : [];
+    // Fetch curriculum when courseId changes
+    const { chapters, isLoading: isCurriculumLoading } = useCourseCurriculum(courseId);
+
+    // Load courses on mount
+    React.useEffect(() => {
+        const loadCourses = async () => {
+            setIsLoadingCourses(true);
+            try {
+                const result = await CourseService.getMyCoursesDropdown();
+                if (result?.success && result.data) {
+                    setCourses(result.data);
+                }
+            } catch (error) {
+                toast({
+                    title: "Error",
+                    description: "Failed to load courses",
+                    variant: "destructive"
+                });
+            } finally {
+                setIsLoadingCourses(false);
+            }
+        };
+        loadCourses();
+    }, [toast]);
+
+    const toggleChapter = (chapterId: string) => {
+        setCollapsedChapters(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(chapterId)) {
+                newSet.delete(chapterId);
+            } else {
+                newSet.add(chapterId);
+            }
+            return newSet;
+        });
+    };
 
     const handleFileSelect = (file: File | null) => {
         if (!file) return;
@@ -123,47 +141,70 @@ export default function QuizImportPage() {
     };
 
     const handleImport = async () => {
-        if (!courseId || courseId === 0) {
-            alert("Please select a course");
+        if (!courseId) {
+            toast({
+                title: "Validation Error",
+                description: "Please select a course",
+                variant: "destructive"
+            });
             return;
         }
 
         if (!selectedFile) {
-            alert("Please select an Excel file to import");
+            toast({
+                title: "Validation Error",
+                description: "Please select an Excel file to import",
+                variant: "destructive"
+            });
             return;
         }
 
         setIsUploading(true);
 
-        // Simulate API call
-        setTimeout(() => {
-            // Mock successful import
-            const mockResult: ImportResult = {
-                success: true,
-                quizId: Math.floor(Math.random() * 1000),
-                quizTitle: "Imported Quiz - " + selectedFile.name.replace('.xlsx', '').replace('.xls', ''),
-                questionsImported: 10,
-                totalAnswers: 40
-            };
+        try {
+            const result = await QuizService.importQuizFromExcel(selectedFile, courseId, lessonId);
 
-            setImportResult(mockResult);
-            setShowResultDialog(true);
-            setIsUploading(false);
-
-            console.log("Import Request:", {
-                courseId,
-                lessonId,
-                file: selectedFile.name,
-                fileSize: selectedFile.size,
-                fileType: selectedFile.type
+            if (result?.success) {
+                setImportResult({
+                    success: true,
+                    quizId: result.data?.quizId,
+                    questionsImported: result.data?.questionsImported,
+                    errors: result.data?.errors || []
+                });
+                setShowResultDialog(true);
+                
+                toast({
+                    title: "Success",
+                    description: `Quiz imported successfully with ${result.data?.questionsImported} questions`,
+                });
+            } else {
+                throw new Error(result?.message || "Import failed");
+            }
+        } catch (error: any) {
+            console.error("Import error:", error);
+            setImportResult({
+                success: false,
+                errors: [error.message || "Failed to import quiz"]
             });
-        }, 2000);
+            setShowResultDialog(true);
+            
+            toast({
+                title: "Import Failed",
+                description: error.message || "An error occurred while importing the quiz",
+                variant: "destructive"
+            });
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     const handleResultDialogClose = () => {
         setShowResultDialog(false);
-        if (importResult?.success) {
-            // Redirect to quiz detail or quiz list
+        if (importResult?.success && importResult.quizId) {
+            // Redirect to quiz detail page
+            router.push(`/teacher/quizzes/${importResult.quizId}`);
+        } else if (importResult?.success) {
+            // Fallback to quiz list if no ID
             router.push("/teacher/quizzes");
         }
     };
@@ -214,41 +255,105 @@ export default function QuizImportPage() {
                                         setCourseId(parseInt(value));
                                         setLessonId(undefined);
                                     }}
+                                    disabled={isLoadingCourses}
                                 >
                                     <SelectTrigger className="mt-1.5">
-                                        <SelectValue placeholder="Select a course" />
+                                        <SelectValue placeholder={isLoadingCourses ? "Loading courses..." : "Select a course"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {mockCourses.map((course) => (
+                                        {courses.map((course) => (
                                             <SelectItem key={course.id} value={course.id.toString()}>
-                                                {course.title} ({course.lessons} lessons)
+                                                {course.title}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
 
-                            {courseId > 0 && selectedCourseLessons.length > 0 && (
-                                <div>
-                                    <Label htmlFor="lesson">Lesson (Optional)</Label>
-                                    <p className="text-xs text-muted-foreground mb-2">
-                                        Select if this is a lesson quiz
-                                    </p>
-                                    <Select
-                                        value={lessonId?.toString()}
-                                        onValueChange={(value) => setLessonId(parseInt(value))}
-                                    >
-                                        <SelectTrigger className="mt-1.5">
-                                            <SelectValue placeholder="Select a lesson (optional)" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {selectedCourseLessons.map((lesson) => (
-                                                <SelectItem key={lesson.id} value={lesson.id.toString()}>
-                                                    {lesson.chapterTitle} → {lesson.title}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                            {courseId && (
+                                <div className="space-y-3">
+                                    <div>
+                                        <Label>Lesson (Optional)</Label>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Select a lesson to create a lesson-level quiz, or leave empty for course-level
+                                        </p>
+                                    </div>
+                                    
+                                    {isCurriculumLoading ? (
+                                        <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                                            <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+                                            <p className="text-sm">Loading curriculum...</p>
+                                        </div>
+                                    ) : !chapters || chapters.length === 0 ? (
+                                        <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                                            <p className="text-sm">No curriculum available for this course</p>
+                                        </div>
+                                    ) : (
+                                        <RadioGroup
+                                            value={lessonId?.toString() || "none"}
+                                            onValueChange={(value) => setLessonId(value === "none" ? undefined : parseInt(value))}
+                                        >
+                                            <div className="space-y-2 max-h-[300px] overflow-y-auto border rounded-lg p-3">
+                                                {/* None option for course-level quiz */}
+                                                <div className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50">
+                                                    <RadioGroupItem value="none" id="lesson-none" />
+                                                    <Label htmlFor="lesson-none" className="flex-1 cursor-pointer text-sm font-medium">
+                                                        None (Course-level Quiz)
+                                                    </Label>
+                                                </div>
+                                                
+                                                <Separator className="my-2" />
+                                                
+                                                {chapters.map((chapter) => (
+                                                    <div key={chapter.id} className="space-y-2">
+                                                        {/* Chapter Header */}
+                                                        <div
+                                                            className="flex items-center gap-2 p-2 bg-muted rounded cursor-pointer hover:bg-muted/80"
+                                                            onClick={() => toggleChapter(chapter.id.toString())}
+                                                        >
+                                                            {collapsedChapters.has(chapter.id.toString()) ? (
+                                                                <ChevronRight className="h-4 w-4" />
+                                                            ) : (
+                                                                <ChevronDown className="h-4 w-4" />
+                                                            )}
+                                                            <span className="font-semibold text-sm">
+                                                                {chapter.title}
+                                                            </span>
+                                                            <Badge variant="secondary" className="ml-auto">
+                                                                {chapter.lessons.length} lessons
+                                                            </Badge>
+                                                        </div>
+
+                                                        {/* Lessons */}
+                                                        {!collapsedChapters.has(chapter.id.toString()) && (
+                                                            <div className="ml-6 space-y-1">
+                                                                {chapter.lessons.map((lesson) => (
+                                                                    <div
+                                                                        key={lesson.id}
+                                                                        className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50"
+                                                                    >
+                                                                        <RadioGroupItem
+                                                                            value={lesson.id?.toString() || ""}
+                                                                            id={`lesson-${lesson.id}`}
+                                                                        />
+                                                                        <Label
+                                                                            htmlFor={`lesson-${lesson.id}`}
+                                                                            className="flex-1 cursor-pointer text-sm font-normal"
+                                                                        >
+                                                                            {lesson.title}
+                                                                            <span className="text-xs text-muted-foreground ml-2">
+                                                                                ({lesson.duration} min)
+                                                                            </span>
+                                                                        </Label>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </RadioGroup>
+                                    )}
                                 </div>
                             )}
                         </CardContent>
@@ -476,35 +581,46 @@ export default function QuizImportPage() {
                         </div>
                         <AlertDialogDescription>
                             {importResult?.success ? (
-                                <div className="space-y-3 text-sm">
-                                    <p>Your quiz has been imported successfully.</p>
-                                    <div className="bg-muted p-3 rounded-lg space-y-2">
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Quiz Title:</span>
-                                            <span className="font-semibold">{importResult.quizTitle}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Questions:</span>
-                                            <span className="font-semibold">{importResult.questionsImported}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground">Total Answers:</span>
-                                            <span className="font-semibold">{importResult.totalAnswers}</span>
-                                        </div>
-                                        <div className="flex justify-between">
+                                <div className="space-y-3">
+                                    <p className="text-sm">
+                                        Your quiz has been imported successfully.
+                                    </p>
+                                    <div className="bg-muted rounded-lg p-4 space-y-2">
+                                        <div className="flex justify-between text-sm">
                                             <span className="text-muted-foreground">Quiz ID:</span>
-                                            <span className="font-semibold">#{importResult.quizId}</span>
+                                            <span className="font-medium">#{importResult.quizId}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-muted-foreground">Questions Imported:</span>
+                                            <span className="font-medium">{importResult.questionsImported}</span>
                                         </div>
                                     </div>
+                                    {importResult.errors && importResult.errors.length > 0 && (
+                                        <div className="bg-amber-500/10 rounded-lg p-4">
+                                            <p className="text-sm font-medium mb-2 text-amber-700 dark:text-amber-400">Warnings:</p>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                {importResult.errors.map((error, index) => (
+                                                    <li key={index} className="text-sm text-amber-600 dark:text-amber-300">{error}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
-                                <div className="space-y-3 text-sm">
-                                    <p>There were errors importing your quiz:</p>
-                                    <ul className="list-disc list-inside space-y-1 text-red-600">
-                                        {importResult?.errors?.map((error, index) => (
-                                            <li key={index}>{error}</li>
-                                        ))}
-                                    </ul>
+                                <div className="space-y-3">
+                                    <p className="text-sm text-destructive">
+                                        An error occurred while importing your quiz.
+                                    </p>
+                                    {importResult?.errors && importResult.errors.length > 0 && (
+                                        <div className="bg-destructive/10 rounded-lg p-4">
+                                            <p className="text-sm font-medium mb-2">Errors:</p>
+                                            <ul className="list-disc list-inside space-y-1">
+                                                {importResult.errors.map((error, index) => (
+                                                    <li key={index} className="text-sm text-destructive">{error}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </AlertDialogDescription>

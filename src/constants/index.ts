@@ -125,7 +125,7 @@ export class Constants {
         STUDENT_HISTORY: "/api/quiz-statistics/student",
         
         // Import/Export
-        IMPORT_EXCEL: "/api/quizzes/import/excel",
+        IMPORT_EXCEL: "/api/quizzes/import",
         EXPORT_EXCEL: "/api/quizzes"
     };
 

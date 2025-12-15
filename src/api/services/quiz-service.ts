@@ -192,9 +192,13 @@ export const QuizService = {
 
     // ==================== Import/Export ====================
 
-    importQuizFromExcel: async (file: File) => {
+    importQuizFromExcel: async (file: File, courseId: number, lessonId?: number) => {
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('courseId', courseId.toString());
+        if (lessonId) {
+            formData.append('lessonId', lessonId.toString());
+        }
 
         return await apiCall<ImportQuizResponse>(() => 
             axiosInstance.post(Constants.QUIZ_ROUTES.IMPORT_EXCEL, formData, {
