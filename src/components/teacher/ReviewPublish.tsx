@@ -8,10 +8,12 @@ import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
 import {AlertCircle, BookOpen, CheckCircle2, Clock, DollarSign, FileText, FileType, Layers, Video} from "lucide-react";
 import {CourseStatus, Difficulty, LessonType} from "@/types/enum";
 import {Accordion, AccordionContent, AccordionItem, AccordionTrigger,} from "@/components/ui/accordion";
-import {ChapterWithLessons, ReviewCourseData} from "@/types/types";
+import {ChapterWithLessons, CourseFormData} from "@/types/types";
+import {CourseService} from "@/api/services/course-service";
+import {AxiosError} from "axios";
 
 type Props = {
-    courseData: ReviewCourseData;
+    courseData: CourseFormData;
 };
 
 export default function ReviewPublish({courseData}: Props) {
@@ -19,24 +21,34 @@ export default function ReviewPublish({courseData}: Props) {
     const [publishStatus, setPublishStatus] = useState<
         "idle" | "success" | "error"
     >("idle");
+    const [serverError, setServerError] = useState<string>();
 
     const handlePublish = async () => {
         setPublishing(true);
         setPublishStatus("idle");
 
         try {
-            // Simulate API call
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            setPublishStatus("success");
+            const result = await CourseService.publishCourse(courseData.courseId!);
+            if (result.success && result.data?.status) {
+                setPublishStatus("success");
+            } else if (result.success && !result.data?.status) {
+                setServerError(result.data!.message);
+                setPublishStatus("error");
+            }
         } catch (error) {
             setPublishStatus("error");
+            if (error instanceof AxiosError) {
+                console.error("Failed to publish course:", error.response?.data.message);
+                setServerError(error.response?.data.message || "Unknown error");
+            } else {
+                setServerError("An unexpected error occurred while publishing the course.");
+            }
         } finally {
             setPublishing(false);
         }
     };
 
     const handleSaveDraft = async () => {
-        // Handle save as draft
         console.log("Saving as draft...");
     };
 
@@ -57,7 +69,7 @@ export default function ReviewPublish({courseData}: Props) {
         switch (type) {
             case LessonType.VIDEO:
                 return <Video className="h-4 w-4"/>;
-            case LessonType.PDF:
+            case LessonType.MARKDOWN:
                 return <FileType className="h-4 w-4"/>;
             default:
                 return <FileText className="h-4 w-4"/>;
@@ -95,13 +107,13 @@ export default function ReviewPublish({courseData}: Props) {
                 </Alert>
             );
         }
-        if (publishStatus === "error") {
+        if (publishStatus === "error" && serverError) {
             return (
                 <Alert variant="destructive" className="mb-6">
                     <AlertCircle className="h-4 w-4"/>
                     <AlertTitle>Error</AlertTitle>
                     <AlertDescription>
-                        Failed to publish course. Please check your connection and try again.
+                        {serverError}
                     </AlertDescription>
                 </Alert>
             );

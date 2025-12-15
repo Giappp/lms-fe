@@ -1,8 +1,9 @@
 import React from 'react'
+import StudentCalendarPage from "@/components/student/calendar/StudentCalendarPage";
 
 const Page = () => {
     return (
-        <div>My Progress Page</div>
+        <StudentCalendarPage/>
     )
 }
 export default Page

@@ -1,0 +1,113 @@
+import useSWR from "swr";
+import {EnrollmentService} from "@/api/services/enrollment-service";
+import {Constants} from "@/constants";
+import {EnrollmentStatus} from "@/types/enum";
+import {useState} from "react";
+import {EnrollmentPreviewResponse, EnrollmentResponse, PaginatedResponse} from "@/types/response";
+import {UpdateEnrollmentStatusRequest} from "@/types/request";
+import {swrFetcher} from "@/lib/swrFetcher";
+import {defaultSWRConfig} from "@/lib/swrConfig";
+
+/**
+ * Hook for student enrollments
+ */
+export function useMyEnrollments(
+    status?: EnrollmentStatus,
+    pageNumber: number = 1,
+    pageSize: number = 20
+) {
+    const params = new URLSearchParams();
+    params.append("pageNumber", pageNumber.toString());
+    params.append("pageSize", pageSize.toString());
+    if (status) params.append("status", status);
+
+    const key = `${Constants.ENROLLMENT_ROUTES.MY_ENROLLMENTS}?${params.toString()}`;
+
+    const {data, error, isLoading, mutate} = useSWR<PaginatedResponse<EnrollmentPreviewResponse> | null>(
+        key,
+        swrFetcher, {
+            revalidateOnFocus: false,
+            revalidateOnReconnect: true,
+            shouldRetryOnError: false, // Don't retry immediately if user is navigating away
+            dedupingInterval: 5000,    // Increase this to prevent duplicate requests
+            keepPreviousData: true,    // VITAL: Keeps old data visible while fetching new data
+        }
+    );
+
+    const cancelEnrollment = async (courseId: number) => {
+        const response = await EnrollmentService.cancelEnrollment(courseId);
+        if (response.success) {
+            await mutate();
+            return {success: true};
+        }
+        return {
+            success: false,
+            error: response.message || "Failed to cancel enrollment"
+        };
+    };
+
+    return {
+        enrollments: data,
+        isLoading,
+        error,
+        mutate,
+        cancelEnrollment
+    };
+}
+
+/**
+ * Hook for teacher course enrollments
+ * @param courseId - Course ID to filter by, or null for all courses
+ */
+export function useCourseEnrollments(
+    courseId: number | null,
+    status?: EnrollmentStatus,
+    search?: string,
+    page: number = 1,
+    size: number = 20
+) {
+    const params = new URLSearchParams();
+    params.append("page", page.toString());
+    params.append("size", size.toString());
+    if (courseId !== null) params.append("courseId", courseId.toString());
+    if (status) params.append("status", status);
+    if (search) params.append("search", search);
+
+    // courseId is now a request param (optional)
+    const key = `${Constants.ENROLLMENT_ROUTES.COURSE_ENROLLMENTS}?${params.toString()}`;
+
+    const {data, error, isLoading, mutate} = useSWR<PaginatedResponse<EnrollmentResponse> | null>(
+        key,
+        swrFetcher,
+        defaultSWRConfig
+    );
+
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    const updateEnrollmentStatus = async (
+        enrollmentId: number,
+        request: UpdateEnrollmentStatusRequest
+    ) => {
+        setIsUpdating(true);
+        const response = await EnrollmentService.updateEnrollmentStatus(enrollmentId, request);
+        setIsUpdating(false);
+
+        if (response.success) {
+            await mutate();
+            return {success: true};
+        }
+        return {
+            success: false,
+            error: response.message || "Failed to update enrollment status"
+        };
+    };
+
+    return {
+        enrollments: data,
+        isLoading,
+        isUpdating,
+        error,
+        mutate,
+        updateEnrollmentStatus
+    };
+}

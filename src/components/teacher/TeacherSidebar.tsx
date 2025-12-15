@@ -34,8 +34,8 @@ const menuGroups = [
     {
         title: "Courses",
         subMenus: [
-            {title: "My Courses", url: "/teacher/my-courses", icon: faBookOpen},
-            {title: "Publish Course", url: "/teacher/create-curriculum", icon: faBook},
+            {title: "All Courses", url: "/teacher/courses", icon: faBook},
+            {title: "Create Course", url: "/teacher/courses/create", icon: faBookOpen},
         ],
     },
     {
@@ -49,7 +49,7 @@ const menuGroups = [
         subMenus: [
             {title: "Quizzes", url: "/teacher/quizzes", icon: faFileAlt},
             {title: "Templates", url: "/teacher/quizzes/templates", icon: faCertificate},
-            {title: "Import (Excel)", url: "/(teacher/quizzes/import", icon: faFileAlt},
+            {title: "Import (Excel)", url: "/teacher/quizzes/import", icon: faFileAlt},
         ],
     },
     {

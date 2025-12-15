@@ -1,232 +1,227 @@
-import React, {useState} from 'react'
+"use client"
+
+import React, {useMemo, useState} from 'react'
 import {
     closestCenter,
     defaultDropAnimation,
     DndContext,
     DragEndEvent,
+    DragOverlay,
     DragStartEvent,
     DropAnimation,
+    KeyboardSensor,
     MeasuringStrategy,
-    Modifier,
-    UniqueIdentifier
+    PointerSensor,
+    useSensor,
+    useSensors,
 } from "@dnd-kit/core";
 import {ChapterWithLessons, Lesson} from "@/types/types";
-import {arrayMove, SortableContext, verticalListSortingStrategy} from "@dnd-kit/sortable";
+import {arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy} from "@dnd-kit/sortable";
 import {Button} from "@/components/ui/button";
 import {BookOpen, Plus} from "lucide-react";
 import {ChapterSortableRef} from "@/components/teacher/ChapterSortableRef";
-import {restrictToFirstScrollableAncestor, restrictToVerticalAxis, restrictToWindowEdges} from "@dnd-kit/modifiers";
+import {ChapterItem} from "@/components/teacher/ChapterItem"; // Import the pure UI component
+import {restrictToVerticalAxis, restrictToWindowEdges} from "@dnd-kit/modifiers";
+import {createPortal} from "react-dom";
 
 type Props = {
-    collapsible?: boolean;
     chapters: ChapterWithLessons[];
     setChapters: React.Dispatch<React.SetStateAction<ChapterWithLessons[]>>;
-    indentationWidth?: number;
-    indicator?: boolean;
-    removable?: boolean;
     onAddChapterAction: () => void;
     onUpdateChapterAction: (index: number, item: ChapterWithLessons,) => void;
     onRemoveChapterAction: (index: number) => void;
     onUpdateLessonsAction: (idx: number, lessons: Lesson[]) => void;
+    errors?: Record<string, string> | null;
 }
 
+// Optimized measuring strategy for variable height lists
 const measuring = {
     droppable: {
         strategy: MeasuringStrategy.Always,
     },
 };
 
-// Use the default drop animation to avoid unused-property warnings from the checker
-const dropAnimationConfig: DropAnimation = defaultDropAnimation as DropAnimation;
-
-const adjustTranslate: Modifier = ({transform}) => {
-    return {
-        ...transform,
-        y: transform.y - 25,
-    };
+const dropAnimationConfig: DropAnimation = {
+    ...defaultDropAnimation,
 };
 
-const ChaptersTree = ({
-                          chapters,
-                          setChapters,
-                          indicator = false,
-                          onUpdateChapterAction,
-                          onAddChapterAction,
-                          onRemoveChapterAction,
-                          onUpdateLessonsAction
-                      }: Props) => {
-    const [activeType, setActiveType] = useState<"chapter" | "lesson" | null>(null);
-    const [activeItem, setActiveItem] = useState<any>(null);
-    const [activeIndex, setActiveIndex] = useState<number | null>(null);
-    if (chapters?.length != 0) {
-        chapters.forEach((chapter, chapterIndex) => {
-            chapter._id = crypto.randomUUID(); // Temporary ID for dnd-kit
-            chapter.orderIndex = chapterIndex;
-        });
-    }
+export default function ChaptersTree({
+                                         chapters,
+                                         setChapters,
+                                         errors,
+                                         onUpdateChapterAction,
+                                         onAddChapterAction,
+                                         onRemoveChapterAction,
+                                         onUpdateLessonsAction,
+                                         ...props
+                                     }: Props) {
 
-    // Find an item (chapter or lesson) by a dnd-kit id like "chapter:1" or "lesson:2"
-    const findItemById = (id: UniqueIdentifier) => {
-        const idStr = id?.toString() || '';
-        const [type, idPart] = idStr.split(":");
-        if (type === 'chapter') {
-            const chapter = chapters.find((c) => c._id === idPart);
-            const index = chapters.findIndex((c) => c._id === idPart);
-            if (chapter) return {type: 'chapter', item: chapter, index: index};
-            return null;
-        }
-        if (type === 'lesson') {
-            for (const chapter of chapters) {
-                const lesson = chapter.lessons.find((l) => l._id === idPart);
-                if (lesson) return {type: 'lesson', item: lesson, parentChapterId: chapter._id};
-            }
-            return null;
-        }
-        return null;
-    };
-    return (
-        <DndContext collisionDetection={closestCenter}
-                    measuring={measuring}
-                    modifiers={[restrictToVerticalAxis, restrictToWindowEdges, restrictToFirstScrollableAncestor]}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    onDragCancel={handleDragCancel}>
-            <div className="mb-6">
-                {chapters.length === 0 && (
-                    <div className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-                        <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300"/>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            No chapters yet
-                        </h3>
-                        <p className="text-gray-600 mb-6">
-                            Start building your curriculum by adding your first chapter
-                        </p>
-                        <Button onClick={onAddChapterAction} size="lg">
-                            <Plus className="w-5 h-5"/>
-                            Add Your First Chapter
-                        </Button>
-                    </div>
-                )}
-                <SortableContext items={chapters.map((c) => `chapter:${c._id}`)}
-                                 strategy={verticalListSortingStrategy}>
-                    {chapters.map((chapter, index) => (
-                        <ChapterSortableRef key={chapter._id} id={`chapter:${chapter._id}`} chapter={chapter}
-                                            index={index}
-                                            onChangeAction={(updated) => onUpdateChapterAction(index, updated)}
-                                            onRemoveAction={() => onRemoveChapterAction(index)}
-                                            onUpdateLessonsAction={(lessons) => onUpdateLessonsAction(index, lessons)}/>
-                    ))}
-                    {/*{createPortal(*/}
-                    {/*    <DragOverlay*/}
-                    {/*        dropAnimation={dropAnimationConfig}*/}
-                    {/*        modifiers={indicator ? [adjustTranslate] : undefined}*/}
-                    {/*    >*/}
-                    {/*        {activeItem && activeIndex ? (*/}
-                    {/*            activeType === "chapter" ? (*/}
-                    {/*                // When rendering the overlay for a chapter, pass the same id format used by SortableContext*/}
-                    {/*                <ChapterHeader/>*/}
-                    {/*            ) : (*/}
-                    {/*                <div className="p-2 rounded-lg bg-gray-100 shadow-md border border-gray-300">*/}
-                    {/*                    {activeItem.title}*/}
-                    {/*                </div>*/}
-                    {/*            )*/}
-                    {/*        ) : null}*/}
-                    {/*    </DragOverlay>,*/}
-                    {/*    document.body,*/}
-                    {/*)}*/}
-                </SortableContext>
-            </div>
-        </DndContext>
+    // 1. Sensors: Prevent accidental drags when clicking inputs/buttons
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 5, // User must move mouse 5px before drag starts
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
     );
 
-    // Bắt đầu kéo -> Set item đang kéo
+    // 2. State for the Drag Overlay (The visual "floating" item)
+    const [activeId, setActiveId] = useState<string | null>(null);
+    const [activeChapter, setActiveChapter] = useState<ChapterWithLessons | null>(null);
+
+    // Memoize the IDs to prevent unnecessary re-calculations
+    const chapterIds = useMemo(() => chapters.map((c) => `chapter:${c._id}`), [chapters]);
+
     function handleDragStart(event: DragStartEvent) {
         const {active} = event;
-        const found = findItemById(active.id);
-        if (found) {
-            setActiveType(found.type as "chapter" | "lesson");
-            setActiveItem(found.item);
-            setActiveIndex(found.index as number);
+        setActiveId(active.id as string);
+
+        // Find the chapter being dragged to render in the Overlay
+        if (active.id.toString().startsWith('chapter:')) {
+            const chapter = chapters.find(c => `chapter:${c._id}` === active.id);
+            if (chapter) setActiveChapter(chapter);
         }
-    }
-
-    function handleDragEnd({active, over}: DragEndEvent) {
-        resetState();
-        if (!over || active.id === over.id) return;
-
-        const [overTypeStr, overIdPart] = over.id.toString().split(':');
-        const [activeTypeStr, activeIdPart] = active.id.toString().split(':');
-
-        if (activeTypeStr === "chapter" && overTypeStr === "chapter") {
-            const oldIndex = chapters.findIndex((c) => c._id === activeIdPart);
-            const newIndex = chapters.findIndex((c) => c._id === overIdPart);
-            if (oldIndex === -1 || newIndex === -1) return;
-            setChapters((prev) => {
-                const reordered = arrayMove(prev, oldIndex, newIndex);
-
-                return reordered.map((c, index) => ({
-                    ...c,
-                    orderIndex: index,
-                }));
-            });
-            return;
-        }
-
-        if (activeTypeStr === "lesson" && overTypeStr === "lesson") {
-            const chapter = chapters.find((c) =>
-                c.lessons.some((l) => l._id === activeIdPart)
-            );
-            const overChapter = chapters.find((c) =>
-                c.lessons.some((l) => l._id === overIdPart)
-            );
-            if (!chapter || !overChapter) return;
-
-            const oldIndex = chapter.lessons.findIndex((l) => l._id === activeIdPart);
-            const newIndex = overChapter.lessons.findIndex((l) => l._id === overIdPart);
-
-            if (chapter._id === overChapter._id) {
-                // Reorder lessons within same chapter
-                const updated = chapters.map((c) =>
-                    c._id === chapter._id
-                        ? {
-                            ...c,
-                            lessons: arrayMove(c.lessons, oldIndex, newIndex),
-                        }
-                        : c
-                );
-                setChapters(updated);
-            } else {
-                // (Optional) Move lessons between chapters
-                const movedLesson = chapter.lessons[oldIndex];
-                if (!movedLesson) return;
-                const updated = chapters.map((c) => {
-                    if (c._id === chapter._id) {
-                        return {
-                            ...c,
-                            lessons: c.lessons.filter((l) => l._id !== activeIdPart),
-                        };
-                    }
-                    if (c._id === overChapter._id) {
-                        const newLessons = [...c.lessons];
-                        newLessons.splice(newIndex, 0, movedLesson);
-                        return {...c, lessons: newLessons};
-                    }
-                    return c;
-                });
-                setChapters(updated);
-            }
-        }
-    }
-
-    function resetState() {
-        setActiveItem(null);
-        setActiveType(null);
-        setActiveIndex(null);
-        document.body.style.setProperty('cursor', '');
     }
 
     function handleDragCancel() {
-        resetState();
+        setActiveId(null);
+        setActiveChapter(null);
     }
+
+    function handleDragEnd(event: DragEndEvent) {
+        const {active, over} = event;
+        setActiveId(null);
+        setActiveChapter(null);
+
+        if (!over) return;
+
+        const activeIdStr = active.id.toString();
+        const overIdStr = over.id.toString();
+
+        if (activeIdStr === overIdStr) return;
+
+        // --- Scenario 1: Reordering Chapters ---
+        const isChapterDrag = activeIdStr.startsWith('chapter:') && overIdStr.startsWith('chapter:');
+
+        if (isChapterDrag) {
+            const oldIndex = chapters.findIndex((c) => `chapter:${c._id}` === activeIdStr);
+            const newIndex = chapters.findIndex((c) => `chapter:${c._id}` === overIdStr);
+
+            if (oldIndex !== -1 && newIndex !== -1) {
+                setChapters((prev) => {
+                    const reordered = arrayMove(prev, oldIndex, newIndex);
+                    // Update orderIndex immediately for UI consistency
+                    return reordered.map((c, index) => ({...c, orderIndex: index}));
+                });
+            }
+        } else {
+            const activeLessonId = activeIdStr.replace('lesson:', '');
+            const overLessonId = overIdStr.replace('lesson:', '');
+
+            const chapterIndex = chapters.findIndex(c =>
+                c.lessons.some(l => l._id === activeLessonId)
+            );
+
+            if (chapterIndex !== -1) {
+                const chapter = chapters[chapterIndex];
+                const oldLessonIndex = chapter.lessons.findIndex(l => l._id === activeLessonId);
+                const newLessonIndex = chapter.lessons.findIndex(l => l._id === overLessonId);
+
+                if (oldLessonIndex !== -1 && newLessonIndex !== -1) {
+                    const newLessons = arrayMove(chapter.lessons, oldLessonIndex, newLessonIndex)
+                        .map((l, idx) => ({...l, orderIndex: idx})); // Re-index
+
+                    // Use the prop callback to update parent state
+                    onUpdateLessonsAction(chapterIndex, newLessons);
+                }
+            }
+        }
+    }
+
+    return (
+        <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            measuring={measuring}
+            modifiers={[restrictToVerticalAxis, restrictToWindowEdges]} // removed ScrollableAncestor as it often clips overlays
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+        >
+            <div className="mb-6 min-h-[200px]">
+                {chapters.length === 0 ? (
+                    <EmptyState onAdd={onAddChapterAction}/>
+                ) : (
+                    <SortableContext items={chapterIds} strategy={verticalListSortingStrategy}>
+                        <div className="space-y-4"> {/* Adds gap between items */}
+                            {chapters.map((chapter, index) => {
+                                const errorKey = `chapters[${index}].title`;
+                                return (
+                                    <ChapterSortableRef
+                                        key={chapter._id}
+                                        id={`chapter:${chapter._id}`}
+                                        chapter={chapter}
+                                        index={index}
+                                        error={errors?.[errorKey]}
+                                        onChangeAction={(updated) => onUpdateChapterAction(index, updated)}
+                                        onRemoveAction={() => onRemoveChapterAction(index)}
+                                        onUpdateLessonsAction={(lessons) => onUpdateLessonsAction(index, lessons)}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </SortableContext>
+                )}
+            </div>
+
+            {/* 3. The Drag Overlay 
+              This creates a portal, rendering a "clone" of the item under your cursor.
+              It prevents the UI from looking broken while dragging.
+            */}
+            {typeof window !== 'undefined' && createPortal(
+                <DragOverlay dropAnimation={dropAnimationConfig}>
+                    {activeChapter ? (
+                        // Render a Pure UI version (no dnd logic inside) for the overlay
+                        <ChapterItem
+                            chapter={activeChapter}
+                            index={chapters.findIndex(c => c._id === activeChapter._id)}
+                            onChangeAction={() => {
+                            }} // Read only in overlay
+                            onRemoveAction={() => {
+                            }} // Read only
+                            ghost // Optional: Add a specific style for the floating item
+                            disableInteraction // Important: disable inputs in the overlay
+                        />
+                    ) : null}
+                </DragOverlay>,
+                document.body
+            )}
+        </DndContext>
+    );
 }
-export default ChaptersTree
+
+// Cleaned up Empty State Sub-component
+function EmptyState({onAdd}: { onAdd: () => void }) {
+    return (
+        <div
+            className="bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200 p-12 text-center hover:bg-gray-50 transition-colors">
+            <div
+                className="bg-white p-4 rounded-full w-16 h-16 mx-auto mb-4 shadow-sm flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-blue-500"/>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+                Curriculum is Empty
+            </h3>
+            <p className="text-gray-500 mb-6 max-w-sm mx-auto">
+                Start building your course by adding chapters. You can drag and drop them later to rearrange.
+            </p>
+            <Button onClick={onAdd} size="lg" className="shadow-md hover:shadow-lg transition-all">
+                <Plus className="w-5 h-5 mr-2"/>
+                Add First Chapter
+            </Button>
+        </div>
+    );
+}

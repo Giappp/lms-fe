@@ -2,42 +2,39 @@
 import React from 'react'
 import {ModeToggle} from "@/components/shared/ModeToggle";
 import LanguageToggle from "@/components/shared/LanguageToggle";
-import {Button} from "@/components/ui/button";
 import {SidebarTrigger} from "@/components/ui/sidebar";
+import {Separator} from "@/components/ui/separator";
 import DashboardBreadcrumb from "@/components/dashboard/DashboardBreadcrumb";
-import {useAuth} from "@/hooks/useAuth";
-import {useRouter} from "next/navigation";
-import {toast} from "sonner";
 
-const DashboardTopbar = () => {
-    const {logOut} = useAuth();
-    const router = useRouter();
+interface DashboardTopbarProps {
+    children?: React.ReactNode;
+}
 
-    const handleSignOut = async () => {
-        try {
-            await logOut();
-            toast.success("Successfully signed out!");
-            router.push("/signin/student");
-        } catch (error) {
-            toast.error("Failed to sign out");
-            console.error("Sign out error:", error);
-        }
-    };
-
+const DashboardTopbar = ({children}: DashboardTopbarProps) => {
     return (
-        <header>
-            <div className="flex items-center justify-between px-4 text-foreground shadow-sm h-[60px]">
-                <div className="flex justify-center items-center gap-4">
-                    <SidebarTrigger/>
-                    <DashboardBreadcrumb/>
+        <header
+            className="flex sticky top-0 z-10 h-14 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-14">
+            <div className="flex flex-1 items-center gap-2 px-4">
+                <SidebarTrigger className="-ml-1"/>
+                <Separator orientation="vertical" className="mr-2 h-4"/>
+                <DashboardBreadcrumb/>
+            </div>
+
+            <div className="flex items-center gap-2 px-4">
+                {/* This area renders specific actions passed from the parent layout.
+                  Example: A teacher might see a "Create Course" button here.
+                */}
+                <div className="mr-2 hidden md:flex items-center gap-2">
+                    {children}
                 </div>
-                <div className="flex gap-4 items-center">
-                    <ModeToggle/>
+
+                <div className="flex items-center gap-2">
                     <LanguageToggle/>
-                    <Button variant="outline" onClick={handleSignOut}>Sign Out</Button>
+                    <ModeToggle/>
                 </div>
             </div>
         </header>
     )
 }
+
 export default DashboardTopbar

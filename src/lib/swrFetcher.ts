@@ -1,15 +1,17 @@
-import {apiCall, ApiResult} from "@/api/core/apiCall";
+import {ApiResponse} from "@/api/core/apiCall";
 import {axiosInstance} from "@/api/core/axiosInstance";
+import {ApiError} from "@/api/core/ApiError";
 
 export async function swrFetcher<T>(url: string): Promise<T> {
-    const result: ApiResult<T> = await apiCall<T>(() => axiosInstance.get(url));
+    const response = await axiosInstance.get<ApiResponse<T>>(url);
 
-    if (!result.success) {
-        // SWR treats thrown errors as failed requests → triggers error state
-        const err = new Error(result.message);
-        (err as any).details = result;
-        throw err;
+    if (response.data.status === "ERROR") {
+        throw new ApiError(
+            response.data.message || "API Logic Error",
+            response.data.errors,
+            response.data.errorCode || 500
+        );
     }
 
-    return result.data as T;
+    return response.data.data as T;
 }

@@ -7,7 +7,6 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faGoogle} from "@fortawesome/free-brands-svg-icons/faGoogle";
-import {faGithub} from "@fortawesome/free-brands-svg-icons";
 import {useRouter} from "next/navigation";
 import {toast} from "sonner";
 import {useAuth} from "@/hooks/useAuth";
@@ -18,19 +17,25 @@ import Link from "next/link";
 import {SignInData} from "@/types";
 import {Constants} from "@/constants";
 
-const teacherSchema = z.object({
-    email: z
-        .email({message: "Invalid email address"})
-        .min(1, "Email is required")
-        .max(100, "Email must be less than 100 characters"),
-    password: z.string().min(8, "Password must be at least 6 characters").regex(/[A-Z]/, "Must contain at least one uppercase letter")
-        .regex(/[a-z]/, "Must contain at least one lowercase letter")
-        .regex(/[0-9]/, "Must contain at least one number")
-        .regex(/[^A-Za-z0-9]/, "Must contain at least one special character")
-        .max(100, "Password must be less than 100 characters"),
+const teacherLoginSchema = z.object({
+    email: z.string().min(1, "Email is required").email("Invalid email address"),
+    password: z.string().min(1, "Password is required"),
 });
 
-type TeacherFormData = z.infer<typeof teacherSchema>;
+type TeacherFormData = z.infer<typeof teacherLoginSchema>;
+
+const LoadingSpinner = () => (
+    <svg
+        className="mr-2 h-4 w-4 animate-spin"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+    >
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+);
 
 export default function TeacherLoginForm() {
     const {signIn, oauthSignIn, isLoading} = useAuth();
@@ -43,7 +48,7 @@ export default function TeacherLoginForm() {
         formState: {errors, isSubmitting},
         reset
     } = useForm<TeacherFormData>({
-        resolver: zodResolver(teacherSchema),
+        resolver: zodResolver(teacherLoginSchema),
         mode: "onSubmit",
     });
 
@@ -67,10 +72,47 @@ export default function TeacherLoginForm() {
             toast.success("Successfully signed in!");
             reset();
             router.push("/teacher");
-        } catch (error) {
-            const message = error instanceof Error ? error.message : "An unknown error occurred";
-            console.log(error);
-            setError("root", {type: "manual", message: message});
+        } catch (err: any) {
+            if (err.errors) {
+                Object.keys(err.errors).forEach((key) => {
+                    // Check if the error key matches 'email' or 'password'
+                    if (key === "email" || key === "password") {
+                        setError(key, {type: "server", message: err.errors[key]});
+                    } else {
+                        setError("root", {type: "server", message: err.errors[key]});
+                    }
+                });
+                return; // Stop here if we found validation errors
+            }
+
+            switch (err.errorCode) {
+                case 1007: // USER_NOT_FOUND
+                    setError("email", {
+                        type: "manual",
+                        message: "We couldn't find an account with that email."
+                    });
+                    break;
+
+                case 1016:
+                    setError("root", {
+                        type: "manual",
+                        message: "The password or email you entered is incorrect."
+                    });
+                    break;
+
+                case 1008:
+                    setError("email", {
+                        type: "manual",
+                        message: "This email is already in use."
+                    });
+                    break;
+
+                default:
+                    setError("root", {
+                        type: "manual",
+                        message: err.message || "Something went wrong. Please try again."
+                    });
+            }
         }
     };
 
@@ -91,21 +133,7 @@ export default function TeacherLoginForm() {
                         onClick={() => handleOAuthSignIn("google")}
                         disabled={isLoading}
                     >
-                        {isLoading ? (
-                            <svg
-                                className="mr-2 h-4 w-4 animate-spin"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                            >
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                        strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor"
-                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                        ) : (
-                            <FontAwesomeIcon icon={faGoogle} className="mr-2"/>
-                        )}
+                        {isLoading ? <LoadingSpinner/> : <FontAwesomeIcon icon={faGoogle} className="mr-2"/>}
                         Google
                     </Button>
 
@@ -115,21 +143,7 @@ export default function TeacherLoginForm() {
                         onClick={() => handleOAuthSignIn("github")}
                         disabled={isLoading}
                     >
-                        {isLoading ? (
-                            <svg
-                                className="mr-2 h-4 w-4 animate-spin"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                            >
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                        strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor"
-                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                        ) : (
-                            <FontAwesomeIcon icon={faGithub} className="mr-2"/>
-                        )}
+                        {isLoading ? <LoadingSpinner/> : <FontAwesomeIcon icon={faGoogle} className="mr-2"/>}
                         Github
                     </Button>
                 </div>
@@ -141,8 +155,13 @@ export default function TeacherLoginForm() {
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
+                    {/* Root Error Display */}
                     {errors.root && (
-                        <p className="text-sm text-red-500 mt-1">{errors.root.message}</p>
+                        <div
+                            className="bg-destructive/15 p-3 rounded-md flex items-center gap-x-2 text-sm text-destructive">
+                            {/* You can add an alert icon here */}
+                            <p>{errors.root.message}</p>
+                        </div>
                     )}
                     <div className="grid gap-1">
                         <Label htmlFor="email">Work Email</Label>
@@ -152,6 +171,8 @@ export default function TeacherLoginForm() {
                             placeholder="you@school.edu"
                             {...register("email")}
                             disabled={isLoading || isSubmitting}
+                            // Add aria-invalid for accessibility
+                            aria-invalid={!!errors.email}
                             className={errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}
                             autoComplete="email"
                         />
@@ -166,6 +187,7 @@ export default function TeacherLoginForm() {
                             placeholder="Enter your password"
                             {...register("password")}
                             disabled={isLoading || isSubmitting}
+                            aria-invalid={!!errors.password}
                             className={errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
                             autoComplete="current-password"
                         />
@@ -173,19 +195,7 @@ export default function TeacherLoginForm() {
                     </div>
 
                     <Button type="submit" className="w-full mt-2" disabled={isLoading || isSubmitting}>
-                        {(isLoading || isSubmitting) && (
-                            <svg
-                                className="mr-2 h-4 w-4 animate-spin"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                            >
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                        strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor"
-                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                        )}
+                        {(isLoading || isSubmitting) && <LoadingSpinner/>}
                         {(isLoading || isSubmitting) ? "Signing in..." : "Sign In as Teacher"}
                     </Button>
                 </form>

@@ -1,46 +1,44 @@
 import useSWR from "swr";
-import {Constants} from "@/constants";
-import {PaginatedResponse} from "@/types/types";
-import {CourseResponse} from "@/types";
+import {CourseResponse, CourseSelectResponse, PaginatedResponse} from "@/types/response";
+import {CourseCreationRequest, CoursesFilterParams, CourseUpdateRequest} from "@/types/request";
 import {CourseService} from "@/api/services/course-service";
-import {CourseStatus} from "@/types/enum";
-import {buildParamsFromOptions} from '@/api/core/utils';
+import {CourseStatus, Difficulty} from "@/types/enum";
 import {useCallback} from "react";
 import {swrFetcher} from "@/lib/swrFetcher";
+import {Constants} from "@/constants";
+import {defaultSWRConfig} from "@/lib/swrConfig";
 
 export interface CourseFilter {
     page?: number;
     size?: number;
     teacherId?: number;
-    status?: CourseStatus;
-    q?: string;
-}
-
-function toQueryString(paramsObj: Record<string, any> = {}) {
-    const qs = new URLSearchParams();
-    for (const [k, v] of Object.entries(paramsObj)) {
-        if (v === undefined || v === null) continue;
-        if (Array.isArray(v)) {
-            v.forEach((item) => qs.append(k, String(item)));
-        } else {
-            qs.append(k, String(v));
-        }
-    }
-    return qs.toString();
+    difficulty?: Difficulty | "ALL";
+    status?: CourseStatus | "ALL";
+    categoryId?: number;
+    keyword?: string;
 }
 
 export function useCourses(filters?: CourseFilter) {
-    const opts = {
-        page: filters?.page ?? 1,
-        size: filters?.size ?? 20,
+    const opts: CoursesFilterParams = {
+        pageNumber: (filters?.page ?? 0) + 1, // Convert zero-based to one-based
+        pageSize: filters?.size ?? 12,
         teacherId: filters?.teacherId,
-        status: filters?.status,
-        q: filters?.q,
-    } as any;
+        categoryId: filters?.categoryId,
+        status: filters?.status === "ALL" ? undefined : filters?.status,
+        difficulty: filters?.difficulty === "ALL" ? undefined : filters?.difficulty,
+        keyword: filters?.keyword,
+    };
 
-    const params = buildParamsFromOptions(opts);
-    const queryString = toQueryString(params);
-    const key = queryString ? `${Constants.COURSES_ROUTES.LIST}?${queryString}` : Constants.COURSES_ROUTES.LIST;
+    // Convert object to query string (filtering out null/undefined)
+    const qs = new URLSearchParams();
+    Object.entries(opts).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+            qs.append(key, String(value));
+        }
+    });
+
+    const queryString = qs.toString();
+    const key = `${Constants.COURSES_ROUTES.SEARCH}?${queryString}`;
 
     const {data, error, isLoading, isValidating, mutate} = useSWR<PaginatedResponse<CourseResponse> | null>(
         key,
@@ -51,79 +49,93 @@ export function useCourses(filters?: CourseFilter) {
             shouldRetryOnError: true,
             errorRetryCount: 3,
             dedupingInterval: 2000,
+            keepPreviousData: true,
+            suspense: false,
+            fallbackData: null
         }
     );
 
-    const createCourse = useCallback(async (courseData: FormData) => {
-        try {
-            const result = await CourseService.createCourseWithBasicInfo(courseData);
-
-            if (result?.success) {
-                // Optimistically update the cache
-                await mutate();
-            }
-
-            return result;
-        } catch (error) {
-            console.error('Failed to create course:', error);
-            throw error;
+    const createCourse = useCallback(async (request: CourseCreationRequest, thumbnail?: File) => {
+        const result = await CourseService.createCourse(request, thumbnail);
+        if (result?.success) {
+            await mutate();
         }
+        return result;
     }, [mutate]);
 
-    const updateCourse = useCallback(async (courseId: number, courseData: FormData) => {
-        try {
-            const result = await CourseService.updateCourseBasicInfo(courseId, courseData);
-
-            if (result?.success) {
-                // Optimistically update the cache
-                await mutate();
-            }
-
-            return result;
-        } catch (error) {
-            console.error('Failed to update course:', error);
-            throw error;
+    const updateCourse = useCallback(async (courseId: number, request: CourseUpdateRequest, thumbnail?: File) => {
+        const result = await CourseService.updateCourse(courseId, request, thumbnail);
+        if (result?.success) {
+            await mutate();
         }
+        return result;
     }, [mutate]);
 
     const deleteCourse = useCallback(async (courseId: number) => {
-        try {
-            const result = await CourseService.deleteCourse(courseId);
-
-            if (result?.success) {
-                // Optimistic update: remove from local cache
-                await mutate(
-                    (currentData) => {
-                        if (!currentData) return currentData;
-                        return {
-                            ...currentData,
-                            items: currentData.items.filter(course => course.id !== courseId),
-                            total: currentData.total - 1,
-                        };
-                    },
-                    {revalidate: true}
-                );
-            }
-
-            return result;
-        } catch (error) {
-            console.error('Failed to delete course:', error);
-            throw error;
+        const result = await CourseService.deleteCourse(courseId);
+        if (result?.success) {
+            await mutate();
         }
+        return result;
     }, [mutate]);
 
     return {
-        courses: data?.items ?? [],
-        total: data?.total ?? 0,
-        page: data?.page ?? opts.page,
-        size: data?.size ?? opts.size,
-        isLoading,
+        courses: (data as any)?.items ?? data?.content ?? [],
+        totalElements: data?.totalElements ?? 0,
+        totalPages: (data as any)?.totalPage ?? data?.totalPages ?? 0,
+        currentPage: data?.number ?? (filters?.page ?? 0),
+        isLoading: isLoading && !data,
         isValidating,
         isError: !!error,
         error,
         createCourse,
         updateCourse,
         deleteCourse,
+        mutate,
+        refresh: () => mutate(),
+    };
+}
+
+/**
+ * Hook for fetching teacher's own courses or student's enrolled courses
+ */
+export function useMyCourses(pageNumber: number = 1, pageSize: number = 20) {
+    const key = `${Constants.COURSES_ROUTES.MY_COURSES}?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+
+    const {data, error, isLoading, mutate} = useSWR<PaginatedResponse<CourseResponse>>(
+        key,
+        swrFetcher,
+        defaultSWRConfig
+    );
+
+    return {
+        courses: data?.content ?? [],
+        totalElements: data?.totalElements ?? 0,
+        totalPages: data?.totalPages ?? 0,
+        currentPage: data?.number ?? (pageNumber - 1),
+        isLoading,
+        isError: !!error,
+        error,
+        mutate,
+        refresh: () => mutate(),
+    };
+}
+
+/**
+ * Hook for fetching compact course list for dropdown selection
+ */
+export function useMyCoursesDropdown() {
+    const key = Constants.COURSES_ROUTES.MY_COURSES_DROPDOWN;
+
+    const {data, error, isLoading, mutate} = useSWR<CourseSelectResponse[]>(
+        key
+    );
+
+    return {
+        courses: data ?? [],
+        isLoading,
+        isError: !!error,
+        error,
         mutate,
         refresh: () => mutate(),
     };

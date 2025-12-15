@@ -24,7 +24,7 @@ export async function apiCall<T>(
 ): Promise<ApiResult<T>> {
     try {
         const res = await request();
-        const apiRes = res.data as ApiResponse<T>;
+        const apiRes = res.data;
 
         if (apiRes.status === "ERROR") {
             return {

@@ -22,7 +22,7 @@ export default function VerifyEmailPage() {
 
         let isMounted = true;
 
-        axios.post(`http://localhost:8081${Constants.AUTH_ROUTES.VERIFY_EMAIL}?verifyCode=${token}`)
+        axios.post(`${Constants.BACKEND_URL}${Constants.AUTH_ROUTES.VERIFY_EMAIL}?verifyCode=${token}`)
             .then(() => {
                 if (!isMounted) return;
                 console.log("Verification success");

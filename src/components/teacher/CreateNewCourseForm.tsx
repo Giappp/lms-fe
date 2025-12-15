@@ -20,20 +20,20 @@ type StepId = 'template' | 'basic-info' | 'lessons' | 'review';
 type Step = {
     id: StepId;
     title: string;
-    touched: boolean;
 }
 
 const steps: Step[] = [
-    {id: 'template', title: 'Choose Template', touched: false},
-    {id: 'basic-info', title: 'Basic Information', touched: false},
-    {id: 'lessons', title: 'Lessons', touched: false},
-    {id: 'review', title: 'Review & Publish', touched: false},
+    {id: 'template', title: 'Choose Template'},
+    {id: 'basic-info', title: 'Basic Information'},
+    {id: 'lessons', title: 'Lessons'},
+    {id: 'review', title: 'Review & Publish'},
 ];
 
 const CreateNewCourseForm = () => {
     const {user} = useAuth();
-    const {createCourse, updateCourse, isError} = useCourses();
+    const {createCourse, updateCourse} = useCourses();
     const [currentStep, setCurrentStep] = useState<StepId>('template');
+    const [completedSteps, setCompletedSteps] = useState<Set<StepId>>(new Set());
     const [basicInfoErrors, setBasicInfoErrors] = useState<Record<string, string> | null>(null);
     const [courseData, setCourseData] = useState<CourseFormData>({
         template: null,
@@ -47,13 +47,56 @@ const CreateNewCourseForm = () => {
         chapters: [],
     });
 
-    const handleNext = () => {
-        const currentIndex = steps.findIndex(step => step.id === currentStep);
-        if (!courseData.courseId && currentIndex === 1) {
-            setBasicInfoErrors({general: "Please fill all the form to proceed."});
-            return toast.error("Please fill all the form to proceed.");
+    const markStepCompleted = (stepId: StepId) => {
+        setCompletedSteps(prev => new Set(prev).add(stepId));
+    };
+
+    const isNextStepValid = (): boolean => {
+        switch (currentStep) {
+            case 'template':
+                return !!courseData.template;
+            case 'basic-info':
+                return !!courseData.courseId;
+            case 'lessons':
+                return true;
+            case 'review':
+                return false;
+            default:
+                return true;
         }
+    };
+
+    const validateAndProceed = (): boolean => {
+        switch (currentStep) {
+            case 'template':
+                if (!courseData.template) {
+                    toast.error("Please select a template to proceed.");
+                    return false;
+                }
+                return true;
+            case 'basic-info':
+                if (!courseData.courseId) {
+                    toast.error("Please save the basic information to proceed.");
+                    return false;
+                }
+                return true;
+            case 'lessons':
+                return true;
+            case 'review':
+                return false;
+            default:
+                return true;
+        }
+    };
+
+    const handleNext = () => {
+        if (!validateAndProceed()) {
+            return;
+        }
+
+        const currentIndex = steps.findIndex(step => step.id === currentStep);
         if (currentIndex < steps.length - 1) {
+            markStepCompleted(currentStep);
             setCurrentStep(steps[currentIndex + 1].id);
         }
     };
@@ -66,12 +109,10 @@ const CreateNewCourseForm = () => {
     };
 
     const onSaveBasicInfo = async (data: CourseCreationRequest) => {
-        // Build FormData and call create/update via CourseService
         const formData = new FormData();
         formData.append('request', new Blob([JSON.stringify(data)], {type: 'application/json'}));
         if (data.thumbnail) formData.append('thumbnail', data.thumbnail as File);
 
-        // Decide if updating existing course or creating new
         try {
             let result = null;
             if (courseData.courseId) {
@@ -81,13 +122,11 @@ const CreateNewCourseForm = () => {
             }
 
             if (!result.success) {
-                // surface server validation errors back to BasicInfoForm
                 setBasicInfoErrors(result.errors || null);
                 toast.error(result.message || 'Failed to save course');
                 return;
             }
 
-            // clear previous validation errors on success
             setBasicInfoErrors(null);
 
             const saved = result.data as CourseResponse | undefined;
@@ -100,13 +139,28 @@ const CreateNewCourseForm = () => {
                     } as any,
                     courseId: saved.id,
                 });
-                handleNext();
+                // Mark basic-info as completed but don't auto-advance
+                // Let user click Next button to proceed
+                markStepCompleted('basic-info');
+                toast.success('Course information saved successfully');
             }
         } catch (err) {
             console.error('Error saving basic info', err);
             toast.error('An unexpected error occurred while saving the course.');
         }
     }
+
+    const isStepAccessible = (stepId: StepId): boolean => {
+        const stepIndex = steps.findIndex(s => s.id === stepId);
+        const currentIndex = steps.findIndex(s => s.id === currentStep);
+
+        // Can access current step or any completed step
+        if (stepId === currentStep) return true;
+        if (completedSteps.has(stepId)) return true;
+
+        // Can access previous steps
+        return stepIndex < currentIndex;
+    };
 
     return (
         <div className="container mx-auto p-6">
@@ -116,13 +170,17 @@ const CreateNewCourseForm = () => {
             </div>
 
             <Card className="p-6">
-                <Tabs value={currentStep} className="w-full">
+                <Tabs value={currentStep} onValueChange={(value) => {
+                    if (isStepAccessible(value as StepId)) {
+                        setCurrentStep(value as StepId);
+                    }
+                }} className="w-full">
                     <TabsList className="grid w-full grid-cols-4">
                         {steps.map((step) => (
                             <TabsTrigger
                                 key={step.id}
                                 value={step.id}
-                                disabled={step.touched}
+                                disabled={!isStepAccessible(step.id)}
                                 className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                             >
                                 {step.title}
@@ -134,6 +192,7 @@ const CreateNewCourseForm = () => {
                         <TemplateChooser
                             onSelect={(template) => {
                                 setCourseData({...courseData, template});
+                                markStepCompleted('template');
                                 handleNext();
                             }}
                         />
@@ -143,9 +202,7 @@ const CreateNewCourseForm = () => {
                         <BasicInfoForm
                             initialData={courseData.basicInfo}
                             serverErrors={basicInfoErrors}
-                            onSaveAction={(response) => {
-                                onSaveBasicInfo(response).then(r => handleNext());
-                            }}
+                            onSaveAction={onSaveBasicInfo}
                         />
                     </TabsContent>
 
@@ -153,21 +210,12 @@ const CreateNewCourseForm = () => {
                         <CurriculumBuilder
                             onSaveAction={(chapters) => {
                                 setCourseData({...courseData, chapters});
+                                markStepCompleted('lessons');
                                 handleNext();
                             }}
                             courseId={courseData.courseId}
                         />
                     </TabsContent>
-
-                    {/*<TabsContent value="materials">*/}
-                    {/*    <MaterialsEditor*/}
-                    {/*        materials={courseData.materials}*/}
-                    {/*        onSaveAction={(materials) => {*/}
-                    {/*            setCourseData({...courseData, materials});*/}
-                    {/*            handleNext();*/}
-                    {/*        }}*/}
-                    {/*    />*/}
-                    {/*</TabsContent>*/}
 
                     <TabsContent value="review">
                         <ReviewPublish courseData={courseData}/>
@@ -184,7 +232,7 @@ const CreateNewCourseForm = () => {
                     </Button>
                     <Button
                         onClick={handleNext}
-                        disabled={currentStep === 'review'}
+                        disabled={currentStep === 'review' || !isNextStepValid()}
                     >
                         Next
                     </Button>

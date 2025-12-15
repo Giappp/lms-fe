@@ -78,18 +78,10 @@ export default function EditCourseModal({course, open, onOpenChange, onSaved}: E
 
         try {
             const formData = new FormData();
-            formData.append('title', data.title);
-            formData.append('description', data.description);
-            formData.append('difficulty', data.difficulty);
-            formData.append('price', String(data.price));
-            formData.append('status', data.status);
+            formData.append('request', new Blob([JSON.stringify(data)], {type: 'application/json'}));
 
             if (data.thumbnail) {
                 formData.append('thumbnail', data.thumbnail);
-            }
-
-            if (data.categoryId && data.categoryId.length > 0) {
-                data.categoryId.forEach(id => formData.append('categoryId', String(id)));
             }
 
             const result = await updateCourse(course.id, formData);
