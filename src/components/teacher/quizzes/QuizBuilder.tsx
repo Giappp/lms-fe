@@ -1,7 +1,7 @@
 "use client"
 import React, {useState} from 'react'
 import {useRouter} from 'next/navigation';
-import {QuestionType} from "@/types/enum"; // Use the imported enum
+import {QuestionType} from "@/types/enum";
 import {Button} from "@/components/ui/button";
 import {AlertCircle, Eye, FileText, Loader2, Plus, Save, Target} from "lucide-react";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
@@ -37,7 +37,7 @@ const ADD_BUTTONS = [
 const QuizBuilder = () => {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('build');
-    const { courses, isLoading: isLoadingCourses } = useMyCoursesDropdown();
+    const {courses, isLoading: isLoadingCourses} = useMyCoursesDropdown();
 
     const {
         quiz,
@@ -117,7 +117,8 @@ const QuizBuilder = () => {
                                     disabled={isLoadingCourses}
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder={isLoadingCourses ? "Loading courses..." : "Select a course"}/>
+                                        <SelectValue
+                                            placeholder={isLoadingCourses ? "Loading courses..." : "Select a course"}/>
                                     </SelectTrigger>
                                     <SelectContent>
                                         {courses.map(course => (

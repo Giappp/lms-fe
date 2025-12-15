@@ -1,12 +1,13 @@
 "use client";
 
 import {useRouter, useSearchParams} from 'next/navigation';
-import {useEffect, useState} from 'react';
+import {Suspense, useEffect, useState} from 'react';
 import {CheckCircle, Loader2, XCircle} from 'lucide-react';
 import {Constants} from "@/constants";
 import axios from "axios";
 
-export default function VerifyEmailPage() {
+// 1. Logic component: Handles the token reading and API verification
+function VerifyEmailContent() {
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
     const router = useRouter();
@@ -43,30 +44,48 @@ export default function VerifyEmailPage() {
     }, [token, router]);
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen text-center p-6">
+        <div className="flex flex-col items-center">
             {status === 'loading' && (
-                <div className="flex flex-col items-center">
+                <>
                     <Loader2 className="h-10 w-10 animate-spin"/>
                     <p className="mt-4 font-medium">Verifying your email...</p>
-                </div>
+                </>
             )}
 
             {status === 'success' && (
-                <div className="flex flex-col items-center">
+                <>
                     <CheckCircle className="h-10 w-10 text-green-500"/>
                     <p className="mt-4 font-medium">Email verified! Redirecting...</p>
-                </div>
+                </>
             )}
 
             {status === 'error' && (
-                <div className="flex flex-col items-center">
+                <>
                     <XCircle className="h-10 w-10 text-red-500"/>
                     <p className="mt-4 font-medium">Invalid or expired link.</p>
                     <button className="mt-4 underline" onClick={() => router.push('/signin')}>
                         Return to sign in
                     </button>
-                </div>
+                </>
             )}
+        </div>
+    );
+}
+
+// 2. Main Page: Provides the Suspense Boundary
+export default function VerifyEmailPage() {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen text-center p-6">
+            <Suspense
+                fallback={
+                    <div className="flex flex-col items-center">
+                        <Loader2 className="h-10 w-10 animate-spin"/>
+                        <p className="mt-4 font-medium">Loading verification...</p>
+                    </div>
+                }
+            >
+                <VerifyEmailContent/>
+            </Suspense>
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import {useCallback, useState} from 'react';
 import {QuestionRequest, QuizCreationRequest} from "@/types";
-import {QuestionType, QuizType} from "@/types/enum";
+import {QuestionType, QuizType, ScoringMethod} from "@/types/enum";
 import {toast} from "sonner";
 import {QuizService} from "@/api/services/quiz-service";
 
@@ -37,7 +37,7 @@ export const useQuizBuilder = () => {
         timeLimitMinutes: 60,
         maxAttempts: 3,
         passingPercentage: 70,
-        scoringMethod: 'HIGHEST',
+        scoringMethod: ScoringMethod.HIGHEST,
         shuffleQuestions: false,
         shuffleAnswers: false,
         showResults: true,

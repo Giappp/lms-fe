@@ -1,6 +1,6 @@
 import React from 'react'
 import {LessonType} from "@/types/enum";
-import {Files, FileText, Upload, Video, X} from "lucide-react";
+import {Files, Upload, Video, X} from "lucide-react";
 import {Button} from "@/components/ui/button";
 
 type Props = {
@@ -21,7 +21,6 @@ const FileUpload = ({accept, onChange, currentFile, onRemove, lessonType}: Props
 
     const getFileIcon = () => {
         if (lessonType === 'VIDEO') return <Video className="w-5 h-5 text-blue-600"/>;
-        if (lessonType === 'PDF') return <FileText className="w-5 h-5 text-red-600"/>;
         return <Files className="w-5 h-5 text-gray-600"/>;
     };
 
@@ -39,7 +38,6 @@ const FileUpload = ({accept, onChange, currentFile, onRemove, lessonType}: Props
                         </p>
                         <p className="text-xs text-gray-500">
                             {lessonType === 'VIDEO' && 'MP4, WebM, or Ogg (MAX. 100MB)'}
-                            {lessonType === 'PDF' && 'PDF files (MAX. 10MB)'}
                         </p>
                     </div>
                     <input

@@ -9,9 +9,10 @@ import {
     faUserCheck,
     faUserGraduate
 } from "@fortawesome/free-solid-svg-icons";
+import React from "react";
 
 const DemoRoleSection = () => {
-    const playDemo = (event: MouseEvent<HTMLDivElement, MouseEvent>): void => {
+    const playDemo = (event: React.MouseEvent<HTMLDivElement>): void => {
         event.preventDefault();
         alert('Demo video would play here. In a real implementation, this would open a video player.');
     }
@@ -26,7 +27,7 @@ const DemoRoleSection = () => {
                         </p>
                     </div>
                     <div className="demo-video">
-                        <div className="demo-placeholder" onClick={playDemo}>
+                        <div className="demo-placeholder" onClick={(e) => playDemo(e)}>
                             <FontAwesomeIcon icon={faPlay}/>
                         </div>
                     </div>

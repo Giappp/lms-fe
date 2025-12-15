@@ -18,7 +18,24 @@ export interface CourseFilter {
     keyword?: string;
 }
 
-export function useCourses(filters?: CourseFilter) {
+// Explicit return type for the hook to ensure type safety in components
+interface UseCoursesReturn {
+    courses: CourseResponse[];
+    totalElements: number;
+    totalPages: number;
+    currentPage: number;
+    isLoading: boolean;
+    isValidating: boolean;
+    isError: boolean;
+    error: any;
+    createCourse: (request: CourseCreationRequest, thumbnail?: File) => Promise<any>; // Replace 'any' with actual API response type if available
+    updateCourse: (courseId: number, request: CourseUpdateRequest, thumbnail?: File) => Promise<any>;
+    deleteCourse: (courseId: number) => Promise<any>;
+    mutate: () => Promise<any>;
+    refresh: () => Promise<any>;
+}
+
+export function useCourses(filters?: CourseFilter): UseCoursesReturn {
     const opts: CoursesFilterParams = {
         pageNumber: (filters?.page ?? 0) + 1, // Convert zero-based to one-based
         pageSize: filters?.size ?? 12,
