@@ -20,6 +20,17 @@ const nextConfig: NextConfig = {
     eslint: {
         ignoreDuringBuilds: true,
     },
+    reactStrictMode: true,
+    async rewrites() {
+        return [
+            {
+                // When the frontend calls /api-backend/...,
+                // Vercel forwards it to your HTTP backend.
+                source: '/api-backend/:path*',
+                destination: 'http://54.255.181.154:8081/:path*',
+            },
+        ]
+    }
 };
 
 export default nextConfig;
