@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
                 // When the frontend calls /api-backend/...,
                 // Vercel forwards it to your HTTP backend.
                 source: '/api-backend/:path*',
-                destination: 'http://54.255.181.154:8081/:path*',
+                destination: 'http://52.221.217.63:8081/:path*',
             },
         ]
     }
