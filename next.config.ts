@@ -21,16 +21,6 @@ const nextConfig: NextConfig = {
         ignoreDuringBuilds: true,
     },
     reactStrictMode: true,
-    async rewrites() {
-        return [
-            {
-                // When the frontend calls /api-backend/...,
-                // Vercel forwards it to your HTTP backend.
-                source: '/api-backend/:path*',
-                destination: 'http://52.221.217.63:8081/:path*',
-            },
-        ]
-    }
 };
 
 export default nextConfig;
